@@ -1,4 +1,5 @@
 import Stats from "stats.js";
+import { GUI } from "dat.gui"
 import {
   MeshMaterial3D,
   BasicMaterial,
@@ -91,6 +92,26 @@ function update() {
 
 addEventListener("resize", updateView)
 
+const controls = new GUI()
+const buildOptionsFolder = controls.addFolder("Settings")
+buildOptionsFolder
+  .add(meshBuilder, "width", 0, 4, 0.01)
+  .name("Width")
+  .onFinishChange(buildMeshes)
+buildOptionsFolder
+  .add(meshBuilder, "height", 0, 4, 0.01)
+  .name("Height")
+  .onFinishChange(buildMeshes)
+buildOptionsFolder
+  .add(meshBuilder, "widthSegments", 1, 100, 1)
+  .name("Width Segments")
+  .onFinishChange(buildMeshes)
+buildOptionsFolder
+  .add(meshBuilder, "heightSegments", 1, 100, 1)
+  .name("Height Segments")
+  .onFinishChange(buildMeshes)
+buildOptionsFolder.open()
+
 function updateView() {
   canvas.style.width = innerWidth + "px"
   canvas.style.height = innerHeight + "px"
@@ -99,5 +120,39 @@ function updateView() {
 
   if (camera.projection instanceof PerspectiveProjection) {
     camera.projection.aspect = innerWidth / innerHeight
+  }
+}
+
+function buildMeshes() {
+  for (let i = 0; i < meshes.length; i++) {
+    const mesh = meshBuilder.build()
+    switch (i) {
+      case 0:
+        mesh.topology = PrimitiveTopology.Points
+        break
+      case 1:
+        mesh.topology = PrimitiveTopology.Lines
+        break
+      case 2:
+        mesh.topology = PrimitiveTopology.LineLoop
+        break
+      case 3:
+        mesh.topology = PrimitiveTopology.LineStrip
+        break
+      case 4:
+        mesh.topology = PrimitiveTopology.Triangles
+        break
+      case 5:
+        mesh.topology = PrimitiveTopology.TriangleStrip
+        break
+      case 6:
+        mesh.topology = PrimitiveTopology.TriangleFan
+        break
+    }
+    meshes[i] = mesh
+    const object = objects[i]
+    if (object) {
+      object.mesh = mesh
+    }
   }
 }
