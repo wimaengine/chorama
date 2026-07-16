@@ -1,4 +1,5 @@
 precision mediump float;
+precision mediump sampler2DArray;
 
 #include <common>
 
@@ -8,7 +9,20 @@ uniform CameraBlock {
 
 uniform mat4 model;
 #ifdef SKINNED
-  uniform sampler2D bone_transforms;
+  uniform SkinBlock {
+    uint skin_index;
+    uint bone_count;
+  };
+  uniform sampler2DArray bone_transforms;
+
+  mat4 get_skin_bone(uint joint_index) {
+    if (bone_count == 0u) {
+      return mat4(1.0);
+    }
+
+    uint resolved_joint = min(joint_index, bone_count - 1u);
+    return get_value_from_texture(skin_index + resolved_joint, bone_transforms);
+  }
 #endif
 
 in vec3 position;
@@ -36,10 +50,10 @@ out vec3 cam_direction;
 
 void main(){
   #ifdef SKINNED
-    mat4 boneMat0 = get_value_from_texture(joint_index.x, bone_transforms);
-    mat4 boneMat1 = get_value_from_texture(joint_index.y, bone_transforms);
-    mat4 boneMat2 = get_value_from_texture(joint_index.z, bone_transforms);
-    mat4 boneMat3 = get_value_from_texture(joint_index.w, bone_transforms);
+    mat4 boneMat0 = get_skin_bone(joint_index.x);
+    mat4 boneMat1 = get_skin_bone(joint_index.y);
+    mat4 boneMat2 = get_skin_bone(joint_index.z);
+    mat4 boneMat3 = get_skin_bone(joint_index.w);
 
     vec4 skeleton_space_position = vec4(position, 1.0);
     vec4 skinned_position =

@@ -5,11 +5,15 @@ import { MeshVertexLayout, Shader, WebGLRenderDevice } from "../../core/index.js
 import { Mesh, Attribute } from "../../mesh/index.js";
 import { MeshMaterial3D, Object3D } from "../../objects/index.js";
 import { Plugin, RenderItem, SortViewsNode, WebGLRenderer } from "../../renderer/index.js";
-import { PrimitiveTopology, TextureFormat, TextureType } from '../../constants/index.js';
+import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../../constants/index.js';
 import { ShadowMap } from '../shadow/index.js';
 import { CameraViewNode } from '../camera/index.js';
 import { MeshMaterialNode } from './nodes/index.js';
-import { MeshMaterialPipelines } from './resources/index.js';
+import { BoneTextureResource, MeshMaterialPipelines } from './resources/index.js';
+
+/** @type {WeakMap<import("../../objects/index.js").Skin, import("../../caches/uniformbuffers.js").UniformBuffer>} */
+const skinUniformBuffers = new WeakMap()
+let skinUniformBufferId = 0
 
 export class MeshMaterialPlugin extends Plugin {
   /**
@@ -18,6 +22,12 @@ export class MeshMaterialPlugin extends Plugin {
    */
   init(renderer) {
     renderer.setResource(new MeshMaterialPipelines())
+    if (!renderer.getResource(BoneTextureResource)) {
+      renderer.setResource(new BoneTextureResource(
+        renderer.limits.textures.maxTextureSize,
+        renderer.limits.textures.maxArrayTextureLayers
+      ))
+    }
     renderer.renderGraph.addNode(MeshMaterialNode.name, new MeshMaterialNode())
     renderer.renderGraph.addDependency(CameraViewNode.name, MeshMaterialNode.name)
     renderer.renderGraph.addDependency(MeshMaterialNode.name, SortViewsNode.name)
@@ -107,8 +117,10 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
  */
 function createMaterialBindGroup(device, renderer, pipeline, material, object) {
   const { caches, defaults } = renderer
+  const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
   const bindings = []
   const materialBlockLayout = pipeline.uniformBlocks.get("MaterialBlock")
+  const skinBlockLayout = object.skin ? pipeline.uniformBlocks.get("SkinBlock") : undefined
   let binding = 0
 
   if (materialBlockLayout) {
@@ -116,6 +128,16 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
 
     materialBuffer.update(device.context, material.getData())
     bindings.push(createBufferBinding(binding++, "MaterialBlock", materialBuffer, materialBlockLayout.size))
+  }
+
+  if (object.skin && skinBlockLayout && skinTextureState) {
+    const skinBuffer = getSkinUniformBuffer(device, renderer, skinBlockLayout, object.skin)
+
+    skinBuffer.update(
+      device.context,
+      createSkinUniformData(skinBlockLayout, skinTextureState.slot.index, object.skin.bones.length)
+    )
+    bindings.push(createBufferBinding(binding++, "SkinBlock", skinBuffer, skinBlockLayout.size))
   }
 
   for (const [name, _unusedBinding, texture, sampler] of material.getTextures()) {
@@ -151,18 +173,16 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
     ))
   }
 
-  if (object.skin && hasActiveTextureUniform(pipeline, "bone_transforms")) {
-    object.skin.updateTexture()
-
-    const gpuTexture = caches.getTexture(device, object.skin.boneTexture)
+  if (object.skin && skinTextureState && hasActiveTextureUniform(pipeline, "bone_transforms")) {
+    const gpuTexture = caches.getTexture(device, skinTextureState.resource.texture)
 
     bindings.push(createTextureBinding(
       binding++,
       "bone_transforms",
       gpuTexture,
       defaults.textureSampler,
-      object.skin.boneTexture.type,
-      object.skin.boneTexture.format
+      skinTextureState.resource.texture.type,
+      skinTextureState.resource.texture.format
     ))
   }
 
@@ -188,6 +208,75 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
     layout: bindGroupLayout,
     entries: bindings.map((binding) => binding.entry)
   })
+}
+
+/**
+ * @param {WebGLRenderDevice} device
+ * @param {WebGLRenderer} renderer
+ * @param {import("../../core/layouts/index.js").UniformBufferLayout} layout
+ * @param {import("../../objects/index.js").Skin} skin
+ */
+function getSkinUniformBuffer(device, renderer, layout, skin) {
+  const existing = skinUniformBuffers.get(skin)
+
+  if (existing) {
+    return existing
+  }
+
+  const template = renderer.caches.uniformBuffers.get("SkinBlock")
+
+  assert(template, "SkinBlock uniform buffer missing")
+
+  const name = `SkinBlock:${skinUniformBufferId++}`
+  const buffer = renderer.caches.uniformBuffers.setAtPoint(device, name, template.point, layout)
+
+  skinUniformBuffers.set(skin, buffer)
+  return buffer
+}
+
+/**
+ * @param {WebGLRenderer} renderer
+ * @param {import("../../objects/index.js").Skin} skin
+ */
+function getSkinTextureState(renderer, skin) {
+  const resource = renderer.getResource(BoneTextureResource)
+
+  assert(resource, "BoneTextureResource missing")
+
+  return {
+    resource,
+    slot: resource.getOrAllocate(skin)
+  }
+}
+
+/**
+ * @param {import("../../core/layouts/index.js").UniformBufferLayout} layout
+ * @param {number} skinIndex
+ * @param {number} boneCount
+ * @returns {ArrayBuffer}
+ */
+function createSkinUniformData(layout, skinIndex, boneCount) {
+  const data = new ArrayBuffer(layout.size)
+  const view = new DataView(data)
+  let skinIndexWritten = false
+  let boneCountWritten = false
+
+  for (const [name, field] of layout.fields.entries()) {
+    if (field.type === UniformType.Uint) {
+      if (name === "skin_index") {
+        view.setUint32(field.offset, skinIndex >>> 0, true)
+        skinIndexWritten = true
+      } else if (name === "bone_count") {
+        view.setUint32(field.offset, boneCount >>> 0, true)
+        boneCountWritten = true
+      }
+    }
+  }
+
+  assert(skinIndexWritten, "SkinBlock skin_index field missing")
+  assert(boneCountWritten, "SkinBlock bone_count field missing")
+
+  return data
 }
 
 /**
@@ -354,7 +443,8 @@ function createPipelineBitsFromMesh(mesh, object) {
   if (
     mesh.attributes.has(Attribute.JointIndex.name) &&
     mesh.attributes.has(Attribute.JointWeight.name) &&
-    object.skin
+    object.skin &&
+    object.skin.bones.length > 0
   ) {
     key |= MeshKey.Skinned
   }

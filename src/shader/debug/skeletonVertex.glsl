@@ -1,11 +1,12 @@
 precision mediump float;
+precision mediump sampler2DArray;
 
 #include <common>
 
 uniform CameraBlock {
 Camera camera;
 };
-uniform sampler2D transforms;
+uniform sampler2DArray transforms;
 uniform mat4 model;
 uniform uint parent_index;
 uniform uint child_index;

@@ -83,16 +83,24 @@ export class Mesh {
 
     if (this.indices && other.indices) {
       const positions = this.attributes.get(Attribute.Position.name)
+      const otherPositions = other.attributes.get(Attribute.Position.name)
 
       if (!positions) {
         return newMesh
       }
 
-      // TODO: Remove this hardcoding and use the attribute map instead
       const attributeCount = positions.byteLength / (3 * 4)
+      const otherAttributeCount = otherPositions
+        ? otherPositions.byteLength / (3 * 4)
+        : 0
       const offset = this.indices.length
+      const IndexArray = (
+        this.indices instanceof Uint32Array ||
+        other.indices instanceof Uint32Array ||
+        attributeCount + otherAttributeCount > 65535
+      ) ? Uint32Array : Uint16Array
 
-      const newIndices = new Uint16Array(this.indices.length + other.indices.length)
+      const newIndices = new IndexArray(this.indices.length + other.indices.length)
 
       for (let i = 0; i < this.indices.length; i++) {
         const index = /**@type {number} */(this.indices[i]);
@@ -106,7 +114,7 @@ export class Mesh {
         newIndices[i + offset] = index + attributeCount
       }
       newMesh.indices = newIndices
-    } else if (!this.indices && !this.indices) {
+    } else if (!this.indices && !other.indices) {
       // Do nothing because attributes are already merged
     } else {
       // TODO: How do we merge an indexed and non-indexed mesh?

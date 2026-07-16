@@ -98,10 +98,18 @@ const runnerScript = isProd ? rewriteAssetLiterals(source) : source;
         background-color: black;
         touch-action: none;
       }
+      .dg.ac {
+        position: fixed;
+        top: 0;
+        left: auto;
+        right: 0;
+        z-index: 10000;
+      }
       .performance-monitor {
         position: fixed;
         top: 0%;
-        right: 0%;
+        left: 0%;
+        right: auto;
         cursor: pointer;
         opacity: 0.9;
         z-index: 10000;

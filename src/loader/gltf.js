@@ -1187,7 +1187,7 @@ class GLFTTexture {
 
 class GLTFSkin {
   /**
-   * @type {number}
+   * @type {number | undefined}
    */
   inverseBindMatrices
 
@@ -1216,8 +1216,11 @@ class GLTFSkin {
   static deserialize(data) {
     const { joints, inverseBindMatrices, skeleton } = data
 
+    if (!(joints instanceof Array)) {
+      throw 'Invalid skin'
+    }
     if (
-      !(joints instanceof Array) ||
+      inverseBindMatrices !== undefined &&
       typeof inverseBindMatrices !== 'number'
     ) {
       throw 'Invalid skin'
@@ -2365,21 +2368,27 @@ function parseGeometry(gltfMesh, gltf) {
  * @returns {Skin}
  */
 function parseSkin(gltfSkin, gltf, entityMap) {
-  const bindPoseAccessor = gltf.accessors[gltfSkin.inverseBindMatrices]
-  if (
-    !bindPoseAccessor ||
-    bindPoseAccessor.type !== GLTFAccessorType.Mat4 ||
-    bindPoseAccessor.componentType !== GLTFComponentType.Float ||
-    bindPoseAccessor.normalized
-  ) {
-    throw "Attribute types do not match"
+  /** @type {Affine3[]} */
+  let bindPose = []
+
+  if (gltfSkin.inverseBindMatrices !== undefined) {
+    const bindPoseAccessor = gltf.accessors[gltfSkin.inverseBindMatrices]
+    if (
+      !bindPoseAccessor ||
+      bindPoseAccessor.type !== GLTFAccessorType.Mat4 ||
+      bindPoseAccessor.componentType !== GLTFComponentType.Float ||
+      bindPoseAccessor.normalized
+    ) {
+      throw "Attribute types do not match"
+    }
+
+    const [bindPoseData] = getAccessorData(gltfSkin.inverseBindMatrices, gltf)
+    bindPose = convertToInverseBindPose(bindPoseData)
   }
 
-  const [bindPoseData] = getAccessorData(gltfSkin.inverseBindMatrices, gltf)
-  const bindPose = convertToInverseBindPose(bindPoseData)
   const skin = new Skin()
 
-  if (bindPose.length !== gltfSkin.joints.length) {
+  if (gltfSkin.inverseBindMatrices !== undefined && bindPose.length !== gltfSkin.joints.length) {
     console.warn(
       "GLTF skin inverse bind matrix count does not match joint count",
       bindPose.length,
@@ -2387,7 +2396,7 @@ function parseSkin(gltfSkin, gltf, entityMap) {
     )
   }
 
-  skin.inverseBindPose = bindPose
+  skin.inverseBindPose = gltfSkin.joints.map((_, index) => bindPose[index] || new Affine3())
   skin.bones = gltfSkin.joints.map(joint => {
     const entity = entityMap.get(joint)
     if (!(entity instanceof Bone3D)) {
