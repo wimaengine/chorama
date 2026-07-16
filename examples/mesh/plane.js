@@ -14,8 +14,15 @@ import {
   CanvasTarget,
   CameraPlugin
 } from "chorama"
+import Stats from "stats.js"
 import { GUI } from "dat.gui"
 import { addRenderGraphGuiAddon } from "@examples/rendergraph_gui"
+
+const stats = new Stats()
+stats.showPanel(1)
+document.body.append(stats.dom)
+stats.dom.removeAttribute("style")
+stats.dom.classList.add("performance-monitor")
 
 const canvas = document.createElement('canvas')
 const renderTarget = new CanvasTarget(canvas)
