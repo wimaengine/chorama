@@ -146,8 +146,7 @@ function updateView() {
 
   updateRenderTargets(settings.slider)
 }
-
-// gui controls
+// demo-only GUI controls
 const controls = new GUI()
 const screenFolder = controls.addFolder("Settings")
 const slider = screenFolder.add(settings, 'slider', 0.2, 0.8).name("Split")

@@ -24,12 +24,6 @@ import {
   WebGLRenderer,
 } from "chorama"
 
-const stats = new Stats()
-stats.showPanel(1)
-document.body.append(stats.dom)
-stats.dom.removeAttribute("style")
-stats.dom.classList.add("performance-monitor")
-
 const canvas = document.createElement("canvas")
 const renderTarget = new CanvasTarget(canvas)
 const renderDevice = new WebGLRenderDevice(canvas)
@@ -184,3 +178,10 @@ function applyExposure() {
     camera.toneMapping.exposure = settings.exposure
   }
 }
+
+// demo-only performance monitor
+const stats = new Stats()
+stats.showPanel(1)
+document.body.append(stats.dom)
+stats.dom.removeAttribute("style")
+stats.dom.classList.add("performance-monitor")

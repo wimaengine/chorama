@@ -9,6 +9,7 @@
  * @property {string} [title]
  * @property {{x:number;y:number}} [position]
  * @property {number} [width]
+ * @property {boolean} [visible]
  */
 
 /**
@@ -20,7 +21,8 @@ export function addRenderGraphGuiAddon({
   renderer,
   title = "Render Graph",
   position = { x: 24, y: 24 },
-  width = 320
+  width = 320,
+  visible = false
 }) {
   const container = document.createElement("div")
   const header = document.createElement("div")
@@ -61,7 +63,7 @@ export function addRenderGraphGuiAddon({
     executionOrder: []
   }
   const panelState = {
-    visible: true,
+    visible,
     refresh: () => renderSnapshot(),
     back: () => {
       if (graphStack.length <= 1) return
@@ -97,6 +99,7 @@ export function addRenderGraphGuiAddon({
   container.style.border = "1px solid #2c2c2c"
   container.style.boxShadow = "0 8px 24px rgba(0,0,0,0.35)"
   container.style.userSelect = "none"
+  container.style.display = visible ? "block" : "none"
 
   header.style.padding = "8px 10px"
   header.style.cursor = "move"

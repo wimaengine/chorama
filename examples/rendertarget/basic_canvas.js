@@ -93,8 +93,7 @@ function updateView() {
     camera.projection.aspect = fullWidth / fullHeight
   }
 }
-
-// gui controls
+// demo-only GUI controls
 const settings = {
   enableScissors: false
 }

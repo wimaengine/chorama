@@ -4,23 +4,14 @@ import {
   PerspectiveProjection,
   GLTFLoader,
   Camera,
-  Quaternion,
   WebGLRenderDevice,
   OrbitCameraControls,
-  DirectionalLight,
   LightPlugin,
   AmbientLight,
   MeshMaterialPlugin,
   CanvasTarget,
   CameraPlugin
 } from "chorama";
-
-// performance monitor
-const stats = new Stats()
-stats.showPanel(1)
-document.body.append(stats.dom)
-stats.dom.removeAttribute('style')
-stats.dom.classList.add('performance-monitor')
 
 const canvas = document.createElement('canvas')
 const renderTarget = new CanvasTarget(canvas)
@@ -39,13 +30,8 @@ const cameraControls = new OrbitCameraControls(camera, canvas)
 
 // lighting
 const ambientLight = new AmbientLight()
-const directionalLight = new DirectionalLight()
 
-directionalLight.transform.orientation
-  .rotateX(-Math.PI / 4)
-  .rotateZ(-Math.PI / 4)
-directionalLight.intensity = 24
-ambientLight.intensity = 0.18
+ambientLight.intensity = 0.5
 
 const loader = new GLTFLoader()
 const model = loader.load({
@@ -62,7 +48,6 @@ if (camera.projection instanceof PerspectiveProjection) {
   camera.projection.aspect = innerWidth / innerHeight
 }
 
-
 document.body.append(canvas)
 updateView()
 addEventListener("resize", updateView)
@@ -71,7 +56,7 @@ requestAnimationFrame(update)
 function update() {
   stats.begin()
   cameraControls.update()
-  renderer.render([model, ambientLight, directionalLight, camera], renderDevice)
+  renderer.render([model, ambientLight, camera], renderDevice)
   stats.end()
   requestAnimationFrame(update)
 }
@@ -86,3 +71,10 @@ function updateView() {
     camera.projection.aspect = innerWidth / innerHeight
   }
 }
+
+// demo-only performance monitor
+const stats = new Stats()
+stats.showPanel(1)
+document.body.append(stats.dom)
+stats.dom.removeAttribute('style')
+stats.dom.classList.add('performance-monitor')

@@ -43,12 +43,6 @@ const terrainHeightModes = {
   Ridges: ridgeTerrainHeight
 }
 
-const stats = new Stats()
-stats.showPanel(1)
-document.body.append(stats.dom)
-stats.dom.removeAttribute("style")
-stats.dom.classList.add("performance-monitor")
-
 const canvas = document.createElement("canvas")
 const renderTarget = new CanvasTarget(canvas)
 const renderDevice = new WebGLRenderDevice(canvas, {
@@ -96,6 +90,7 @@ const settings = {
   sampleHeight: terrainHeightModes.Hills,
   wireframe: false
 }
+// demo-only GUI controls
 const controls = new GUI()
 const buildOptionsFolder = controls.addFolder("Settings")
 buildOptionsFolder
@@ -159,3 +154,10 @@ function buildMesh() {
     object.mesh = mesh
   }
 }
+
+// demo-only performance monitor
+const stats = new Stats()
+stats.showPanel(1)
+document.body.append(stats.dom)
+stats.dom.removeAttribute("style")
+stats.dom.classList.add("performance-monitor")

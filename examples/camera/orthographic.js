@@ -93,6 +93,7 @@ function updateView() {
   canvas.height = innerHeight * devicePixelRatio
 }
 
+// demo-only GUI controls
 const controls = new GUI()
 const cameraFolder = controls.addFolder("Camera")
 

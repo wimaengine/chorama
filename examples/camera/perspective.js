@@ -116,6 +116,7 @@ function updateView() {
   }
 }
 
+// demo-only GUI controls
 const controls = new GUI()
 const cameraFolder = controls.addFolder("Camera")
 

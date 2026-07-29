@@ -17,13 +17,6 @@ import {
   CameraPlugin
 } from 'chorama';
 
-// performance monitor
-const stats = new Stats()
-stats.showPanel(1)
-document.body.append(stats.dom)
-stats.dom.removeAttribute('style')
-stats.dom.classList.add('performance-monitor')
-
 /**@type {Object3D[]} */
 const objects = []
 const canvas = document.createElement('canvas')
@@ -134,3 +127,10 @@ function updateView() {
     camera.projection.aspect = innerWidth / innerHeight
   }
 }
+
+// demo-only performance monitor
+const stats = new Stats()
+stats.showPanel(1)
+document.body.append(stats.dom)
+stats.dom.removeAttribute('style')
+stats.dom.classList.add('performance-monitor')

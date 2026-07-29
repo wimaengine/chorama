@@ -21,13 +21,6 @@ import {
   CameraPlugin
 } from "chorama"
 
-// performance monitor
-const stats = new Stats()
-stats.showPanel(1)
-document.body.append(stats.dom)
-stats.dom.removeAttribute('style')
-stats.dom.classList.add('performance-monitor')
-
 const canvas = document.createElement('canvas')
 const canvasTarget = new CanvasTarget(canvas)
 const renderDevice = new WebGLRenderDevice(canvas,{
@@ -143,3 +136,10 @@ function updateView() {
     camera2.projection.aspect = fullWidth / fullHeight
   }
 }
+
+// demo-only performance monitor
+const stats = new Stats()
+stats.showPanel(1)
+document.body.append(stats.dom)
+stats.dom.removeAttribute('style')
+stats.dom.classList.add('performance-monitor')

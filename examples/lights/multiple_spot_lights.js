@@ -223,6 +223,7 @@ const shadowFilterSettings = {
     }
   }
 }
+// demo-only GUI controls
 const controls = new GUI()
 const shadowFolder = controls.addFolder("Shadows")
 /**

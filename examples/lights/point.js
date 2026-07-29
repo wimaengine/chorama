@@ -184,8 +184,7 @@ function updateView() {
     camera.projection.aspect = innerWidth / innerHeight
   }
 }
-
-// gui controls
+// demo-only GUI controls
 const options = [
   'LAMBERT',
   'PHONG',
