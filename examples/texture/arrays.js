@@ -42,9 +42,6 @@ class TextureArrayMaterial extends Material {
    */
   fragment(){
     return `
-    precision mediump float;
-    precision mediump sampler2DArray;
-
     in vec2 v_uv;
 
     uniform MaterialBlock {

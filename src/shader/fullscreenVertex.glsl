@@ -1,5 +1,3 @@
-precision mediump float;
-
 out vec2 v_uv;
 
   // Fullscreen triangle generated from gl_VertexID.

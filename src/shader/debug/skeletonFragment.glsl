@@ -1,5 +1,3 @@
-precision mediump float;
-
 in vec3 color;
 out vec4 fragment_color;
 

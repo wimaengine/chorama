@@ -1,6 +1,3 @@
-precision mediump float;
-precision mediump sampler2DArray;
-
 #include <math>
 #include <common>
 #include <light>

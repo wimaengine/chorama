@@ -32,6 +32,14 @@ export class Shader {
   }
 }
 
+const shaderPrecision = [
+  "precision mediump float;",
+  "precision mediump int;",
+  "precision mediump sampler2D;",
+  "precision mediump samplerCube;",
+  "precision mediump sampler2DArray;"
+].join("\n")
+
 /**
  * @typedef ShaderModuleDescriptor
  * @property {string} source
@@ -47,7 +55,7 @@ export class Shader {
  * @returns {string}
  */
 function preprocessShader(source, includes, defines) {
-  const version = "#version 300 es\n"
+  const version = "#version 300 es"
   const mergedDefines = [...defines.entries()]
     .map(([name, value]) => `#define ${name} ${value}`)
     .join("\n")
@@ -58,5 +66,7 @@ function preprocessShader(source, includes, defines) {
     }
     return include || ""
   })
-  return version + mergedDefines + "\n" + preprocessed
+  return [version, mergedDefines, shaderPrecision, preprocessed]
+    .filter(Boolean)
+    .join("\n")
 }

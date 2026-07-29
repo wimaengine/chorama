@@ -1,5 +1,3 @@
-precision highp float;
-
 #include <color>
 #include <tonemap>
 
