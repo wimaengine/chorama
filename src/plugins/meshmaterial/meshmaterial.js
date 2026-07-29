@@ -16,6 +16,20 @@ import { BoneTextureResource, MeshMaterialPipelines } from './resources/index.js
 const skinUniformBuffers = new WeakMap()
 let skinUniformBufferId = 0
 
+/**
+ * @typedef MaterialUniformBufferState
+ * @property {import("../../caches/uniformbuffers.js").UniformBuffer | undefined} materialBlock
+ * @property {import("../../caches/uniformbuffers.js").UniformBuffer | undefined} alphaMaskBlock
+ */
+
+/**
+ * Per-material UBOs so one material update cannot overwrite another material's data.
+ * @type {WeakMap<WebGLRenderer, WeakMap<import("../../material/index.js").RawMaterial, MaterialUniformBufferState>>}
+ */
+const materialUniformBuffers = new WeakMap()
+let materialUniformBufferId = 0
+let alphaMaskUniformBufferId = 0
+
 export class MeshMaterialPlugin extends Plugin {
   /**
    * @override
@@ -126,7 +140,15 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
   let binding = 0
 
   if (materialBlockLayout) {
-    const materialBuffer = caches.uniformBuffers.getorSet(device, "MaterialBlock", materialBlockLayout)
+    const materialBuffer = getMaterialUniformBuffer(
+      device,
+      renderer,
+      material,
+      materialBlockLayout,
+      "MaterialBlock",
+      "materialBlock",
+      () => `${material.constructor.name}:MaterialBlock:${materialUniformBufferId++}`
+    )
 
     materialBuffer.update(device.context, material.getData())
     bindings.push(createBufferBinding(binding++, "MaterialBlock", materialBuffer, materialBlockLayout.size))
@@ -136,7 +158,15 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
     const alphaMaskBlockLayout = pipeline.uniformBlocks.get("AlphaMaskBlock")
 
     if (alphaMaskBlockLayout) {
-      const alphaMaskBuffer = caches.uniformBuffers.getorSet(device, "AlphaMaskBlock", alphaMaskBlockLayout)
+      const alphaMaskBuffer = getMaterialUniformBuffer(
+        device,
+        renderer,
+        material,
+        alphaMaskBlockLayout,
+        "AlphaMaskBlock",
+        "alphaMaskBlock",
+        () => `${material.constructor.name}:AlphaMaskBlock:${alphaMaskUniformBufferId++}`
+      )
 
       alphaMaskBuffer.update(
         device.context,
@@ -224,6 +254,52 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
     layout: bindGroupLayout,
     entries: bindings.map((binding) => binding.entry)
   })
+}
+
+// HACK: THIS is here because there is no dynamic offsets in bind groups and i have yet to separate
+// out bind groups into: per scene, per material and per mesh/object bind groups.Revisit when thats done
+// Also, alphamask cutoff will live in the mesh bind group for alpha mask pass renderitems with a
+// shared uniform buffer that is offset in the object/mesh bind group. Material in per material bind group... obviously.
+/**
+ * Returns a per-renderer, per-material uniform buffer for the requested block.
+ * @param {WebGLRenderDevice} device
+ * @param {WebGLRenderer} renderer
+ * @param {import("../../material/index.js").RawMaterial} material
+ * @param {import("../../core/layouts/index.js").UniformBufferLayout} layout
+ * @param {"MaterialBlock" | "AlphaMaskBlock"} templateName
+ * @param {"materialBlock" | "alphaMaskBlock"} stateKey
+ * @param {() => string} labelFactory
+ * @returns {import("../../caches/uniformbuffers.js").UniformBuffer}
+ */
+function getMaterialUniformBuffer(device, renderer, material, layout, templateName, stateKey, labelFactory) {
+  let rendererBuffers = materialUniformBuffers.get(renderer)
+
+  if (!rendererBuffers) {
+    rendererBuffers = new WeakMap()
+    materialUniformBuffers.set(renderer, rendererBuffers)
+  }
+
+  let state = rendererBuffers.get(material)
+
+  if (!state) {
+    state = { materialBlock: undefined, alphaMaskBlock: undefined }
+    rendererBuffers.set(material, state)
+  }
+
+  const existing = state[stateKey]
+
+  if (existing && existing.size >= layout.size) {
+    return existing
+  }
+
+  const template = renderer.caches.uniformBuffers.get(templateName)
+
+  assert(template, `${templateName} uniform buffer missing`)
+
+  const buffer = renderer.caches.uniformBuffers.setAtPoint(device, labelFactory(), template.point, layout)
+  state[stateKey] = buffer
+
+  return buffer
 }
 
 /**
