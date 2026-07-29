@@ -1,4 +1,5 @@
 export * from "./material.js"
+export * from "./alphablend.js"
 export * from "./basic.js"
 export * from "./normal.js"
 export * from "./lambert.js"

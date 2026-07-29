@@ -44,6 +44,11 @@ in vec3 cam_direction;
 uniform MaterialBlock {
   StandardMaterial material;
 };
+#ifdef ALPHA_MASK_MODE
+uniform AlphaMaskBlock {
+  float cutoff;
+};
+#endif
 uniform AmbientLightBlock {
   AmbientLight ambient_light;
 };
@@ -187,6 +192,11 @@ PBRProperties calculate_pbr_properties(){
 
 void main(){
   PBRProperties pbr_properties = calculate_pbr_properties();
+#ifdef ALPHA_MASK_MODE
+  if (pbr_properties.opacity < cutoff) {
+    discard;
+  }
+#endif
   vec3 N = pbr_properties.normal;
   vec3 V = normalize(cam_direction);
   int directional_light_count = min(directional_lights.count,MAX_DIRECTIONAL_LIGHTS);

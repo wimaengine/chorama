@@ -1,4 +1,4 @@
-/**@import { WebGLRenderPipelineOptions } from '../core/index.js' */
+/**@import { WebGLRenderPipelineDescriptor } from '../core/webgl/descriptors.js' */
 import { Sampler, Texture } from "../texture/index.js"
 import { abstractClass, abstractMethod } from "../utils/index.js"
 
@@ -25,6 +25,13 @@ export class RawMaterial {
   }
 
   /**
+   * @returns {import("./alphablend.js").AlphaBlend}
+   */
+  alphaBlendMode() {
+    abstractMethod(this, RawMaterial, "alphaBlendMode")
+  }
+
+  /**
    * @returns {ArrayBuffer}
    */
   getData() {
@@ -46,7 +53,7 @@ export class RawMaterial {
   }
 
   /**
-   * @param {WebGLRenderPipelineOptions} _descriptor 
+   * @param {WebGLRenderPipelineDescriptor} _descriptor
    */
   specialize(_descriptor) { }
 }

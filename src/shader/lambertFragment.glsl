@@ -17,6 +17,11 @@ in vec3 v_position;
 uniform MaterialBlock {
   LambertMaterial material;
 };
+#ifdef ALPHA_MASK_MODE
+uniform AlphaMaskBlock {
+  float cutoff;
+};
+#endif
 // Lights
 uniform AmbientLightBlock {
   AmbientLight ambient_light;
@@ -42,17 +47,23 @@ out vec4 fragment_color;
 
 void main(){
   vec3 base_color =  material.color.rgb;
+  float opacity = material.color.a;
   
   #ifdef VERTEX_UVS
     vec4 sample_color = texture(mainTexture,v_uv);
     base_color *= sample_color.rgb;
+    opacity *= sample_color.a;
   #endif
   #ifdef VERTEX_NORMALS
     vec3 normal = normalize(v_normal);
   #else
     #error "Mesh vertex normals are required for lighting."
   #endif
-  float opacity = material.color.a;
+#ifdef ALPHA_MASK_MODE
+  if (opacity < cutoff) {
+    discard;
+  }
+#endif
   int directional_light_count = min(directional_lights.count,MAX_DIRECTIONAL_LIGHTS);
   int point_light_count = min(point_lights.count,MAX_POINT_LIGHTS);
   int spot_light_count = min(spot_lights.count,MAX_SPOT_LIGHTS);

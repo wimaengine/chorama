@@ -1,10 +1,11 @@
-/**@import {WebGLRenderPipelineOptions } from '../core/index.js' */
+/**@import { WebGLRenderPipelineDescriptor } from '../core/webgl/descriptors.js' */
 
 import {
   CullFace,
   FrontFaceDirection
 } from "../constants/index.js"
 import { abstractClass, abstractMethod } from "../utils/index.js"
+import { AlphaMaskMode } from "./alphablend.js"
 import { RawMaterial } from "./raw.js"
 
 /**
@@ -24,6 +25,15 @@ export class Material extends RawMaterial {
    * @type {boolean}
    */
   depthWrite = true
+
+  /**
+   * Returns the material's alpha classification.
+   * @override
+   * @returns {import("./alphablend.js").AlphaBlend}
+   */
+  alphaBlendMode() {
+    abstractMethod(this, Material, "alphaBlendMode")
+  }
 
   constructor(){
     super()
@@ -75,20 +85,26 @@ export class Material extends RawMaterial {
     if (this.frontFace == FrontFaceDirection.CW) {
       materialKey |= MaterialKey.FrontFaceCW
     }
+    if (this.alphaBlendMode() instanceof AlphaMaskMode) {
+      materialKey |= MaterialKey.AlphaMaskEnabled
+    }
 
     return materialKey
   }
 
   /**
    * @override
-   * @param {WebGLRenderPipelineOptions} descriptor 
+   * @param {WebGLRenderPipelineDescriptor} descriptor
    */
   specialize(descriptor) {
-    // TODO: Incorporate blending to the pipeline key
-
     descriptor.cullFace = this.cullFace
     descriptor.frontFace = this.frontFace
     descriptor.depthWrite = this.depthWrite
+    if (this.alphaBlendMode() instanceof AlphaMaskMode) {
+      descriptor.fragment?.source?.defines.set("ALPHA_MASK_MODE", "")
+    } else {
+      descriptor.fragment?.source?.defines.delete("ALPHA_MASK_MODE")
+    }
   }
 }
 
@@ -102,5 +118,6 @@ export const MaterialKey = /**@type {const}*/({
   CullFaceBack: 2n << 0n,
   CullFaceBoth: 3n << 0n,
   FrontFaceCW: 1n << 2n,
-  DepthWrite: 1n << 3n
+  DepthWrite: 1n << 3n,
+  AlphaMaskEnabled: 1n << 4n
 })

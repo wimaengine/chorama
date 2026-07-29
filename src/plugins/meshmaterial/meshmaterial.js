@@ -3,6 +3,7 @@
 import { assert } from '../../utils/index.js'
 import { MeshVertexLayout, Shader, WebGLRenderDevice } from "../../core/index.js";
 import { Mesh, Attribute } from "../../mesh/index.js";
+import { AlphaMaskMode } from "../../material/index.js";
 import { MeshMaterial3D, Object3D } from "../../objects/index.js";
 import { Plugin, RenderItem, SortViewsNode, WebGLRenderer } from "../../renderer/index.js";
 import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../../constants/index.js';
@@ -120,6 +121,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
   const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
   const bindings = []
   const materialBlockLayout = pipeline.uniformBlocks.get("MaterialBlock")
+  const alphaBlendMode = material.alphaBlendMode()
   const skinBlockLayout = object.skin ? pipeline.uniformBlocks.get("SkinBlock") : undefined
   let binding = 0
 
@@ -128,6 +130,20 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
 
     materialBuffer.update(device.context, material.getData())
     bindings.push(createBufferBinding(binding++, "MaterialBlock", materialBuffer, materialBlockLayout.size))
+  }
+
+  if (alphaBlendMode instanceof AlphaMaskMode) {
+    const alphaMaskBlockLayout = pipeline.uniformBlocks.get("AlphaMaskBlock")
+
+    if (alphaMaskBlockLayout) {
+      const alphaMaskBuffer = caches.uniformBuffers.getorSet(device, "AlphaMaskBlock", alphaMaskBlockLayout)
+
+      alphaMaskBuffer.update(
+        device.context,
+        createAlphaMaskUniformData(alphaMaskBlockLayout, alphaBlendMode.cutoff)
+      )
+      bindings.push(createBufferBinding(binding++, "AlphaMaskBlock", alphaMaskBuffer, alphaMaskBlockLayout.size))
+    }
   }
 
   if (object.skin && skinBlockLayout && skinTextureState) {
@@ -275,6 +291,20 @@ function createSkinUniformData(layout, skinIndex, boneCount) {
 
   assert(skinIndexWritten, "SkinBlock skin_index field missing")
   assert(boneCountWritten, "SkinBlock bone_count field missing")
+
+  return data
+}
+
+/**
+ * @param {import("../../core/layouts/index.js").UniformBufferLayout} layout
+ * @param {number} cutoff
+ * @returns {ArrayBuffer}
+ */
+function createAlphaMaskUniformData(layout, cutoff) {
+  const data = new ArrayBuffer(layout.size)
+  const view = new DataView(data)
+
+  view.setFloat32(0, cutoff, true)
 
   return data
 }

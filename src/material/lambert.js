@@ -1,4 +1,5 @@
 import { Material } from "./material.js"
+import { OpaqueMode } from "./alphablend.js"
 import { Color } from "../math/index.js"
 import { basicVertex, lambertFragment } from "../shader/index.js"
 import { Texture, Sampler } from "../texture/index.js"
@@ -18,6 +19,11 @@ export class LambertMaterial extends Material {
    * @type {Sampler | undefined}
    */
   mainSampler
+
+  /**
+   * @type {import("./alphablend.js").AlphaBlend}
+   */
+  alphaBlend = new OpaqueMode()
 
   /**
    * @param {LambertMaterialOptions} param0 
@@ -45,6 +51,14 @@ export class LambertMaterial extends Material {
    */
   fragment() {
     return lambertFragment
+  }
+
+  /**
+   * @override
+   * @returns {import("./alphablend.js").AlphaBlend}
+   */
+  alphaBlendMode() {
+    return this.alphaBlend
   }
 
   /**

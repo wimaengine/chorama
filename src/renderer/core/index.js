@@ -101,6 +101,11 @@ export class RenderStages {
    * @type {RenderItem[] | undefined}
    */
   opaque
+
+  /**
+   * @type {RenderItem[] | undefined}
+   */
+  alphaMask
 }
 export class RenderItem {
 

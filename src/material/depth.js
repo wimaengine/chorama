@@ -1,4 +1,5 @@
 import { Material } from "./material.js"
+import { OpaqueMode } from "./alphablend.js"
 import { basicVertex, depthFragment } from "../shader/index.js"
 import { Texture } from "../texture/index.js"
 import { Sampler } from "../texture/sampler.js"
@@ -19,6 +20,11 @@ export class DepthMaterial extends Material {
    * @type {Sampler | undefined}
    */
   mainSampler
+
+  /**
+   * @type {import("./alphablend.js").AlphaBlend}
+   */
+  alphaBlend = new OpaqueMode()
 
   /**
    * @param {DepthMaterialOptions} options 
@@ -46,6 +52,14 @@ export class DepthMaterial extends Material {
    */
   fragment() {
     return depthFragment
+  }
+
+  /**
+   * @override
+   * @returns {import("./alphablend.js").AlphaBlend}
+   */
+  alphaBlendMode() {
+    return this.alphaBlend
   }
 
   /**

@@ -15,6 +15,7 @@ import { CameraColorTargets } from "../resources/index.js"
 function renderItems(view, device, renderer, colorTargets) {
   const { renderStage } = view
   const opaquePhase = renderStage.opaque
+  const alphaMaskPhase = renderStage.alphaMask
 
   const context = device.context
   const caches = renderer.caches
@@ -74,13 +75,30 @@ function renderItems(view, device, renderer, colorTargets) {
   })
 
   if (!opaquePhase) {
+    renderPhase(pass, alphaMaskPhase, context, caches)
     pass.end()
     return
   }
 
-  for (let i = 0; i < opaquePhase.length; i++) {
+  renderPhase(pass, opaquePhase, context, caches)
+  renderPhase(pass, alphaMaskPhase, context, caches)
+  pass.end()
+}
+
+/**
+ * @param {import("../../../core/index.js").WebGLRenderPassEncoder} pass
+ * @param {RenderItem[] | undefined} phase
+ * @param {WebGL2RenderingContext} context
+ * @param {import("../../../caches/cache.js").Caches} caches
+ */
+function renderPhase(pass, phase, context, caches) {
+  if (!phase) {
+    return
+  }
+
+  for (let i = 0; i < phase.length; i++) {
     // SAFETY: List is dense
-    const { pipelineId, mesh, bindGroup, transform } = /**@type {RenderItem}*/(opaquePhase[i])
+    const { pipelineId, mesh, bindGroup, transform } = /**@type {RenderItem}*/(phase[i])
     const pipeline = caches.getRenderPipeline(pipelineId)
 
     if (!pipeline) {
@@ -101,7 +119,6 @@ function renderItems(view, device, renderer, colorTargets) {
     }
     pass.draw(mesh)
   }
-  pass.end()
 }
 
 export class CameraOpaquePassNode {
