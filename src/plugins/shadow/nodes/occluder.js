@@ -33,8 +33,7 @@ export class ShadowOccluderNode {
                 continue
             }
 
-            /**@type {RenderItem[]} */
-            const opaqueStage = []
+            const opaqueStage = view.opaque
 
             for (let i = 0; i < objects.length; i++) {
                 const object = /**@type {Object3D} */ (objects[i])
@@ -54,12 +53,10 @@ export class ShadowOccluderNode {
                         tag: ""
                     })
 
-                    opaqueStage.push(item)
+                    opaqueStage.add(item)
                     return true
                 })
             }
-
-            view.renderStage.opaque = opaqueStage
         }
     }
 }

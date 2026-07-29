@@ -51,10 +51,8 @@ export class MeshMaterialNode {
         continue
       }
 
-      const opaqueStage = view.renderStage.opaque || []
-      const alphaMaskStage = view.renderStage.alphaMask || []
-      view.renderStage.opaque = opaqueStage
-      view.renderStage.alphaMask = alphaMaskStage
+      const opaqueStage = view.opaque
+      const alphaMaskStage = view.alphaMask
 
       for (let i = 0; i < objects.length; i++) {
         // SAFETY: Asssume the list is dense
@@ -75,9 +73,9 @@ export class MeshMaterialNode {
             const alphaBlendMode = child.material.alphaBlendMode()
 
             if (alphaBlendMode instanceof AlphaMaskMode) {
-              alphaMaskStage.push(item)
+              alphaMaskStage.add(item)
             } else {
-              opaqueStage.push(item)
+              opaqueStage.add(item)
             }
           }
           return true

@@ -33,8 +33,7 @@ export class SkyBoxNode {
         continue
       }
 
-      const opaqueStage = view.renderStage.opaque || []
-      view.renderStage.opaque = opaqueStage
+      const opaqueStage = view.opaque
 
       for (let i = 0; i < objects.length; i++) {
         // SAFETY: Asssume the list is dense
@@ -52,7 +51,7 @@ export class SkyBoxNode {
           const item = createSkyboxRenderItem(child, renderDevice, renderer)
 
           if (item) {
-            opaqueStage.push(item)
+            opaqueStage.add(item)
           }
 
           return true

@@ -11,8 +11,7 @@ import { hasDepthComponent, hasStencilComponent } from "../../../constants/index
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  */
 function renderItems(view, device, renderer) {
-  const { renderStage, renderTarget } = view
-  const opaquePhase = renderStage.opaque
+  const { renderTarget, opaque: opaqueStage } = view
 
   const context = device.context
   const caches = renderer.caches
@@ -60,14 +59,9 @@ function renderItems(view, device, renderer) {
     scissor: imageTarget.scissor || imageTarget.viewport
   })
 
-  if (!opaquePhase) {
-    pass.end()
-    return
-  }
-
-  for (let i = 0; i < opaquePhase.length; i++) {
+  for (let i = 0; i < opaqueStage.items.length; i++) {
     // SAFETY: List is dense
-    const { pipelineId, mesh, transform } = /**@type {RenderItem}*/(opaquePhase[i])
+    const { pipelineId, mesh, transform } = /**@type {RenderItem}*/(opaqueStage.items[i])
     const pipeline = caches.getRenderPipeline(pipelineId)
 
     if (!pipeline) {

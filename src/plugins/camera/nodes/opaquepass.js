@@ -1,7 +1,6 @@
 import { Camera } from "../../../objects/index.js"
-import { RenderItem, Views } from "../../../renderer/index.js"
+import { Views } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
-import { Affine3 } from "../../../math/index.js"
 import { CanvasTarget } from "../../../rendertarget/index.js"
 import { hasDepthComponent, hasStencilComponent } from "../../../constants/index.js"
 import { CameraColorTargets } from "../resources/index.js"
@@ -13,9 +12,8 @@ import { CameraColorTargets } from "../resources/index.js"
  * @param {CameraColorTargets} colorTargets
  */
 function renderItems(view, device, renderer, colorTargets) {
-  const { renderStage } = view
-  const opaquePhase = renderStage.opaque
-  const alphaMaskPhase = renderStage.alphaMask
+  const opaqueStage = view.opaque
+  const alphaMaskStage = view.alphaMask
 
   const context = device.context
   const caches = renderer.caches
@@ -74,51 +72,10 @@ function renderItems(view, device, renderer, colorTargets) {
     scissor: camera.target.scissor || camera.target.viewport
   })
 
-  if (!opaquePhase) {
-    renderPhase(pass, alphaMaskPhase, context, caches)
-    pass.end()
-    return
-  }
 
-  renderPhase(pass, opaquePhase, context, caches)
-  renderPhase(pass, alphaMaskPhase, context, caches)
+  opaqueStage.renderItems(pass, context, caches)
+  alphaMaskStage.renderItems(pass, context, caches)
   pass.end()
-}
-
-/**
- * @param {import("../../../core/index.js").WebGLRenderPassEncoder} pass
- * @param {RenderItem[] | undefined} phase
- * @param {WebGL2RenderingContext} context
- * @param {import("../../../caches/cache.js").Caches} caches
- */
-function renderPhase(pass, phase, context, caches) {
-  if (!phase) {
-    return
-  }
-
-  for (let i = 0; i < phase.length; i++) {
-    // SAFETY: List is dense
-    const { pipelineId, mesh, bindGroup, transform } = /**@type {RenderItem}*/(phase[i])
-    const pipeline = caches.getRenderPipeline(pipelineId)
-
-    if (!pipeline) {
-      continue
-    }
-
-    const modelInfo = pipeline.uniforms.get("model")
-    const transformMatrix = Affine3.toMatrix4(transform)
-
-    pass.setPipeline(pipeline)
-
-    if (modelInfo) {
-      context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))
-    }
-
-    if (bindGroup) {
-      pass.setBindGroup(0, bindGroup)
-    }
-    pass.draw(mesh)
-  }
 }
 
 export class CameraOpaquePassNode {

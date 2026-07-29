@@ -5,9 +5,13 @@ import { RenderTarget } from "../../rendertarget/index.js"
 
 export class View {
   /**
-   * @type {RenderStages}
+   * @type {RenderStage}
    */
-  renderStage = new RenderStages()
+  opaque = new RenderStage()
+  /**
+   * @type {RenderStage}
+   */
+  alphaMask = new RenderStage()
   /**
    * @type {number}
    */
@@ -96,16 +100,51 @@ export class View {
   }
 }
 
-export class RenderStages {
+export class RenderStage {
   /**
-   * @type {RenderItem[] | undefined}
+   * @type {RenderItem[]}
    */
-  opaque
+  items = []
 
   /**
-   * @type {RenderItem[] | undefined}
+   * @param {RenderItem} item
    */
-  alphaMask
+  add(item) {
+    this.items.push(item)
+  }
+  clear() {
+    this.items.length = 0
+  }
+  /**
+   * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
+   * @param {WebGL2RenderingContext} context
+   * @param {import("../../caches/cache.js").Caches} caches
+   */
+  renderItems(pass, context, caches) {
+    for (let i = 0; i < this.items.length; i++) {
+      // SAFETY: List is dense
+      const { pipelineId, mesh, bindGroup, transform } = /**@type {RenderItem}*/(this.items[i])
+      const pipeline = caches.getRenderPipeline(pipelineId)
+
+      if (!pipeline) {
+        continue
+      }
+
+      const modelInfo = pipeline.uniforms.get("model")
+      const transformMatrix = Affine3.toMatrix4(transform)
+
+      pass.setPipeline(pipeline)
+
+      if (modelInfo) {
+        context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))
+      }
+
+      if (bindGroup) {
+        pass.setBindGroup(0, bindGroup)
+      }
+      pass.draw(mesh)
+    }
+  }
 }
 export class RenderItem {
 
