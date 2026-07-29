@@ -1,6 +1,6 @@
 /**@import { LoadSettings } from './loader.js' */
 import { Attribute, Mesh } from '../mesh/index.js';
-import { StandardMaterial } from '../material/index.js';
+import { StandardMaterial, AlphaMaskMode, OpaqueMode } from '../material/index.js';
 import { MeshMaterial3D, Object3D, Skin } from '../objects/index.js';
 import { Loader } from './loader.js';
 import { arrayBufferToJSON } from './utils.js';
@@ -184,6 +184,12 @@ export class GLTFLoader extends Loader {
         } else {
           console.warn("gltf: invalid metallic-rougness texture on material");
         }
+      }
+
+      if (gltfMaterial.alphaMode === GLFTAlphaMode.Mask) {
+        material.alphaBlend = new AlphaMaskMode(gltfMaterial.alphaCutoff)
+      } else {
+        material.alphaBlend = new OpaqueMode()
       }
 
       return material
