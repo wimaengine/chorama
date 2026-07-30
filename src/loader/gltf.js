@@ -10,7 +10,7 @@ import { SeparateAttributeData } from '../mesh/attributedata/separate.js';
 import { TextureLoader } from './texture.js';
 import { Texture, Sampler } from '../texture/index.js';
 import { assert } from '../utils/index.js';
-import { TextureFilter, TextureType, TextureWrap } from '../constants/index.js';
+import { CullFace, TextureFilter, TextureType, TextureWrap } from '../constants/index.js';
 
 const defaultMaterial = new StandardMaterial()
 const GLB_MAGIC = 0x46546C67
@@ -192,6 +192,10 @@ export class GLTFLoader extends Loader {
         material.alphaBlend = new TransparentMode()
       } else {
         material.alphaBlend = new OpaqueMode()
+      }
+
+      if (gltfMaterial.doubleSided) {
+        material.cullFace = CullFace.None
       }
 
       return material
@@ -914,7 +918,7 @@ class GLTFMaterial {
   /**
    * @type {boolean}
    */
-  doubleSide = false
+  doubleSided = false
 
   /**
    * @param {GLTFPBRetallicRoughness} metallicRoughness
@@ -934,7 +938,7 @@ class GLTFMaterial {
       emissiveFactor,
       alphaMode,
       alphaCutoff,
-      doubleSide,
+      doubleSided,
       name,
       extensions,
       extras
@@ -966,8 +970,8 @@ class GLTFMaterial {
       result.alphaMode = alphaMode
     }
 
-    if (typeof doubleSide === 'boolean') {
-      result.doubleSide = doubleSide
+    if (typeof doubleSided === 'boolean') {
+      result.doubleSided = doubleSided
     }
 
     if (typeof name === "string") {
