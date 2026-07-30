@@ -13,6 +13,10 @@ export class View {
    */
   alphaMask = new RenderStage()
   /**
+   * @type {SortedRenderStage}
+   */
+  transparent = new SortedRenderStage()
+  /**
    * @type {number}
    */
   order = 0
@@ -145,6 +149,71 @@ export class RenderStage {
       pass.draw(mesh)
     }
   }
+}
+
+export class SortedRenderStage extends RenderStage {
+  /**
+   * Renders items back-to-front using the supplied view as the sorting reference.
+   * @override
+   * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
+   * @param {WebGL2RenderingContext} context
+   * @param {import("../../caches/cache.js").Caches} caches
+   * @param {View} [view]
+   */
+  renderItems(pass, context, caches, view) {
+    if (!view) {
+      super.renderItems(pass, context, caches)
+      return
+    }
+
+    const sortedItems = this.items
+      .map((item, index) => ({
+        item,
+        index,
+        depth: getViewSpaceDepth(view, item)
+      }))
+      .sort((a, b) => a.depth - b.depth || a.index - b.index)
+
+    for (const { item } of sortedItems) {
+      const { pipelineId, mesh, bindGroup, transform } = item
+      const pipeline = caches.getRenderPipeline(pipelineId)
+
+      if (!pipeline) {
+        continue
+      }
+
+      const modelInfo = pipeline.uniforms.get("model")
+      const transformMatrix = Affine3.toMatrix4(transform)
+
+      pass.setPipeline(pipeline)
+
+      if (modelInfo) {
+        context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))
+      }
+
+      if (bindGroup) {
+        pass.setBindGroup(0, bindGroup)
+      }
+
+      pass.draw(mesh)
+    }
+  }
+}
+
+/**
+ * @param {View} view
+ * @param {RenderItem} item
+ */
+function getViewSpaceDepth(view, item) {
+  const { viewMatrix } = view
+  const transform = item.transform
+
+  return (
+    viewMatrix.c * transform.x +
+    viewMatrix.g * transform.y +
+    viewMatrix.k * transform.z +
+    viewMatrix.o
+  )
 }
 export class RenderItem {
 

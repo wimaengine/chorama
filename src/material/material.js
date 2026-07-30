@@ -5,8 +5,9 @@ import {
   FrontFaceDirection
 } from "../constants/index.js"
 import { abstractClass, abstractMethod } from "../utils/index.js"
-import { AlphaMaskMode } from "./alphablend.js"
+import { AlphaMaskMode, TransparentMode } from "./alphablend.js"
 import { RawMaterial } from "./raw.js"
+import { BlendParams } from "../core/index.js"
 
 /**
  * @abstract
@@ -72,6 +73,9 @@ export class Material extends RawMaterial {
    */
   getPipelineBits() {
     let materialKey = MaterialKey.None
+    const alphaBlendMode = this.alphaBlendMode()
+    const isTransparent = alphaBlendMode instanceof TransparentMode
+
     if (this.cullFace === CullFace.Front) {
       materialKey |= MaterialKey.CullFaceFront
     } else if (this.cullFace === CullFace.Back) {
@@ -79,14 +83,18 @@ export class Material extends RawMaterial {
     } else if (this.cullFace === CullFace.FrontAndBack) {
       materialKey |= MaterialKey.CullFaceBoth
     }
-    if (this.depthWrite) {
+    if (this.depthWrite && !isTransparent) {
       materialKey |= MaterialKey.DepthWrite
     }
     if (this.frontFace == FrontFaceDirection.CW) {
       materialKey |= MaterialKey.FrontFaceCW
     }
-    if (this.alphaBlendMode() instanceof AlphaMaskMode) {
-      materialKey |= MaterialKey.AlphaMaskEnabled
+    if (alphaBlendMode instanceof AlphaMaskMode) {
+      materialKey |= MaterialKey.AlphaBlendMask
+    } else if (isTransparent) {
+      materialKey |= MaterialKey.AlphaBlendTransparent
+    } else {
+      materialKey |= MaterialKey.AlphaBlendOpaque
     }
 
     return materialKey
@@ -97,10 +105,27 @@ export class Material extends RawMaterial {
    * @param {WebGLRenderPipelineDescriptor} descriptor
    */
   specialize(descriptor) {
+    const alphaBlendMode = this.alphaBlendMode()
+    const isTransparent = alphaBlendMode instanceof TransparentMode
+
     descriptor.cullFace = this.cullFace
     descriptor.frontFace = this.frontFace
-    descriptor.depthWrite = this.depthWrite
-    if (this.alphaBlendMode() instanceof AlphaMaskMode) {
+    descriptor.depthWrite = isTransparent ? false : this.depthWrite
+
+    const target = descriptor.fragment?.targets?.[0]
+
+    if (target) {
+      if (isTransparent) {
+        target.blend = {
+          color: BlendParams.AlphaBlend,
+          alpha: BlendParams.AlphaBlend
+        }
+      } else {
+        target.blend = undefined
+      }
+    }
+
+    if (alphaBlendMode instanceof AlphaMaskMode) {
       descriptor.fragment?.source?.defines.set("ALPHA_MASK_MODE", "")
     } else {
       descriptor.fragment?.source?.defines.delete("ALPHA_MASK_MODE")
@@ -119,5 +144,7 @@ export const MaterialKey = /**@type {const}*/({
   CullFaceBoth: 3n << 0n,
   FrontFaceCW: 1n << 2n,
   DepthWrite: 1n << 3n,
-  AlphaMaskEnabled: 1n << 4n
+  AlphaBlendOpaque: 0n << 4n,
+  AlphaBlendMask: 1n << 4n,
+  AlphaBlendTransparent: 2n << 4n
 })

@@ -1,6 +1,6 @@
 import { assert } from "../../../utils/index.js"
 import { Camera, MeshMaterial3D, Object3D } from "../../../objects/index.js"
-import { AlphaMaskMode } from "../../../material/index.js"
+import { AlphaMaskMode, TransparentMode } from "../../../material/index.js"
 import { Views } from "../../../renderer/index.js"
 import { BoneTextureResource, MeshMaterialPipelines } from "../resources/index.js"
 import { createMeshMaterialRenderItem } from "../meshmaterial.js"
@@ -51,9 +51,6 @@ export class MeshMaterialNode {
         continue
       }
 
-      const opaqueStage = view.opaque
-      const alphaMaskStage = view.alphaMask
-
       for (let i = 0; i < objects.length; i++) {
         // SAFETY: Asssume the list is dense
         const object = /**@type {Object3D}*/(objects[i])
@@ -73,9 +70,11 @@ export class MeshMaterialNode {
             const alphaBlendMode = child.material.alphaBlendMode()
 
             if (alphaBlendMode instanceof AlphaMaskMode) {
-              alphaMaskStage.add(item)
+              view.alphaMask.add(item)
+            } else if (alphaBlendMode instanceof TransparentMode) {
+              view.transparent.add(item)
             } else {
-              opaqueStage.add(item)
+              view.opaque.add(item)
             }
           }
           return true
