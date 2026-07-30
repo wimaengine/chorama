@@ -11,17 +11,14 @@ export class CameraColorTargets {
   /**
    * @param {Camera} camera
    * @param {Texture | undefined} target
-   * @param {Texture | undefined} depthTexture
-   * @param {number} layer
-   * @param {boolean} original
    */
-  getOrSet(camera, target, depthTexture, layer = 0, original = false) {
+  getOrSet(camera, target) {
     const existing = this.targets.get(camera)
     if (existing) {
       return existing
     }
 
-    const cameraColorTarget = new CameraColorTarget(target, depthTexture, layer, original)
+    const cameraColorTarget = new CameraColorTarget(target)
     this.targets.set(camera, cameraColorTarget)
     return cameraColorTarget
   }
@@ -42,50 +39,22 @@ export class CameraColorTarget {
   target
 
   /**
-   * @type {Texture | undefined}
-   */
-  depthTexture
-
-  /**
-   * @type {number}
-   */
-  layer
-
-  /**
-   * True when the target is the camera's original color target.
-   * @type {boolean}
-   */
-  original
-
-  /**
    * @param {Texture | undefined} target
-   * @param {Texture | undefined} depthTexture
-   * @param {number} layer
-   * @param {boolean} original
    */
-  constructor(target, depthTexture, layer, original) {
+  constructor(target) {
     this.target = target
-    this.depthTexture = depthTexture
-    this.layer = layer
-    this.original = original
   }
 
   /**
    * Replaces the tracked color target, recycling the previous temporary color.
    * @param {Texture2DPool} targetPool
    * @param {Texture | undefined} target
-   * @param {number} layer
-   * @param {boolean} original
    */
-  setColor(targetPool, target, layer = 0, original = false) {
+  setColor(targetPool, target) {
     const previous = this.target
-    const previousOriginal = this.original
-
     this.target = target
-    this.layer = layer
-    this.original = original
 
-    if (previous && previous !== target && !previousOriginal) {
+    if (previous && previous !== target) {
       targetPool.recycle(previous)
     }
   }

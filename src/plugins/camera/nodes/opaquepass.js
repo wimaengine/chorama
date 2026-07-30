@@ -1,8 +1,6 @@
 import { Camera } from "../../../objects/index.js"
 import { Views } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
-import { CanvasTarget } from "../../../rendertarget/index.js"
-import { hasDepthComponent, hasStencilComponent } from "../../../constants/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 
 /**
@@ -23,9 +21,11 @@ function renderItems(view, device, renderer, colorTargets) {
   }
 
   const camera = view.object
+  const renderTarget = view.renderTarget
   const cameraColorTarget = colorTargets.get(camera)
 
   assert(cameraColorTarget, "Camera color target missing")
+  assert(renderTarget, "Camera render target missing")
 
   const colorTarget = cameraColorTarget.target
 
@@ -33,43 +33,31 @@ function renderItems(view, device, renderer, colorTargets) {
     return
   }
 
-  camera.target.changed()
+  renderTarget.changed()
 
-  const width = camera.target instanceof CanvasTarget ? camera.target.canvas.width : camera.target.width
-  const height = camera.target instanceof CanvasTarget ? camera.target.canvas.height : camera.target.height
-  const clearColor = camera.target.clearColor
+  const width = renderTarget.width
+  const height = renderTarget.height
+  const clearColor = renderTarget.clearColor
   const clearValue = clearColor ? /** @type {const} */ ([clearColor.r, clearColor.g, clearColor.b, clearColor.a]) : undefined
-  const depthTexture = cameraColorTarget.depthTexture ? caches.getTexture(device, cameraColorTarget.depthTexture) : undefined
-  const depthStencilAttachment = depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
-    texture: depthTexture,
-    layer: cameraColorTarget.layer
-  }) : undefined
-
-  if (depthTexture && depthStencilAttachment && hasDepthComponent(depthTexture.actualFormat)) {
-    depthStencilAttachment.depthLoadOp = camera.target.clearDepth !== undefined ? "clear" : "load"
-    depthStencilAttachment.depthStoreOp = "store"
-    depthStencilAttachment.depthClearValue = camera.target.clearDepth
-  }
-
-  if (depthTexture && depthStencilAttachment && hasStencilComponent(depthTexture.actualFormat)) {
-    depthStencilAttachment.stencilLoadOp = camera.target.clearStencil !== undefined ? "clear" : "load"
-    depthStencilAttachment.stencilStoreOp = "store"
-    depthStencilAttachment.stencilClearValue = camera.target.clearStencil
-  }
+  const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
   const pass = device.beginRenderPass({
     width,
     height,
     colorAttachments: [{
       texture: caches.getTexture(device, colorTarget),
-      layer: cameraColorTarget.layer,
       loadOp: clearValue ? "clear" : "load",
       storeOp: "store",
       clearValue
     }],
-    depthStencilAttachment,
-    viewport: camera.target.viewport,
-    scissor: camera.target.scissor || camera.target.viewport
+    depthStencilAttachment: depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
+      texture: depthTexture,
+      depthLoadOp: renderTarget.clearDepth !== undefined ? "clear" : "load",
+      depthStoreOp: "store",
+      depthClearValue: renderTarget.clearDepth
+    }) : undefined,
+    viewport: renderTarget.viewport,
+    scissor: renderTarget.scissor || renderTarget.viewport
   })
 
 

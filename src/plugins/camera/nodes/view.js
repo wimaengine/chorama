@@ -1,6 +1,5 @@
 import { Camera, Object3D } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
-import { CanvasTarget, ImageRenderTarget } from "../../../rendertarget/index.js"
 import { Vector3 } from "../../../math/index.js"
 import { assert } from "../../../utils/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
@@ -32,51 +31,29 @@ export class CameraViewNode {
         continue
       }
 
-      const original = !(camera.target instanceof CanvasTarget)
-      const existingColorTarget = colorTargets.get(camera)
-      /** @type {import("../../../texture/index.js").Texture | undefined} */
-      let colorTarget
-      /** @type {import("../../../texture/index.js").Texture | undefined} */
-      let depthTexture
-      let layer = 0
-
-      if (camera.target instanceof CanvasTarget) {
-        const width = camera.target.canvas.width
-        const height = camera.target.canvas.height
-
-        colorTarget = targetPool.get({
-          width,
-          height,
-          format: TextureFormat.RGBA16Float
-        })
-        depthTexture = existingColorTarget?.depthTexture ?? targetPool.get({
-          width,
-          height,
-          format: TextureFormat.Depth24Plus
-        })
-      } else if (camera.target instanceof ImageRenderTarget) {
-        colorTarget = camera.target.color[0]
-        depthTexture = camera.target.depthTexture
-        layer = camera.target.layer
-      } else {
-        continue
-      }
-
+      const renderTarget = camera.target
       const position = new Vector3(
         camera.transform.world.x,
         camera.transform.world.y,
         camera.transform.world.z
       )
-      const cameraColorTarget = colorTargets.getOrSet(
+
+      renderTarget.changed()
+      colorTargets.getOrSet(
         camera,
-        colorTarget,
-        depthTexture,
-        layer,
-        original
+        targetPool.get({
+          width: renderTarget.width,
+          height: renderTarget.height,
+          format: TextureFormat.RGBA16Float
+        })
       )
-      cameraColorTarget.depthTexture = depthTexture
-      cameraColorTarget.setColor(targetPool, colorTarget, layer, original)
       const cameraView = new View({
+        renderTarget,
+        depthTexture: targetPool.get({
+          width: renderTarget.width,
+          height: renderTarget.height,
+          format: TextureFormat.Depth24Plus
+        }),
         near: camera.near,
         far: camera.far,
         projection: camera.projection.asProjectionMatrix(camera.near, camera.far),

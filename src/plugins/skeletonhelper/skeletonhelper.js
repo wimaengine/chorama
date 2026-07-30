@@ -71,7 +71,7 @@ export class SkeletonHelperPlugin extends Plugin {
     }
 
     const renderTarget = view.renderTarget
-    const depthTexture = renderTarget.depthTexture ? caches.getTexture(device, renderTarget.depthTexture) : undefined
+    const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
     const depthStencilAttachment = depthTexture ? /** @type {import("../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
       texture: depthTexture,
       layer: renderTarget.layer

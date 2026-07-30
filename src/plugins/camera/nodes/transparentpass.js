@@ -1,7 +1,6 @@
 import { Camera } from "../../../objects/index.js"
 import { Views } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
-import { CanvasTarget } from "../../../rendertarget/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 
 /**
@@ -22,9 +21,11 @@ function renderItems(view, device, renderer, colorTargets) {
   }
 
   const camera = view.object
+  const renderTarget = view.renderTarget
   const cameraColorTarget = colorTargets.get(camera)
 
   assert(cameraColorTarget, "Camera color target missing")
+  assert(renderTarget, "Camera render target missing")
 
   const colorTarget = cameraColorTarget.target
 
@@ -33,29 +34,26 @@ function renderItems(view, device, renderer, colorTargets) {
   }
 
   const caches = renderer.caches
-  const width = camera.target instanceof CanvasTarget ? camera.target.canvas.width : camera.target.width
-  const height = camera.target instanceof CanvasTarget ? camera.target.canvas.height : camera.target.height
-  const depthTexture = cameraColorTarget.depthTexture ? caches.getTexture(device, cameraColorTarget.depthTexture) : undefined
-  const depthStencilAttachment = depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
-    texture: depthTexture,
-    layer: cameraColorTarget.layer,
-    depthLoadOp: "load",
-    depthStoreOp: "store",
-    depthReadOnly: true
-  }) : undefined
+  const width = renderTarget.width
+  const height = renderTarget.height
+  const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
   const pass = device.beginRenderPass({
     width,
     height,
     colorAttachments: [{
       texture: caches.getTexture(device, colorTarget),
-      layer: cameraColorTarget.layer,
       loadOp: "load",
       storeOp: "store"
     }],
-    depthStencilAttachment,
-    viewport: camera.target.viewport,
-    scissor: camera.target.scissor || camera.target.viewport
+    depthStencilAttachment: depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
+      texture: depthTexture,
+      depthLoadOp: "load",
+      depthStoreOp: "store",
+      depthReadOnly: true
+    }) : undefined,
+    viewport: renderTarget.viewport,
+    scissor: renderTarget.scissor || renderTarget.viewport
   })
 
   transparentStage.renderItems(pass, device.context, caches, view)

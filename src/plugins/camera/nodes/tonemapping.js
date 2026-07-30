@@ -94,7 +94,7 @@ export class TonemappingNode {
       pass.draw(3)
       pass.end()
 
-      cameraColorTarget.setColor(targetPool, outputColor, 0, false)
+      cameraColorTarget.setColor(targetPool, outputColor)
     }
   }
 }

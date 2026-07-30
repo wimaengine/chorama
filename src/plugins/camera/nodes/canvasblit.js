@@ -42,10 +42,6 @@ export class CanvasBlitNode {
         continue
       }
 
-      if (cameraColorTarget.original) {
-        continue
-      }
-
       const canvasSource = cameraColorTarget.target
 
       if (view.object.target instanceof CanvasTarget && canvasSource) {
@@ -82,7 +78,10 @@ export class CanvasBlitNode {
         pass.end()
       }
 
-      cameraColorTarget.setColor(targetPool, undefined, cameraColorTarget.layer, false)
+      if (view.depthTexture) {
+        targetPool.recycle(view.depthTexture)
+      }
+      cameraColorTarget.setColor(targetPool, undefined)
     }
   }
 }

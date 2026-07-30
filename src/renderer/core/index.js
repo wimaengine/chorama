@@ -1,3 +1,4 @@
+/** @import { Texture } from "../../texture/index.js" */
 import { GPUMesh } from "../../core/index.js"
 import { Affine3, Matrix4, Vector3 } from "../../math/index.js"
 import { Object3D, RenderMask } from "../../objects/index.js"
@@ -24,6 +25,12 @@ export class View {
    * @type {RenderTarget | undefined}
    */
   renderTarget
+
+  /**
+   * Dedicated depth texture for the view.
+   * @type {Texture | undefined}
+   */
+  depthTexture
 
   /**
    * @type {Matrix4}
@@ -70,6 +77,7 @@ export class View {
    */
   constructor({
     renderTarget,
+    depthTexture,
     position,
     projection,
     view,
@@ -86,6 +94,7 @@ export class View {
     this.projectionMatrix = projection
     this.viewMatrix = view
     this.viewPosition = position
+    this.depthTexture = depthTexture
     this.object = object
     this.renderMask.copy(renderMask)
   }
@@ -263,6 +272,7 @@ export class RenderItem {
 /**
  * @typedef ViewOptions
  * @property {RenderTarget} [renderTarget]
+ * @property {Texture} [depthTexture]
  * @property {Vector3} position
  * @property {Matrix4} projection
  * @property {Matrix4} view
