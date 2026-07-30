@@ -12,5 +12,10 @@ export class AlphaMaskMode {
 }
 
 /**
- * @typedef {OpaqueMode | AlphaMaskMode} AlphaBlend
+ * Marks materials that should render in the transparent pass.
+ */
+export class TransparentMode {}
+
+/**
+ * @typedef {OpaqueMode | AlphaMaskMode | TransparentMode} AlphaBlend
  */
