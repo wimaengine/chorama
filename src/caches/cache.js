@@ -47,10 +47,12 @@ export class Caches {
 
     // Flush out any change detection that happened when the mesh was creates
     mesh.changed
-    // TODO: Stop leaking memory, delete old gpu buffers
     device.context.bindVertexArray(vao)
     updateVAO(device, layout, mesh, newMesh)
     this.meshes.set(mesh, newMesh)
+    if (gpuMesh) {
+      deleteMesh(device.context, gpuMesh)
+    }
 
     return newMesh
   }
@@ -107,14 +109,12 @@ export class Caches {
       }
     }
 
-    // TODO: Stop leaking memory, delete old gpu textures
     const newTex = device.createTexture({
       type: texture.type,
       format: texture.format,
       width: texture.width,
       height: texture.height,
       depth: texture.depth,
-
     })
 
     if (texture.data) {
@@ -131,6 +131,9 @@ export class Caches {
     // Flush out any change detection that happened when the image was creates
     texture.changed
     this.textures.set(texture, newTex)
+    if (gpuTexture) {
+      device.context.deleteTexture(gpuTexture.inner)
+    }
     return newTex
   }
 
@@ -179,7 +182,6 @@ function updateVAO(device, layout, mesh, gpuMesh) {
   const { indices, attributes } = mesh
   let attrCount
 
-  // TODO: Delete the old buffers if present, probably leaking memory here
   if (indices !== undefined) {
     const buffer = device.createBuffer({
       type: BufferType.ElementArray,
@@ -229,6 +231,22 @@ function updateVAO(device, layout, mesh, gpuMesh) {
   } else {
     gpuMesh.count = 0
   }
+}
+
+/**
+ * @param {WebGL2RenderingContext} context
+ * @param {GPUMesh} gpuMesh
+ */
+function deleteMesh(context, gpuMesh) {
+  for (const buffer of gpuMesh.attributeBuffers) {
+    context.deleteBuffer(buffer.inner)
+  }
+
+  if (gpuMesh.indexBuffer) {
+    context.deleteBuffer(gpuMesh.indexBuffer.inner)
+  }
+
+  context.deleteVertexArray(gpuMesh.inner)
 }
 
 /**

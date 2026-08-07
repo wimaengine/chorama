@@ -1,3 +1,5 @@
+import { GPUBuffer } from "./gpubuffer"
+
 export class GPUMesh {
   /**
    * @readonly
@@ -6,12 +8,12 @@ export class GPUMesh {
   inner
 
   /**
-   * @type {WebGLBuffer[]}
+   * @type {GPUBuffer[]}
    */
   attributeBuffers = []
 
   /**
-   * @type {WebGLBuffer | undefined}
+   * @type {GPUBuffer | undefined}
    */
   indexBuffer
 
