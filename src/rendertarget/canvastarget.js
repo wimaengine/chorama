@@ -18,13 +18,15 @@ export class CanvasTarget extends RenderTarget {
    * @override
    */
   changed() {
-    // TODO:Use client bounding rect instead of this.
-    const resized = this.canvas.width !== this.width ||
-      this.canvas.height !== this.height
+    const rect = this.canvas.getBoundingClientRect()
+    const resized = rect.width !== this.width ||
+      rect.height !== this.height
 
     if (resized) {
-      this.width = this.canvas.width
-      this.height = this.canvas.height
+      this.width = rect.width
+      this.height = rect.height
+      this.canvas.width = rect.width
+      this.canvas.height = rect.height
     }
     return super.changed()
   }
