@@ -41,11 +41,14 @@ export class CameraViewNode {
       renderTarget.changed()
       colorTargets.getOrSet(
         camera,
-        targetPool.get({
+        targetPool,
+        {
           width: renderTarget.width,
           height: renderTarget.height,
-          format: TextureFormat.RGBA16Float
-        })
+          depth: 1,
+          format: TextureFormat.RGBA16Float,
+          generateMipmaps: false
+        }
       )
       const cameraView = new View({
         renderTarget,

@@ -76,12 +76,19 @@ export class CanvasBlitNode {
         renderDevice.context.bindTexture(canvasTexture.type, canvasTexture.inner)
         pass.draw(3)
         pass.end()
+
+        cameraColorTarget.setColor(targetPool, targetPool.get({
+          width: canvasTarget.width,
+          height: canvasTarget.height,
+          depth: 1,
+          format: TextureFormat.RGBA16Float,
+          generateMipmaps: false
+        }))
       }
 
       if (view.depthTexture) {
         targetPool.recycle(view.depthTexture)
       }
-      cameraColorTarget.setColor(targetPool, undefined)
     }
   }
 }
