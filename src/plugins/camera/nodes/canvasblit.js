@@ -71,7 +71,7 @@ export class CanvasBlitNode {
           scissor: canvasTarget.scissor || canvasTarget.viewport
         })
 
-        pass.setPipeline(pipeline)
+        pass.setPipeline(pipeline, renderer.caches.uniformBuffers)
         renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
         renderDevice.context.bindTexture(canvasTexture.type, canvasTexture.inner)
         pass.draw(3)

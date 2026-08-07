@@ -147,10 +147,7 @@ export class Caches {
     const pipeline = device.createRenderPipeline(descriptor)
 
     for (const [name, uboLayout] of pipeline.uniformBlocks) {
-      const ubo = this.uniformBuffers.getorSet(device, name, uboLayout)
-      const index = device.context.getUniformBlockIndex(pipeline.program, name)
-
-      device.context.uniformBlockBinding(pipeline.program, index, ubo.point)
+      this.uniformBuffers.getorSet(device, name, uboLayout)
     }
     this.renderpipelines[id] = pipeline
     return [pipeline, id]

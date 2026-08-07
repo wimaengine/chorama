@@ -103,7 +103,7 @@ export class SkeletonHelperPlugin extends Plugin {
       scissor: renderTarget.scissor || renderTarget.viewport
     })
 
-    pass.setPipeline(pipeline)
+    pass.setPipeline(pipeline, caches.uniformBuffers)
     boneTextureResource.upload(device, renderer)
 
     const transformsTexture = caches.getTexture(device, boneTextureResource.texture)

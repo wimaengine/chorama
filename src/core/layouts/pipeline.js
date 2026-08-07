@@ -1,5 +1,6 @@
 /** @import { WebGLBindGroup } from "../webgl/bindgroup.js" */
 /** @import { WebGLBindGroupLayout } from "./bindgroup.js" */
+import { assert, assertTrue } from "../../utils/index.js";
 
 export class WebGLPipelineLayout {
   /**
@@ -9,10 +10,27 @@ export class WebGLPipelineLayout {
   label
 
   /**
-   * @readonly
-   * @type {readonly WebGLBindGroupLayout[]}
+   * @type {(WebGLBindGroupLayout | undefined)[]}
    */
   bindGroupLayouts
+
+  /**
+   * @private
+   * @type {number}
+   */
+  bindingPoint = 0
+
+  /**
+   * @private
+   * @type {Map<number, Map<number, number>>}
+   */
+  bindGroupBufferPoints = new Map()
+
+  /**
+   * @private
+   * @type {Map<string, number>}
+   */
+  bindingPointsByName = new Map()
 
   /**
    * @param {WebGLPipelineLayoutDescriptor} descriptor
@@ -20,6 +38,12 @@ export class WebGLPipelineLayout {
   constructor({ label, bindGroupLayouts }) {
     this.label = label
     this.bindGroupLayouts = [...bindGroupLayouts]
+
+    for (let bindGroupIndex = 0; bindGroupIndex < this.bindGroupLayouts.length; bindGroupIndex++) {
+      const layout = this.bindGroupLayouts[bindGroupIndex]
+      assert(layout, `Pipeline layout is missing bind group layout ${bindGroupIndex}`)
+      this.allocateBindGroupBufferPoints(bindGroupIndex, layout)
+    }
   }
 
   /**
@@ -27,6 +51,100 @@ export class WebGLPipelineLayout {
    */
   getBindGroupLayout(index) {
     return this.bindGroupLayouts[index]
+  }
+
+  /**
+   * Installs a bind group layout into this pipeline layout and reserves
+   * binding points for its buffer entries immediately.
+   * @param {number} index
+   * @param {WebGLBindGroupLayout} layout
+   */
+  setBindGroupLayout(index, layout) {
+    assertTrue(Number.isInteger(index) && index >= 0, `Invalid bind group layout index ${index}`)
+
+    const existing = this.bindGroupLayouts[index]
+
+    if (existing) {
+      assertTrue(existing === layout, `Pipeline layout already defines bind group layout ${index}`)
+      return
+    }
+
+    this.bindGroupLayouts[index] = layout
+    this.allocateBindGroupBufferPoints(index, layout)
+  }
+
+  /**
+   * Allocates binding points for the provided uniform blocks once during pipeline initialization.
+   * @param {Map<string, import("./uniformbuffer.js").UniformBufferLayout>} uniformBlocks
+   */
+  allocateUniformBlocks(uniformBlocks) {
+    for (const name of uniformBlocks.keys()) {
+      if (this.bindingPointsByName.has(name)) {
+        continue
+      }
+
+      this.bindingPointsByName.set(name, this.reserveBindingPoint(name))
+    }
+  }
+
+  /**
+   * @param {string} name
+   * @returns {number | undefined}
+   */
+  getUniformBlockPoint(name) {
+    return this.bindingPointsByName.get(name)
+  }
+
+  /**
+   * @param {number} bindGroupIndex
+   * @param {number} binding
+   * @returns {number | undefined}
+   */
+  getBindGroupBufferPoint(bindGroupIndex, binding) {
+    return this.bindGroupBufferPoints.get(bindGroupIndex)?.get(binding)
+  }
+
+  /**
+   * @param {number} bindGroupIndex
+   * @param {WebGLBindGroupLayout} layout
+   */
+  allocateBindGroupBufferPoints(bindGroupIndex, layout) {
+    assert(layout, `Pipeline layout is missing bind group layout ${bindGroupIndex}`)
+
+    const points = this.bindGroupBufferPoints.get(bindGroupIndex) ?? new Map()
+
+    for (const entry of layout.entries) {
+      if (entry.buffer === undefined || points.has(entry.binding)) {
+        continue
+      }
+
+      points.set(entry.binding, this.reserveBindingPoint(entry.name))
+    }
+
+    this.bindGroupBufferPoints.set(bindGroupIndex, points)
+  }
+
+  /**
+   * @param {string | undefined} [name]
+   * @returns {number}
+   */
+  reserveBindingPoint(name) {
+    if (name !== undefined) {
+      const existing = this.bindingPointsByName.get(name)
+
+      if (existing !== undefined) {
+        return existing
+      }
+    }
+
+    const point = this.bindingPoint
+    this.bindingPoint += 1
+
+    if (name !== undefined) {
+      this.bindingPointsByName.set(name, point)
+    }
+
+    return point
   }
 
   /**

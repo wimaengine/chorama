@@ -61,7 +61,7 @@ function renderItems(view, device, renderer) {
 
   for (let i = 0; i < opaqueStage.items.length; i++) {
     // SAFETY: List is dense
-    const { pipelineId, mesh, transform } = /**@type {RenderItem}*/(opaqueStage.items[i])
+    const { pipelineId, mesh, bindGroup, transform } = /**@type {RenderItem}*/(opaqueStage.items[i])
     const pipeline = caches.getRenderPipeline(pipelineId)
 
     if (!pipeline) {
@@ -71,10 +71,13 @@ function renderItems(view, device, renderer) {
     const modelInfo = pipeline.uniforms.get("model")
     const transformMatrix = Affine3.toMatrix4(transform)
 
-    pass.setPipeline(pipeline)
+    pass.setPipeline(pipeline, caches.uniformBuffers)
 
     if (modelInfo) {
       context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))
+    }
+    if (bindGroup) {
+      pass.setBindGroup(0, bindGroup)
     }
     pass.draw(mesh)
   }

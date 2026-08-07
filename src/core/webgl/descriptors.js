@@ -74,7 +74,6 @@ import { Shader } from "../shader.js";
 /**
  * @typedef WebGLBindGroupBufferResource
  * @property {GPUBuffer} buffer
- * @property {number} point
  * @property {number} [offset]
  * @property {number} [size]
  */

@@ -3,24 +3,11 @@
 import { BufferType, BufferUsage } from "../constants/index.js"
 import { UniformBufferLayout } from "../core/layouts/uniformbuffer.js"
 
-export class UniformBufferPointAllocator {
-  number = 0
-
-  reserve() {
-    const id = this.number
-    this.number++
-
-    return id
-  }
-}
-
 export class UniformBuffers {
   /**
    * @type {Map<string,UniformBuffer>}
    */
   list = new Map()
-
-  allocator = new UniformBufferPointAllocator()
 
   /**
    * @param {WebGLRenderDevice} device
@@ -29,24 +16,12 @@ export class UniformBuffers {
    * @returns {UniformBuffer}
    */
   set(device, name, layout) {
-    const index = this.allocator.reserve()
-    return this.setAtPoint(device, name, index, layout)
-  }
-
-  /**
-   * @param {WebGLRenderDevice} device
-   * @param {string} name
-   * @param {number} index
-   * @param {UniformBufferLayout} layout
-   * @returns {UniformBuffer}
-   */
-  setAtPoint(device, name, index, layout) {
     const buffer = device.createBuffer({
       type: BufferType.Uniform,
       usage: BufferUsage.Dynamic,
       size: layout.size
     })
-    const ubo = new UniformBuffer(device, index, buffer)
+    const ubo = new UniformBuffer(buffer)
     this.list.set(name, ubo)
 
     return ubo
@@ -73,8 +48,7 @@ export class UniformBuffers {
         return ubo
       }
 
-      // TODO: Delete the old buffer, we are leaking gpu memory here
-      return this.setAtPoint(device, name, ubo.point, layout)
+      device.context.deleteBuffer(ubo.buffer.inner)
     }
 
     return this.set(device, name, layout)
@@ -82,12 +56,6 @@ export class UniformBuffers {
 }
 
 export class UniformBuffer {
-  /**
-   * @readonly
-   * @type {number}
-   */
-  point
-
   /**
    * @readonly
    * @type {GPUBuffer}
@@ -101,16 +69,11 @@ export class UniformBuffer {
   size
 
   /**
-   * @param {WebGLRenderDevice} device
-   * @param {number} point
    * @param {GPUBuffer} buffer
    */
-  constructor(device, point, buffer) {
-    this.point = point
+  constructor(buffer) {
     this.buffer = buffer
     this.size = buffer.size
-
-    device.context.bindBufferBase(buffer.type, point, buffer.inner)
   }
 
   /**

@@ -146,7 +146,7 @@ export class RenderStage {
       const modelInfo = pipeline.uniforms.get("model")
       const transformMatrix = Affine3.toMatrix4(transform)
 
-      pass.setPipeline(pipeline)
+      pass.setPipeline(pipeline, caches.uniformBuffers)
 
       if (modelInfo) {
         context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))
@@ -194,7 +194,7 @@ export class SortedRenderStage extends RenderStage {
       const modelInfo = pipeline.uniforms.get("model")
       const transformMatrix = Affine3.toMatrix4(transform)
 
-      pass.setPipeline(pipeline)
+      pass.setPipeline(pipeline, caches.uniformBuffers)
 
       if (modelInfo) {
         context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))

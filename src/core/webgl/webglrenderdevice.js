@@ -1,7 +1,7 @@
 /**@import { WebGLBindGroupDescriptor, WebGLBufferDescriptor, WebGLRenderPipelineDescriptor, WebGLTextureDescriptor, WebGLWriteTextureDescriptor } from './descriptors.js' */
 /**@import { WebGLBindGroupLayoutDescriptor, WebGLPipelineLayoutDescriptor } from '../layouts/index.js' */
 import { CullFace, FrontFaceDirection, TextureFormat, TextureType, getTextureFormatSize } from "../../constants/index.js"
-import { assert } from "../../utils/index.js"
+import { assert, assertTrue } from "../../utils/index.js"
 import { getFramebufferAttachment, getWebGLTextureFormat, mapWebGLAttachmentToBufferBit } from "../../function.js"
 import { WebGLExtensions } from "../extensions.js"
 import { WebGLBindGroupLayout, WebGLPipelineLayout } from "../layouts/index.js"
@@ -211,7 +211,7 @@ export class WebGLRenderDevice {
     const srcAttachment = getFramebufferAttachment(sourceFormat)
     const dstAttachment = getFramebufferAttachment(destination.actualFormat)
 
-    assert(srcAttachment === dstAttachment ? {} : undefined, "Textures need to bind to same attachment to be copy to each other")
+    assertTrue(srcAttachment === dstAttachment, "Textures need to bind to same attachment to be copy to each other")
 
     context.bindFramebuffer(WebGL2RenderingContext.DRAW_FRAMEBUFFER, this.drawBuffer)
     context.bindFramebuffer(WebGL2RenderingContext.READ_FRAMEBUFFER, this.readBuffer)

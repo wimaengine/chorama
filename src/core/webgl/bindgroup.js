@@ -65,13 +65,20 @@ export class WebGLBindGroup {
    * Applies the bind group to the active WebGL state.
    * @param {WebGL2RenderingContext} context
    * @param {WebGLRenderPipeline} pipeline
+   * @param {number} bindGroupIndex
    */
-  apply(context, pipeline) {
+  apply(context, pipeline, bindGroupIndex) {
     for (const entry of this.entries) {
       const layoutEntry = /** @type {WebGLBindGroupLayoutEntry} */ (this.layout.getEntry(entry.binding))
 
       if (layoutEntry.buffer !== undefined) {
-        applyBufferBinding(context, /** @type {WebGLBindGroupBufferResource} */ (entry.resource))
+        applyBufferBinding(
+          context,
+          pipeline,
+          bindGroupIndex,
+          layoutEntry,
+          /** @type {WebGLBindGroupBufferResource} */ (entry.resource)
+        )
         continue
       }
 
@@ -138,17 +145,42 @@ function validateTextureResource(resource, layoutEntry) {
 
 /**
  * @param {WebGL2RenderingContext} context
+ * @param {WebGLRenderPipeline} pipeline
+ * @param {number} bindGroupIndex
+ * @param {WebGLBindGroupLayoutEntry} layoutEntry
  * @param {WebGLBindGroupBufferResource} resource
  */
-function applyBufferBinding(context, resource) {
-  const { buffer, point, offset = 0, size } = resource
+function applyBufferBinding(context, pipeline, bindGroupIndex, layoutEntry, resource) {
+  const point = pipeline.layout.getBindGroupBufferPoint(bindGroupIndex, layoutEntry.binding)
+
+  assertTrue(point !== undefined, `Pipeline layout does not allocate a binding point for bind group ${bindGroupIndex} binding ${layoutEntry.binding}`)
+  const bindingPoint = /** @type {number} */ (point)
+
+  const { buffer, offset = 0, size } = resource
 
   if (size !== undefined) {
-    context.bindBufferRange(buffer.type, point, buffer.inner, offset, size)
-    return
+    context.bindBufferRange(buffer.type, bindingPoint, buffer.inner, offset, size)
+  } else {
+    context.bindBufferBase(buffer.type, bindingPoint, buffer.inner)
   }
 
-  context.bindBufferBase(buffer.type, point, buffer.inner)
+  if (layoutEntry.name !== undefined) {
+    bindUniformBlock(context, pipeline, layoutEntry.name, bindingPoint)
+  }
+}
+
+/**
+ * @param {WebGL2RenderingContext} context
+ * @param {WebGLRenderPipeline} pipeline
+ * @param {string} name
+ * @param {number} bindingPoint
+ */
+function bindUniformBlock(context, pipeline, name, bindingPoint) {
+  const invalidIndex = context.INVALID_INDEX ?? 0xFFFFFFFF
+  const index = context.getUniformBlockIndex(pipeline.program, name)
+
+  assertTrue(index !== invalidIndex, `Uniform block ${name} is not active in the shader program`)
+  context.uniformBlockBinding(pipeline.program, index, bindingPoint)
 }
 
 /**

@@ -81,12 +81,14 @@ export class WebGLRenderPassEncoder {
   /**
    * WebGPU-like API: selects the active render pipeline.
    * @param {import("./renderpipeline.js").WebGLRenderPipeline} pipeline
+   * @param {import("../../caches/uniformbuffers.js").UniformBuffers | undefined} [uniformBuffers]
    */
-  setPipeline(pipeline) {
+  setPipeline(pipeline, uniformBuffers) {
     this.assertActive()
     this.pipeline = pipeline
     retainCompatibleBindGroups(pipeline, this.bindGroups)
     this.context.useProgram(pipeline.program)
+    pipeline.bindUniformBlocks(this.context, uniformBuffers)
 
     // culling
     if (pipeline.cullMode) {
@@ -122,9 +124,11 @@ export class WebGLRenderPassEncoder {
       this.context.disable(this.context.BLEND)
     }
 
-    for (const bindGroup of this.bindGroups) {
+    for (let index = 0; index < this.bindGroups.length; index++) {
+      const bindGroup = this.bindGroups[index]
+
       if (bindGroup) {
-        bindGroup.apply(this.context, pipeline)
+        bindGroup.apply(this.context, pipeline, index)
       }
     }
 
@@ -148,7 +152,7 @@ export class WebGLRenderPassEncoder {
 
     if (this.pipeline) {
       validateBindGroupCompatibility(this.pipeline, index, bindGroup)
-      bindGroup.apply(this.context, this.pipeline)
+      bindGroup.apply(this.context, this.pipeline, index)
     }
 
     this.bindGroups[index] = bindGroup

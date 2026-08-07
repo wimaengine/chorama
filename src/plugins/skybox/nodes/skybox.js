@@ -191,11 +191,8 @@ function getSkyboxRenderPipeline(device, renderer) {
   })
 
   skyboxPipeline.bindGroupLayout = bindGroupLayout
-  skyboxPipeline.pipelineLayout = device.createPipelineLayout({
-    label: "SkyBoxPipelineLayout",
-    bindGroupLayouts: [bindGroupLayout]
-  })
-  pipeline.layout = skyboxPipeline.pipelineLayout
+  skyboxPipeline.pipelineLayout = pipeline.layout
+  skyboxPipeline.pipelineLayout.setBindGroupLayout(0, bindGroupLayout)
 
   skyboxPipeline.pipelineId = newId
 
@@ -229,8 +226,7 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
       {
         binding: 0,
         resource: {
-          buffer: uniformBuffer.buffer,
-          point: uniformBuffer.point
+          buffer: uniformBuffer.buffer
         }
       },
       {
@@ -269,7 +265,7 @@ function getSkyboxUniformBuffer(device, renderer, layout, object) {
   assert(template, "SkyBoxBlock uniform buffer missing")
 
   const name = `SkyBoxBlock:${skyboxUniformBufferId++}`
-  const buffer = renderer.caches.uniformBuffers.setAtPoint(device, name, template.point, layout)
+  const buffer = renderer.caches.uniformBuffers.getorSet(device, name, layout)
 
   skyboxUniformBuffers.set(object, buffer)
   return buffer

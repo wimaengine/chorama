@@ -243,10 +243,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
       label: `${material.constructor.name}BindGroupLayout`,
       entries: bindings.map((binding) => binding.layout)
     })
-    pipeline.layout = device.createPipelineLayout({
-      label: `${material.constructor.name}PipelineLayout`,
-      bindGroupLayouts: [bindGroupLayout]
-    })
+    pipeline.layout.setBindGroupLayout(0, bindGroupLayout)
   }
 
   return device.createBindGroup({
@@ -296,7 +293,7 @@ function getMaterialUniformBuffer(device, renderer, material, layout, templateNa
 
   assert(template, `${templateName} uniform buffer missing`)
 
-  const buffer = renderer.caches.uniformBuffers.setAtPoint(device, labelFactory(), template.point, layout)
+  const buffer = renderer.caches.uniformBuffers.getorSet(device, labelFactory(), layout)
   state[stateKey] = buffer
 
   return buffer
@@ -320,7 +317,7 @@ function getSkinUniformBuffer(device, renderer, layout, skin) {
   assert(template, "SkinBlock uniform buffer missing")
 
   const name = `SkinBlock:${skinUniformBufferId++}`
-  const buffer = renderer.caches.uniformBuffers.setAtPoint(device, name, template.point, layout)
+  const buffer = renderer.caches.uniformBuffers.getorSet(device, name, layout)
 
   skinUniformBuffers.set(skin, buffer)
   return buffer
@@ -410,7 +407,9 @@ function createBufferBinding(binding, name, buffer, minBindingSize) {
     },
     entry: {
       binding,
-      resource: buffer
+      resource: {
+        buffer: buffer.buffer
+      }
     }
   }
 }
