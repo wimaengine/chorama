@@ -10,25 +10,11 @@ import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../.
 import { ShadowMap } from '../shadow/index.js';
 import { CameraViewNode } from '../camera/index.js';
 import { MeshMaterialNode } from './nodes/index.js';
-import { BoneTextureResource, MeshMaterialBindGroups, MeshMaterialPipelines } from './resources/index.js';
+import { BoneTextureResource, MaterialUniformBuffers, MeshMaterialBindGroups, MeshMaterialPipelines } from './resources/index.js';
 
 /** @type {WeakMap<import("../../objects/index.js").Skin, import("../../caches/uniformbuffers.js").UniformBuffer>} */
 const skinUniformBuffers = new WeakMap()
 let skinUniformBufferId = 0
-
-/**
- * @typedef MaterialUniformBufferState
- * @property {import("../../caches/uniformbuffers.js").UniformBuffer | undefined} materialBlock
- * @property {import("../../caches/uniformbuffers.js").UniformBuffer | undefined} alphaMaskBlock
- */
-
-/**
- * Per-material UBOs so one material update cannot overwrite another material's data.
- * @type {WeakMap<WebGLRenderer, WeakMap<import("../../material/index.js").RawMaterial, MaterialUniformBufferState>>}
- */
-const materialUniformBuffers = new WeakMap()
-let materialUniformBufferId = 0
-let alphaMaskUniformBufferId = 0
 
 export class MeshMaterialPlugin extends Plugin {
   /**
@@ -38,6 +24,7 @@ export class MeshMaterialPlugin extends Plugin {
   init(renderer) {
     renderer.setResource(new MeshMaterialPipelines())
     renderer.setResource(new MeshMaterialBindGroups())
+    renderer.setResource(new MaterialUniformBuffers())
     if (!renderer.getResource(BoneTextureResource)) {
       renderer.setResource(new BoneTextureResource(
         renderer.limits.textures.maxTextureSize,
@@ -138,6 +125,7 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
  */
 function createMaterialBindGroup(device, renderer, pipeline, material, object, bindGroups) {
   const { caches, defaults } = renderer
+  const materialUniformBuffers = renderer.getResource(MaterialUniformBuffers)
   const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
   /**
    * @type {Array<{
@@ -152,40 +140,33 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, b
   const skinBlockLayout = object.skin ? pipeline.uniformBlocks.get("SkinBlock") : undefined
   let binding = 0
 
-  if (materialBlockLayout) {
-    const materialBuffer = getMaterialUniformBuffer(
-      device,
-      renderer,
-      material,
-      materialBlockLayout,
-      "MaterialBlock",
-      "materialBlock",
-      () => `${material.constructor.name}:MaterialBlock:${materialUniformBufferId++}`
-    )
+  assert(materialUniformBuffers, "MaterialUniformBuffers resource missing")
 
-    materialBuffer.update(device.context, material.getData())
-    bindings.push(createBufferBinding(binding++, "MaterialBlock", materialBuffer, materialBlockLayout.size))
+  if (materialBlockLayout) {
+    const materialBuffer = materialUniformBuffers.setData(
+      material,
+      "materialBlock",
+      material.getData(),
+      materialBlockLayout.size
+    )
+    const gpuBuffer = caches.getNewUniformBuffer(device, materialBuffer)
+
+    bindings.push(createBufferBinding(binding++, "MaterialBlock", gpuBuffer, materialBlockLayout.size))
   }
 
   if (alphaBlendMode instanceof AlphaMaskMode) {
     const alphaMaskBlockLayout = pipeline.uniformBlocks.get("AlphaMaskBlock")
 
     if (alphaMaskBlockLayout) {
-      const alphaMaskBuffer = getMaterialUniformBuffer(
-        device,
-        renderer,
+      const alphaMaskBuffer = materialUniformBuffers.setData(
         material,
-        alphaMaskBlockLayout,
-        "AlphaMaskBlock",
         "alphaMaskBlock",
-        () => `${material.constructor.name}:AlphaMaskBlock:${alphaMaskUniformBufferId++}`
+        createAlphaMaskUniformData(alphaMaskBlockLayout, alphaBlendMode.cutoff),
+        alphaMaskBlockLayout.size
       )
+      const gpuBuffer = caches.getNewUniformBuffer(device, alphaMaskBuffer)
 
-      alphaMaskBuffer.update(
-        device.context,
-        createAlphaMaskUniformData(alphaMaskBlockLayout, alphaBlendMode.cutoff)
-      )
-      bindings.push(createBufferBinding(binding++, "AlphaMaskBlock", alphaMaskBuffer, alphaMaskBlockLayout.size))
+      bindings.push(createBufferBinding(binding++, "AlphaMaskBlock", gpuBuffer, alphaMaskBlockLayout.size))
     }
   }
 
@@ -196,7 +177,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, b
       device.context,
       createSkinUniformData(skinBlockLayout, skinTextureState.slot.index, object.skin.bones.length)
     )
-    bindings.push(createBufferBinding(binding++, "SkinBlock", skinBuffer, skinBlockLayout.size))
+    bindings.push(createBufferBinding(binding++, "SkinBlock", skinBuffer.buffer, skinBlockLayout.size))
   }
 
   for (const [name, _unusedBinding, texture, sampler] of material.getTextures()) {
@@ -272,52 +253,6 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, b
   }
 
   return bindGroup
-}
-
-// HACK: THIS is here because there is no dynamic offsets in bind groups and i have yet to separate
-// out bind groups into: per scene, per material and per mesh/object bind groups.Revisit when thats done
-// Also, alphamask cutoff will live in the mesh bind group for alpha mask pass renderitems with a
-// shared uniform buffer that is offset in the object/mesh bind group. Material in per material bind group... obviously.
-/**
- * Returns a per-renderer, per-material uniform buffer for the requested block.
- * @param {WebGLRenderDevice} device
- * @param {WebGLRenderer} renderer
- * @param {import("../../material/index.js").RawMaterial} material
- * @param {import("../../core/layouts/index.js").UniformBufferLayout} layout
- * @param {"MaterialBlock" | "AlphaMaskBlock"} templateName
- * @param {"materialBlock" | "alphaMaskBlock"} stateKey
- * @param {() => string} labelFactory
- * @returns {import("../../caches/uniformbuffers.js").UniformBuffer}
- */
-function getMaterialUniformBuffer(device, renderer, material, layout, templateName, stateKey, labelFactory) {
-  let rendererBuffers = materialUniformBuffers.get(renderer)
-
-  if (!rendererBuffers) {
-    rendererBuffers = new WeakMap()
-    materialUniformBuffers.set(renderer, rendererBuffers)
-  }
-
-  let state = rendererBuffers.get(material)
-
-  if (!state) {
-    state = { materialBlock: undefined, alphaMaskBlock: undefined }
-    rendererBuffers.set(material, state)
-  }
-
-  const existing = state[stateKey]
-
-  if (existing && existing.size >= layout.size) {
-    return existing
-  }
-
-  const template = renderer.caches.uniformBuffers.get(templateName)
-
-  assert(template, `${templateName} uniform buffer missing`)
-
-  const buffer = renderer.caches.uniformBuffers.getorSet(device, labelFactory(), layout)
-  state[stateKey] = buffer
-
-  return buffer
 }
 
 /**
@@ -406,7 +341,7 @@ function createAlphaMaskUniformData(layout, cutoff) {
 /**
  * @param {number} binding
  * @param {string} name
- * @param {import("../../caches/uniformbuffers.js").UniformBuffer} buffer
+ * @param {import("../../core/resources/index.js").GPUBuffer} buffer
  * @param {number} minBindingSize
  * @returns {{
  *   binding: number,
@@ -429,7 +364,7 @@ function createBufferBinding(binding, name, buffer, minBindingSize) {
     entry: {
       binding,
       resource: {
-        buffer: buffer.buffer
+        buffer
       }
     }
   }
