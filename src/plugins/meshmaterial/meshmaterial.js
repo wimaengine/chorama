@@ -10,7 +10,7 @@ import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../.
 import { ShadowMap } from '../shadow/index.js';
 import { CameraViewNode } from '../camera/index.js';
 import { MeshMaterialNode } from './nodes/index.js';
-import { BoneTextureResource, MeshMaterialPipelines } from './resources/index.js';
+import { BoneTextureResource, MeshMaterialBindGroups, MeshMaterialPipelines } from './resources/index.js';
 
 /** @type {WeakMap<import("../../objects/index.js").Skin, import("../../caches/uniformbuffers.js").UniformBuffer>} */
 const skinUniformBuffers = new WeakMap()
@@ -37,6 +37,7 @@ export class MeshMaterialPlugin extends Plugin {
    */
   init(renderer) {
     renderer.setResource(new MeshMaterialPipelines())
+    renderer.setResource(new MeshMaterialBindGroups())
     if (!renderer.getResource(BoneTextureResource)) {
       renderer.setResource(new BoneTextureResource(
         renderer.limits.textures.maxTextureSize,
@@ -62,7 +63,11 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
   }
 
   const { caches, attributes } = renderer
+  const bindGroups = renderer.getResource(MeshMaterialBindGroups)
   const { material, mesh, transform } = object
+
+  assert(bindGroups, "MeshMaterialBindGroups resource missing")
+
   const gpuMesh = caches.getMesh(device, mesh, attributes)
   const meshBits = createPipelineBitsFromMesh(mesh, object)
   const materialBits = material.getPipelineBits()
@@ -110,7 +115,7 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
     })
 
   const pipeline = caches.getRenderPipeline(pipelineId)
-  const bindGroup = pipeline ? createMaterialBindGroup(device, renderer, pipeline, material, object) : undefined
+  const bindGroup = pipeline ? createMaterialBindGroup(device, renderer, pipeline, material, object, bindGroups) : undefined
   const item = new RenderItem({
     bindGroup,
     mesh: gpuMesh,
@@ -128,11 +133,19 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
  * @param {WebGLRenderPipeline} pipeline
  * @param {import("../../material/index.js").RawMaterial} material
  * @param {MeshMaterial3D} object
+ * @param {MeshMaterialBindGroups} bindGroups
  * @returns {import("../../core/index.js").WebGLBindGroup | undefined}
  */
-function createMaterialBindGroup(device, renderer, pipeline, material, object) {
+function createMaterialBindGroup(device, renderer, pipeline, material, object, bindGroups) {
   const { caches, defaults } = renderer
   const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
+  /**
+   * @type {Array<{
+   *   binding: number,
+   *   layout: import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry,
+   *   entry: import("../../core/webgl/descriptors.js").WebGLBindGroupEntry
+   * }>}
+   */
   const bindings = []
   const materialBlockLayout = pipeline.uniformBlocks.get("MaterialBlock")
   const alphaBlendMode = material.alphaBlendMode()
@@ -236,21 +249,29 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
     return undefined
   }
 
-  let bindGroupLayout = pipeline.layout.getBindGroupLayout(0)
+  const bindGroup = bindGroups.getOrSetCompute(material, () => {
+    let bindGroupLayout = pipeline.layout.getBindGroupLayout(0)
 
-  if (!bindGroupLayout) {
-    bindGroupLayout = device.createBindGroupLayout({
-      label: `${material.constructor.name}BindGroupLayout`,
-      entries: bindings.map((binding) => binding.layout)
+    if (!bindGroupLayout) {
+      bindGroupLayout = device.createBindGroupLayout({
+        label: `${material.constructor.name}BindGroupLayout`,
+        entries: bindings.map((binding) => binding.layout)
+      })
+      pipeline.layout.setBindGroupLayout(0, bindGroupLayout)
+    }
+
+    return device.createBindGroup({
+      label: `${material.constructor.name}BindGroup`,
+      layout: bindGroupLayout,
+      entries: bindings.map((binding) => binding.entry)
     })
-    pipeline.layout.setBindGroupLayout(0, bindGroupLayout)
+  })
+
+  if (!pipeline.layout.getBindGroupLayout(0)) {
+    pipeline.layout.setBindGroupLayout(0, bindGroup.layout)
   }
 
-  return device.createBindGroup({
-    label: `${material.constructor.name}BindGroup`,
-    layout: bindGroupLayout,
-    entries: bindings.map((binding) => binding.entry)
-  })
+  return bindGroup
 }
 
 // HACK: THIS is here because there is no dynamic offsets in bind groups and i have yet to separate
