@@ -135,17 +135,19 @@ export class WebGLRenderDevice {
 
   /**
    * @param {GPUBuffer} buffer
-   * @param {ArrayBufferView} data
+   * @param {ArrayBuffer | ArrayBufferView} data
    * @param {number} bufferOffset
    * @param {number} dataOffset
    * @param {number} size
    */
   writeBuffer(buffer, data, bufferOffset = 0, dataOffset = 0, size = data.byteLength) {
     const { context } = this
-    const dataView = new DataView(data.buffer, data.byteOffset, data.byteLength)
+    const source = data instanceof ArrayBuffer
+      ? new Uint8Array(data)
+      : new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
 
     context.bindBuffer(buffer.type, buffer.inner)
-    context.bufferSubData(buffer.type, bufferOffset, dataView, dataOffset, size)
+    context.bufferSubData(buffer.type, bufferOffset, source, dataOffset, size)
   }
 
   /**

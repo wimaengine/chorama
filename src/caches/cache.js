@@ -1,9 +1,10 @@
 /**@import { WebGLRenderPipelineDescriptor } from '../core/index.js' */
 /**@import { WebGLAtttributeParams } from '../function.js' */
+/** @import { NewUniformBuffer } from "../core/resources/index.js" */
 
 import { Texture } from "../texture/index.js"
 import { Attribute, Mesh } from "../mesh/index.js"
-import { GPUMesh, GPUTexture, MeshVertexLayout, WebGLRenderDevice, WebGLRenderPipeline } from "../core/index.js"
+import { GPUMesh, GPUTexture, GPUBuffer, MeshVertexLayout, WebGLRenderDevice, WebGLRenderPipeline } from "../core/index.js"
 import { UniformBuffers } from "./uniformbuffers.js"
 import { BufferType, BufferUsage } from "../constants/others.js"
 import { mapToIndicesType, mapVertexFormatToWebGL } from "../function.js"
@@ -20,6 +21,12 @@ export class Caches {
    * @type {Map<Texture, GPUTexture>}
    */
   textures = new Map()
+
+  /**
+   * @type {Map<NewUniformBuffer, GPUBuffer>}
+   */
+  newUniformBuffers = new Map()
+
   /**
    * @type {WebGLRenderPipeline[]}
    */
@@ -103,6 +110,8 @@ export class Caches {
             })
           }
           return gpuTexture
+        } else {
+          device.context.deleteTexture(gpuTexture.inner)
         }
       } else {
         return gpuTexture
@@ -131,10 +140,42 @@ export class Caches {
     // Flush out any change detection that happened when the image was creates
     texture.changed
     this.textures.set(texture, newTex)
-    if (gpuTexture) {
-      device.context.deleteTexture(gpuTexture.inner)
-    }
     return newTex
+  }
+
+  /**
+   * @param {WebGLRenderDevice} device
+   * @param {NewUniformBuffer} uniformBuffer
+   * @returns {GPUBuffer}
+   */
+  getNewUniformBuffer(device, uniformBuffer) {
+    const gpuBuffer = this.newUniformBuffers.get(uniformBuffer)
+    const data = uniformBuffer.data
+
+    if (gpuBuffer) {
+      if (uniformBuffer.changed) {
+        if (gpuBuffer.size >= data.byteLength) {
+          // non-structural change, no need to create new gpu buffer
+          device.writeBuffer(gpuBuffer, data)
+          return gpuBuffer
+        } else {
+          device.context.deleteBuffer(gpuBuffer.inner)
+        }
+      } else {
+        return gpuBuffer
+      }
+    }
+
+    const newBuffer = device.createBuffer({
+      type: BufferType.Uniform,
+      usage: BufferUsage.Dynamic,
+      size: data.byteLength
+    })
+
+    uniformBuffer.changed
+    device.writeBuffer(newBuffer, data)
+    this.newUniformBuffers.set(uniformBuffer, newBuffer)
+    return newBuffer
   }
 
   /**
