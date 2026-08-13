@@ -1915,12 +1915,12 @@ class TRSTransform {
 
 class MatrixTransform {
   /**
-   * @type {MatrixArray}
+   * @type {Affine3}
    */
   value
 
   /**
-   * @param {MatrixArray} value
+   * @param {Affine3} value
    */
   constructor(value) {
     this.value = value
@@ -1940,7 +1940,11 @@ class MatrixTransform {
     if (t.length !== 16) {
       throw "invalid matrix transform"
     }
-    const transform = new MatrixTransform(/**@type {MatrixArray}*/(t))
+    const transform = new MatrixTransform(new Affine3(
+      t[0], t[4], t[8], t[12],
+      t[1], t[5], t[9], t[13],
+      t[2], t[6], t[10], t[14]
+    ))
 
     return transform
   }
@@ -2516,7 +2520,11 @@ function transferTransform(object, transform) {
     object.transform.scale.z = transform.scale[2]
   }
   if (transform instanceof MatrixTransform) {
-    throw "matrix transform not yet supported"
+    const [position, rotation, scale] = transform.value.decompose()
+
+    object.transform.position.copy(position)
+    object.transform.orientation.copy(rotation)
+    object.transform.scale.copy(scale)
   }
 }
 
