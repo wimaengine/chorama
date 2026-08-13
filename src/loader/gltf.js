@@ -101,6 +101,7 @@ export class GLTFLoader extends Loader {
       const {
         emissiveFactor,
         emissiveTexture,
+        extensions = {},
         normalTexture,
         occlusionTexture,
         pbrMetallicRoughness
@@ -184,6 +185,45 @@ export class GLTFLoader extends Loader {
         } else {
           console.warn("gltf: invalid metallic-rougness texture on material");
         }
+      }
+
+      const transmissionExtension = extensions["KHR_materials_transmission"]
+      if (transmissionExtension) {
+        material.transmission = transmissionExtension.transmissionFactor ?? material.transmission
+
+        const transmissionTexture = transmissionExtension.transmissionTexture
+        if (transmissionTexture) {
+          const texture = textures[transmissionTexture.index]
+
+          if (texture) {
+            material.transmissionTexture = texture[0]
+            material.transmissionSampler = texture[1]
+          } else {
+            console.warn("gltf: invalid transmission texture on material");
+          }
+        }
+      }
+
+      const volumeExtension = extensions["KHR_materials_volume"]
+      if (volumeExtension) {
+        material.thickness = volumeExtension.thicknessFactor ?? material.thickness
+
+        const thicknessTexture = volumeExtension.thicknessTexture
+        if (thicknessTexture) {
+          const texture = textures[thicknessTexture.index]
+
+          if (texture) {
+            material.thicknessTexture = texture[0]
+            material.thicknessSampler = texture[1]
+          } else {
+            console.warn("gltf: invalid thickness texture on material");
+          }
+        }
+      }
+
+      const iorExtension = extensions["KHR_materials_ior"]
+      if (iorExtension) {
+        material.ior = iorExtension.ior ?? material.ior
       }
 
       if (gltfMaterial.alphaMode === GLFTAlphaMode.Mask) {
