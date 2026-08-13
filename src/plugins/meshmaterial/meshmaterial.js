@@ -10,7 +10,7 @@ import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../.
 import { ShadowMap } from '../shadow/index.js';
 import { CameraViewNode } from '../camera/index.js';
 import { MeshMaterialNode } from './nodes/index.js';
-import { BoneTextureResource, MaterialUniformBuffers, MeshMaterialBindGroups, MeshMaterialPipelines } from './resources/index.js';
+import { BoneTextureResource, EnvironmentMap, MaterialUniformBuffers, MeshMaterialPipelines } from './resources/index.js';
 
 /** @type {WeakMap<import("../../objects/index.js").Skin, import("../../caches/uniformbuffers.js").UniformBuffer>} */
 const skinUniformBuffers = new WeakMap()
@@ -23,8 +23,8 @@ export class MeshMaterialPlugin extends Plugin {
    */
   init(renderer) {
     renderer.setResource(new MeshMaterialPipelines())
-    renderer.setResource(new MeshMaterialBindGroups())
     renderer.setResource(new MaterialUniformBuffers())
+    renderer.setResource(new EnvironmentMap())
     if (!renderer.getResource(BoneTextureResource)) {
       renderer.setResource(new BoneTextureResource(
         renderer.limits.textures.maxTextureSize,
@@ -50,10 +50,7 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
   }
 
   const { caches, attributes } = renderer
-  const bindGroups = renderer.getResource(MeshMaterialBindGroups)
   const { material, mesh, transform } = object
-
-  assert(bindGroups, "MeshMaterialBindGroups resource missing")
 
   const gpuMesh = caches.getMesh(device, mesh, attributes)
   const meshBits = createPipelineBitsFromMesh(mesh, object)
@@ -99,10 +96,10 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
       const [_, newId] = caches.createRenderPipeline(device, descriptor)
 
       return newId
-    })
+  })
 
   const pipeline = caches.getRenderPipeline(pipelineId)
-  const bindGroup = pipeline ? createMaterialBindGroup(device, renderer, pipeline, material, object, bindGroups) : undefined
+  const bindGroup = pipeline ? createMaterialBindGroup(device, renderer, pipeline, material, object) : undefined
   const item = new RenderItem({
     bindGroup,
     mesh: gpuMesh,
@@ -120,12 +117,12 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
  * @param {WebGLRenderPipeline} pipeline
  * @param {import("../../material/index.js").RawMaterial} material
  * @param {MeshMaterial3D} object
- * @param {MeshMaterialBindGroups} bindGroups
  * @returns {import("../../core/index.js").WebGLBindGroup | undefined}
  */
-function createMaterialBindGroup(device, renderer, pipeline, material, object, bindGroups) {
+function createMaterialBindGroup(device, renderer, pipeline, material, object) {
   const { caches, defaults } = renderer
   const materialUniformBuffers = renderer.getResource(MaterialUniformBuffers)
+  const environmentMap = renderer.getResource(EnvironmentMap)
   const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
   /**
    * @type {Array<{
@@ -141,6 +138,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, b
   let binding = 0
 
   assert(materialUniformBuffers, "MaterialUniformBuffers resource missing")
+  assert(environmentMap, "EnvironmentMap resource missing")
 
   if (materialBlockLayout) {
     const materialBuffer = materialUniformBuffers.setData(
@@ -198,6 +196,20 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, b
     ))
   }
 
+  if (environmentMap && hasActiveTextureUniform(pipeline, "environment_map")) {
+    const sourceTexture = environmentMap.texture ?? defaults.textureCube
+    const gpuTexture = caches.getTexture(device, sourceTexture)
+
+    bindings.push(createTextureBinding(
+      binding++,
+      "environment_map",
+      gpuTexture,
+      environmentMap.sampler ?? defaults.textureSampler,
+      sourceTexture.type,
+      sourceTexture.format
+    ))
+  }
+
   const shadowmap = renderer.getResource(ShadowMap)
 
   if (shadowmap && hasActiveTextureUniform(pipeline, "shadow_atlas")) {
@@ -230,29 +242,21 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, b
     return undefined
   }
 
-  const bindGroup = bindGroups.getOrSetCompute(material, () => {
-    let bindGroupLayout = pipeline.layout.getBindGroupLayout(0)
+  let bindGroupLayout = pipeline.layout.getBindGroupLayout(0)
 
-    if (!bindGroupLayout) {
-      bindGroupLayout = device.createBindGroupLayout({
-        label: `${material.constructor.name}BindGroupLayout`,
-        entries: bindings.map((binding) => binding.layout)
-      })
-      pipeline.layout.setBindGroupLayout(0, bindGroupLayout)
-    }
-
-    return device.createBindGroup({
-      label: `${material.constructor.name}BindGroup`,
-      layout: bindGroupLayout,
-      entries: bindings.map((binding) => binding.entry)
+  if (!bindGroupLayout) {
+    bindGroupLayout = device.createBindGroupLayout({
+      label: `${material.constructor.name}BindGroupLayout`,
+      entries: bindings.map((binding) => binding.layout)
     })
-  })
-
-  if (!pipeline.layout.getBindGroupLayout(0)) {
-    pipeline.layout.setBindGroupLayout(0, bindGroup.layout)
+    pipeline.layout.setBindGroupLayout(0, bindGroupLayout)
   }
 
-  return bindGroup
+  return device.createBindGroup({
+    label: `${material.constructor.name}BindGroup`,
+    layout: bindGroupLayout,
+    entries: bindings.map((binding) => binding.entry)
+  })
 }
 
 /**

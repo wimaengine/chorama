@@ -2,6 +2,7 @@ import { WebGLDeviceLimits, WebGLRenderDevice } from "../core/index.js"
 import { Object3D } from "../objects/index.js"
 import { colorShaderLib, commonShaderLib, lightShaderLib, mathShaderLib, tonemapShaderLib } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
+import { TextureType } from "../constants/index.js"
 import { assert } from '../utils/index.js'
 import { Caches } from "../caches/index.js"
 import { Attribute } from "../mesh/index.js"
@@ -165,5 +166,26 @@ export class WebGLRenderer {
 
 export class Defaults {
   texture2D = Texture.default()
+  textureCube = createDefaultCubeTexture()
   textureSampler = Sampler.default()
+}
+
+function createDefaultCubeTexture() {
+  const width = 1
+  const height = 1
+  const depth = 6
+  const pixel = new Uint8Array([0, 0, 0, 255])
+  const data = new Uint8Array(width * height * depth * pixel.length)
+
+  for (let face = 0; face < depth; face++) {
+    data.set(pixel, face * pixel.length)
+  }
+
+  return new Texture({
+    width,
+    height,
+    depth,
+    data: data.buffer,
+    type: TextureType.TextureCubeMap,
+  })
 }
