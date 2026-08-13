@@ -18,6 +18,10 @@ struct PBRProperties {
   float metallic;
   float roughness; 
   float ambient_occlusion;
+  float reflection_strength;
+  float transmission;
+  float thickness;
+  float ior;
 };
 
 struct StandardMaterial {
@@ -27,6 +31,10 @@ struct StandardMaterial {
   float ambient_occlusion_strength;
   vec3 emissive_color;
   float emissive_intensity;
+  float reflection_strength;
+  float transmission;
+  float thickness;
+  float ior;
 };
 
 in vec3 v_position;
@@ -72,12 +80,36 @@ uniform sampler2D normal_texture;
 uniform sampler2D occlusion_texture;
 uniform sampler2D roughness_texture;
 uniform sampler2D metallic_texture;
+uniform sampler2D transmission_texture;
+uniform sampler2D thickness_texture;
 uniform sampler2D emissive_texture;
+uniform samplerCube environment_map;
 
 out vec4 fragment_color;
 
 vec3 fresnel_schlick(float HdotV, vec3 F0){
   return F0 + (1.0 - F0) * pow(clamp(1.0 - HdotV, 0.0, 1.0), 5.0);
+}
+
+float environment_lod(float roughness) {
+  ivec2 env_size = textureSize(environment_map, 0);
+  float levels = max(log2(float(max(env_size.x, env_size.y))), 0.0);
+  return roughness * roughness * levels;
+}
+
+vec3 sample_environment_reflection(vec3 N, vec3 V, float roughness) {
+  vec3 reflection_direction = reflect(-V, N);
+  return textureLod(environment_map, reflection_direction, environment_lod(roughness)).rgb;
+}
+
+vec3 sample_environment_refraction(vec3 N, vec3 V, float roughness, float ior) {
+  vec3 refraction_direction = refract(-V, N, 1.0 / ior);
+
+  if (dot(refraction_direction, refraction_direction) <= 0.0) {
+    return vec3(0.0);
+  }
+
+  return textureLod(environment_map, refraction_direction, environment_lod(roughness)).rgb;
 }
 
 // Also the Trowbridge-Rietz normal distribution function
@@ -142,6 +174,10 @@ PBRProperties calculate_pbr_properties(){
   properties.metallic = material.metallic;
   properties.roughness = material.roughness;
   properties.ambient_occlusion = 1.0;
+  properties.reflection_strength = material.reflection_strength;
+  properties.transmission = material.transmission;
+  properties.thickness = material.thickness;
+  properties.ior = max(material.ior, 1.0);
 
   #ifdef VERTEX_UVS
     vec4 albedo_texture_color = texture(mainTexture,v_uv);
@@ -163,6 +199,19 @@ PBRProperties calculate_pbr_properties(){
 
   properties.metallic = clamp(properties.metallic, 0.0, 1.0);
   properties.roughness = clamp(properties.roughness, 0.05, 1.0);
+  properties.reflection_strength = clamp(properties.reflection_strength, 0.0, 1.0);
+  properties.transmission = clamp(properties.transmission, 0.0, 1.0) * (1.0 - properties.metallic);
+
+  #ifdef VERTEX_UVS
+    vec4 transmission_texture_color = texture(transmission_texture, v_uv);
+    properties.transmission *= transmission_texture_color.r;
+
+    vec4 thickness_texture_color = texture(thickness_texture, v_uv);
+    properties.thickness *= thickness_texture_color.r;
+  #endif
+
+  properties.transmission = clamp(properties.transmission, 0.0, 1.0);
+  properties.thickness = max(properties.thickness, 0.0);
 
   #if defined(VERTEX_TANGENTS)
     #ifdef VERTEX_NORMALS
@@ -197,9 +246,9 @@ void main(){
     discard;
   }
 #endif
-  vec3 N = pbr_properties.normal;
+  vec3 N = normalize(pbr_properties.normal);
   vec3 V = normalize(cam_direction);
-  int directional_light_count = min(directional_lights.count,MAX_DIRECTIONAL_LIGHTS);
+    int directional_light_count = min(directional_lights.count,MAX_DIRECTIONAL_LIGHTS);
   int point_light_count = min(point_lights.count, MAX_POINT_LIGHTS);
   int spot_light_count = min(spot_lights.count,MAX_SPOT_LIGHTS);
 
@@ -267,7 +316,16 @@ void main(){
 
   vec3 emissive_exitance = pbr_properties.emissive * material.emissive_intensity;
   vec3 ambient_exitance = pbr_properties.albedo * ambient_light.color.rgb * ambient_light.intensity * pbr_properties.ambient_occlusion;
-  vec3 final_color = emissive_exitance + ambient_exitance + exitance;
+  vec3 surface_exitance = emissive_exitance + ambient_exitance + exitance;
+  vec3 reflection_exitance = sample_environment_reflection(N, V, pbr_properties.roughness);
+  vec3 refraction_exitance = sample_environment_refraction(N, V, pbr_properties.roughness, pbr_properties.ior);
+  vec3 F0 = mix(vec3(0.04), pbr_properties.albedo, pbr_properties.metallic);
+  float NdotV = max(dot(N, V), 0.0);
+  vec3 fresnel = fresnel_schlick(NdotV, F0);
+  float reflection_mix = max(max(fresnel.r, fresnel.g), fresnel.b) * pbr_properties.reflection_strength;
+  float transmission_mix = pbr_properties.transmission * exp(-pbr_properties.thickness) * (1.0 - max(max(fresnel.r, fresnel.g), fresnel.b));
+  vec3 final_color = mix(surface_exitance, refraction_exitance, transmission_mix);
+  final_color += reflection_exitance * reflection_mix;
 
   fragment_color = vec4(final_color, pbr_properties.opacity);
 }

@@ -84,6 +84,46 @@ export class StandardMaterial extends Material {
   emissiveIntensity
 
   /**
+   * @type {number}
+   */
+  reflectionStrength
+
+  /**
+   * @type {number}
+   */
+  transmission
+
+  /**
+   * @type {Texture | undefined}
+   */
+  transmissionTexture
+
+  /**
+   * @type {Sampler | undefined}
+   */
+  transmissionSampler
+
+  /**
+   * @type {number}
+   */
+  thickness
+
+  /**
+   * @type {Texture | undefined}
+   */
+  thicknessTexture
+
+  /**
+   * @type {Sampler | undefined}
+   */
+  thicknessSampler
+
+  /**
+   * @type {number}
+   */
+  ior
+
+  /**
    * @type {Texture | undefined}
    */
   emissiveTexture
@@ -118,6 +158,14 @@ export class StandardMaterial extends Material {
     occlusionSampler,
     emissiveColor = new Color(0, 0, 0),
     emissiveIntensity = 1,
+    reflectionStrength = 1,
+    transmission = 0,
+    transmissionTexture,
+    transmissionSampler,
+    thickness = 0,
+    thicknessTexture,
+    thicknessSampler,
+    ior = 1.5,
     emissiveTexture,
     emissiveSampler
   } = {}) {
@@ -143,6 +191,14 @@ export class StandardMaterial extends Material {
 
     this.emissiveColor = emissiveColor;
     this.emissiveIntensity = emissiveIntensity;
+    this.reflectionStrength = reflectionStrength;
+    this.transmission = transmission;
+    this.transmissionTexture = transmissionTexture;
+    this.transmissionSampler = transmissionSampler;
+    this.thickness = thickness;
+    this.thicknessTexture = thicknessTexture;
+    this.thicknessSampler = thicknessSampler;
+    this.ior = ior;
     this.emissiveTexture = emissiveTexture;
     this.emissiveSampler = emissiveSampler;
   }
@@ -179,7 +235,11 @@ export class StandardMaterial extends Material {
       roughness,
       occlusionStrength,
       emissiveColor,
-      emissiveIntensity
+      emissiveIntensity,
+      reflectionStrength,
+      transmission,
+      thickness,
+      ior
     } = this
 
     return new Float32Array([
@@ -191,7 +251,11 @@ export class StandardMaterial extends Material {
       emissiveColor.r,
       emissiveColor.g,
       emissiveColor.b,
-      emissiveIntensity
+      emissiveIntensity,
+      reflectionStrength,
+      transmission,
+      thickness,
+      ior
     ]).buffer
   }
 
@@ -205,6 +269,8 @@ export class StandardMaterial extends Material {
       ['normal_texture', 0, this.normalTexture, this.normalSampler],
       ['metallic_texture', 0, this.metallicTexture, this.metallicSampler],
       ['roughness_texture', 0, this.roughnessTexture, this.roughnessSampler],
+      ['transmission_texture', 0, this.transmissionTexture, this.transmissionSampler],
+      ['thickness_texture', 0, this.thicknessTexture, this.thicknessSampler],
       ['occlusion_texture', 0, this.occlusionTexture, this.occlusionSampler],
       ['emissive_texture', 0, this.emissiveTexture, this.emissiveSampler]
     ]
@@ -230,6 +296,14 @@ export class StandardMaterial extends Material {
  * @property {Sampler} [occlusionSampler] The sampler for the ambient occlusion texture.
  * @property {Color} [emissiveColor] The color of emissive light emitted by the material.
  * @property {number} [emissiveIntensity] The intensity of the emissive color.
+ * @property {number} [reflectionStrength] The strength of the environment reflection contribution.
+ * @property {number} [transmission] The strength of the environment refraction contribution.
+ * @property {Texture} [transmissionTexture] A texture that modulates transmission by its red channel.
+ * @property {Sampler} [transmissionSampler] The sampler for the transmission texture.
+ * @property {number} [thickness] The thickness used to attenuate transmission.
+ * @property {Texture} [thicknessTexture] A texture that modulates thickness by its red channel.
+ * @property {Sampler} [thicknessSampler] The sampler for the thickness texture.
+ * @property {number} [ior] The index of refraction used for transmission.
  * @property {Texture} [emissiveTexture] A texture representing the emissive map.
  * @property {Sampler} [emissiveSampler] The sampler for the emissive texture.
  */
