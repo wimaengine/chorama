@@ -117,6 +117,7 @@ Render continuously with placeholders and loaded data will appear as they become
 
 - [OBJ Loader](/examples/loader/objloader)
 - [glTF Loader](/examples/loader/gltfloader)
-- [glTF Material Example](/examples/loader/gltf_material)
+- [Iridescence Lamp](/examples/loader/gltf/material/iridescence_lamp)
+- [Teapot Reflection Refraction](/examples/material/standard/reflection_refraction)
 
 After this works, continue with [Scene Graph and Transforms](/guide/scene-graph-and-transforms)
