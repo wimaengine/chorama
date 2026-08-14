@@ -53,4 +53,30 @@ export class SpotLight extends Object3D {
       Math.cos(halfOuterAngle)
     ]
   }
+
+  /**
+   * @override
+   * @param {SpotLight} object
+   * @param {Map<Object3D, Object3D>} [entityMap]
+   */
+  copy(object, entityMap) {
+    super.copy(/** @type {any} */ (object), entityMap)
+    this.intensity = object.intensity
+    this.color.copy(object.color)
+    this.range = object.range
+    this.decay = object.decay
+    this.innerAngle = object.innerAngle
+    this.outerAngle = object.outerAngle
+    this.shadow = object.shadow
+    return this
+  }
+
+  /**
+   * @override
+   * @param {Map<Object3D, Object3D>} [entityMap]
+   * @returns {this}
+   */
+  clone(entityMap) {
+    return super.clone(entityMap)
+  }
 }

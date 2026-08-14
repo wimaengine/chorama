@@ -29,4 +29,28 @@ export class PointLight extends Object3D {
       0
     ]
   }
+
+  /**
+   * @override
+   * @param {PointLight} object
+   * @param {Map<Object3D, Object3D>} [entityMap]
+   */
+  copy(object, entityMap) {
+    super.copy(/** @type {any} */ (object), entityMap)
+    this.color.copy(object.color)
+    this.radius = object.radius
+    this.decay = object.decay
+    this.intensity = object.intensity
+    this.shadow = object.shadow
+    return this
+  }
+
+  /**
+   * @override
+   * @param {Map<Object3D, Object3D>} [entityMap]
+   * @returns {this}
+   */
+  clone(entityMap) {
+    return super.clone(entityMap)
+  }
 }

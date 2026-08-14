@@ -26,4 +26,26 @@ export class DirectionalLight extends Object3D {
       0
     ]
   }
+
+  /**
+   * @override
+   * @param {DirectionalLight} object
+   * @param {Map<Object3D, Object3D>} [entityMap]
+   */
+  copy(object, entityMap) {
+    super.copy(/** @type {any} */ (object), entityMap)
+    this.intensity = object.intensity
+    this.color.copy(object.color)
+    this.shadow = object.shadow
+    return this
+  }
+
+  /**
+   * @override
+   * @param {Map<Object3D, Object3D>} [entityMap]
+   * @returns {this}
+   */
+  clone(entityMap) {
+    return super.clone(entityMap)
+  }
 }
