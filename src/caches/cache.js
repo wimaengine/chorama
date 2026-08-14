@@ -1,6 +1,8 @@
 /**@import { WebGLRenderPipelineDescriptor } from '../core/index.js' */
 /**@import { WebGLAtttributeParams } from '../function.js' */
 /** @import { NewUniformBuffer } from "../core/resources/index.js" */
+/** @import { Sampler } from "../texture/index.js" */
+/** @import { WebGLSamplerDescriptor } from "../core/webgl/descriptors.js" */
 
 import { Texture } from "../texture/index.js"
 import { Attribute, Mesh } from "../mesh/index.js"
@@ -21,6 +23,11 @@ export class Caches {
    * @type {Map<Texture, GPUTexture>}
    */
   textures = new Map()
+
+  /**
+   * @type {Map<Sampler, import("../core/resources/index.js").GPUSampler>}
+   */
+  samplers = new Map()
 
   /**
    * @type {Map<NewUniformBuffer, GPUBuffer>}
@@ -151,6 +158,31 @@ export class Caches {
 
   /**
    * @param {WebGLRenderDevice} device
+   * @param {Sampler} sampler
+   * @returns {import("../core/resources/index.js").GPUSampler}
+   */
+  getSampler(device, sampler) {
+    const gpuSampler = this.samplers.get(sampler)
+    const changed = sampler.changed
+
+    if (gpuSampler) {
+      if (!changed) {
+        return gpuSampler
+      }
+
+      const newSampler = device.createSampler(createSamplerDescriptor(sampler))
+      device.context.deleteSampler(gpuSampler.inner)
+      this.samplers.set(sampler, newSampler)
+      return newSampler
+    }
+
+    const newSampler = device.createSampler(createSamplerDescriptor(sampler))
+    this.samplers.set(sampler, newSampler)
+    return newSampler
+  }
+
+  /**
+   * @param {WebGLRenderDevice} device
    * @param {NewUniformBuffer} uniformBuffer
    * @returns {GPUBuffer}
    */
@@ -213,6 +245,24 @@ export class Caches {
    */
   getMeshVertexLayout(id) {
     return this.meshLayouts[id]
+  }
+}
+
+/**
+ * @param {Sampler} sampler
+ * @returns {WebGLSamplerDescriptor}
+ */
+function createSamplerDescriptor(sampler) {
+  return {
+    magnificationFilter: sampler.magnificationFilter,
+    minificationFilter: sampler.minificationFilter,
+    mipmapFilter: sampler.mipmapFilter,
+    wrapS: sampler.wrapS,
+    wrapT: sampler.wrapT,
+    wrapR: sampler.wrapR,
+    lod: sampler.lod,
+    anisotropy: sampler.anisotropy,
+    compare: sampler.compare
   }
 }
 
