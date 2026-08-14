@@ -1,7 +1,7 @@
 /**@import { LoadSettings } from './loader.js' */
 import { Attribute, Mesh } from '../mesh/index.js';
 import { StandardMaterial, AlphaMaskMode, OpaqueMode, TransparentMode } from '../material/index.js';
-import { MeshMaterial3D, Object3D, Skin } from '../objects/index.js';
+import { DirectionalLight, MeshMaterial3D, Object3D, PointLight, Skin, SpotLight } from '../objects/index.js';
 import { Loader } from './loader.js';
 import { arrayBufferToJSON } from './utils.js';
 import { Bone3D } from '../objects/bone.js';
@@ -16,6 +16,9 @@ const defaultMaterial = new StandardMaterial()
 const GLB_MAGIC = 0x46546C67
 const GLB_CHUNK_TYPE_JSON = 0x4E4F534A
 const GLB_CHUNK_TYPE_BIN = 0x004E4942
+const GLTF_LIGHTS_PUNCTUAL_EXTENSION = "KHR_lights_punctual"
+// Keep the fallback finite so attenuation and shadow math remain stable.
+const DEFAULT_GLTF_LIGHT_RANGE = 1000
 /**
  * @extends {Loader<Object3D, GLTFLoadSettings>}
  */
@@ -40,6 +43,8 @@ export class GLTFLoader extends Loader {
 
     /**@type {Map<number, Object3D>} */
     const entityMap = new Map()
+    /** @type {Map<number, DirectionalLight | PointLight | SpotLight>} */
+    const lightCache = new Map()
     const baseUrl = new URL(path, location.href).href
     const gltf = await loadGLTF(buffer, baseUrl)
     const scene = gltf.scenes[gltf.scene]
@@ -241,7 +246,7 @@ export class GLTFLoader extends Loader {
     })
 
     gltf.nodes.forEach((node, index) => {
-      const object = parseObject(index, node, gltf, geometries, materials)
+      const object = parseObject(index, node, gltf, geometries, materials, lightCache)
 
       if (object) {
         entityMap.set(index, object)
@@ -613,6 +618,18 @@ class GLTF {
    * @type {GLTFMetaData}
    */
   metaData
+  /**
+   * @type {Record<string, any>}
+   */
+  extensions = {}
+  /**
+   * @type {string[]}
+   */
+  extensionsUsed = []
+  /**
+   * @type {string[]}
+   */
+  extensionsRequired = []
 
   /**
    * @param {GLTFMetaData} meta
@@ -636,7 +653,10 @@ class GLTF {
       bufferViews,
       accessors,
       asset,
-      skins
+      skins,
+      extensions,
+      extensionsUsed,
+      extensionsRequired
     } = data
 
     if (
@@ -683,6 +703,24 @@ class GLTF {
       gltf.skins = skins.map(a => GLTFSkin.deserialize(a))
     } else {
       gltf.skins = []
+    }
+
+    if (extensions instanceof Object) {
+      gltf.extensions = extensions
+    } else {
+      gltf.extensions = {}
+    }
+
+    if (extensionsUsed instanceof Array) {
+      gltf.extensionsUsed = extensionsUsed.filter((value) => typeof value === "string")
+    } else {
+      gltf.extensionsUsed = []
+    }
+
+    if (extensionsRequired instanceof Array) {
+      gltf.extensionsRequired = extensionsRequired.filter((value) => typeof value === "string")
+    } else {
+      gltf.extensionsRequired = []
     }
     return gltf
   }
@@ -2495,18 +2533,28 @@ function convertToInverseBindPose(poseData) {
  * @param {GLTF} gltf
  * @param {[Mesh,number | undefined][][]} geometries
  * @param {StandardMaterial[]} materials
+ * @param {Map<number, DirectionalLight | PointLight | SpotLight>} lightCache
  */
-function parseObject(index, node, gltf, geometries, materials) {
+function parseObject(index, node, gltf, geometries, materials, lightCache) {
   const { mesh, transform, name } = node
+  const light = parseGLTFLight(node, gltf, lightCache)
 
   let object
   if (mesh !== undefined) {
     object = parseMeshObject(mesh, gltf.meshes, geometries, materials)
+    if (light) {
+      object.add(light)
+    }
   } else {
     const bone = parseBone(index, gltf)
 
     if (bone) {
       object = bone
+      if (light) {
+        object.add(light)
+      }
+    } else if (light) {
+      object = light
     } else {
       object = new Object3D()
     }
@@ -2519,6 +2567,101 @@ function parseObject(index, node, gltf, geometries, materials) {
   object.name = name
 
   return object
+}
+
+/**
+ * @param {GLTFNode} node
+ * @param {GLTF} gltf
+ * @param {Map<number, DirectionalLight | PointLight | SpotLight>} lightCache
+ * @returns {DirectionalLight | PointLight | SpotLight | undefined}
+ */
+function parseGLTFLight(node, gltf, lightCache) {
+  const nodeLightExtension = node.extensions[GLTF_LIGHTS_PUNCTUAL_EXTENSION]
+
+  if (!(nodeLightExtension instanceof Object)) {
+    return undefined
+  }
+
+  const lightIndex = nodeLightExtension.light
+  if (typeof lightIndex !== "number") {
+    throw "GLTF light node is missing a light index"
+  }
+
+  const extension = gltf.extensions[GLTF_LIGHTS_PUNCTUAL_EXTENSION]
+  if (!(extension instanceof Object) || !(extension.lights instanceof Array)) {
+    throw "GLTF punctual lights extension is missing its light table"
+  }
+
+  const gltfLight = extension.lights[lightIndex]
+  if (!(gltfLight instanceof Object)) {
+    throw "GLTF light index is invalid"
+  }
+
+  const cachedLight = lightCache.get(lightIndex)
+  if (cachedLight) {
+    return cachedLight.clone()
+  }
+
+  const prototype = createGLTFLight(gltfLight)
+  lightCache.set(lightIndex, prototype)
+  return prototype.clone()
+}
+
+/**
+ * @param {any} gltfLight
+ * @returns {DirectionalLight | PointLight | SpotLight}
+ */
+function createGLTFLight(gltfLight) {
+  const color = Array.isArray(gltfLight.color) ? gltfLight.color : []
+  const red = Number.isFinite(color[0]) ? color[0] : 1
+  const green = Number.isFinite(color[1]) ? color[1] : 1
+  const blue = Number.isFinite(color[2]) ? color[2] : 1
+  const intensity = Number.isFinite(gltfLight.intensity) ? gltfLight.intensity : 1
+  const name = typeof gltfLight.name === "string" ? gltfLight.name : ""
+
+  if (gltfLight.type === "directional") {
+    const light = new DirectionalLight()
+    light.color.set(red, green, blue)
+    light.intensity = intensity
+    light.name = name
+    return light
+  }
+
+  if (gltfLight.type === "point") {
+    const light = new PointLight()
+    light.color.set(red, green, blue)
+    light.intensity = intensity
+    light.radius = Number.isFinite(gltfLight.range) && gltfLight.range > 0
+      ? gltfLight.range
+      : DEFAULT_GLTF_LIGHT_RANGE
+    light.name = name
+    return light
+  }
+
+  if (gltfLight.type === "spot") {
+    const light = new SpotLight()
+    const spot = gltfLight.spot instanceof Object ? gltfLight.spot : {}
+    const innerConeAngle = Number.isFinite(spot.innerConeAngle) && spot.innerConeAngle >= 0
+      ? spot.innerConeAngle
+      : 0
+    const outerConeAngle = Number.isFinite(spot.outerConeAngle) && spot.outerConeAngle > 0
+      ? spot.outerConeAngle
+      : Math.PI / 4
+    const normalizedInnerConeAngle = Math.min(innerConeAngle, outerConeAngle)
+    const normalizedOuterConeAngle = Math.max(innerConeAngle, outerConeAngle)
+
+    light.color.set(red, green, blue)
+    light.intensity = intensity
+    light.range = Number.isFinite(gltfLight.range) && gltfLight.range > 0
+      ? gltfLight.range
+      : DEFAULT_GLTF_LIGHT_RANGE
+    light.innerAngle = normalizedInnerConeAngle * 2
+    light.outerAngle = normalizedOuterConeAngle * 2
+    light.name = name
+    return light
+  }
+
+  throw `Unsupported glTF light type: ${gltfLight.type}`
 }
 
 /**
