@@ -46,8 +46,7 @@ export class CameraViewNode {
           width: renderTarget.width,
           height: renderTarget.height,
           depth: 1,
-          format: TextureFormat.RGBA16Float,
-          generateMipmaps: false
+          format: TextureFormat.RGBA16Float
         }
       )
       const cameraView = new View({

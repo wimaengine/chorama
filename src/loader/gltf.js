@@ -89,10 +89,6 @@ export class GLTFLoader extends Loader {
       if (gltfTextures.sampler !== undefined) {
         const sampler = samplers[gltfTextures.sampler]
         assert(sampler, "GLTF texture does not have a valid sampler")
-
-        if (sampler.mipmapFilter !== undefined) {
-          image.generateMipmaps = true
-        }
         return [image, sampler]
       }
       return [image, createDefaultGLTFSampler()]

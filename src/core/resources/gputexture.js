@@ -34,6 +34,12 @@ export class GPUTexture {
 
   /**
    * @readonly
+   * @type {number}
+   */
+  mipmapCount
+
+  /**
+   * @readonly
    * @type {WebGLTextureFormat}
    */
   format
@@ -58,15 +64,17 @@ export class GPUTexture {
    * @param {number} width
    * @param {number} height
    * @param {number} depth
+   * @param {number} mipmapCount
    * @param {number} pixelSize
    */
-  constructor(texture, type, format, actualFormat, width, height, depth, pixelSize){
+  constructor(texture, type, format, actualFormat, width, height, depth, mipmapCount, pixelSize){
     this.inner = texture
     this.type = type
     this.format = format
     this.width = width
     this.height = height
     this.depth = depth
+    this.mipmapCount = mipmapCount
     this.pixelSize = pixelSize
     this.actualFormat = actualFormat
   }

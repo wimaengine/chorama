@@ -18,7 +18,6 @@ export class BoneTextureResource {
     height: 0,
     depth: 0,
     format: TextureFormat.RGBA32Float,
-    generateMipmaps: false,
   })
 
   /**
@@ -130,7 +129,7 @@ export class BoneTextureResource {
 
     device.writeTexture({
       texture: gpuTexture,
-      data: this.#boneTransforms.buffer,
+      data: /** @type {ArrayBuffer} */ (this.#boneTransforms.buffer),
       size: new Vector3(4, this.texture.height, this.texture.depth)
     })
 

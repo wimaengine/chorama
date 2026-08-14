@@ -44,8 +44,7 @@ export class Texture2DPool {
       type: TextureType.Texture2D,
       width: normalized.width,
       height: normalized.height,
-      depth: normalized.depth,
-      generateMipmaps: normalized.generateMipmaps
+      depth: normalized.depth
     });
   }
 
@@ -73,8 +72,7 @@ function normalizeDescriptor(descriptor) {
     format: descriptor.format ?? Texture.defaultSettings.format,
     width: descriptor.width ?? Texture.defaultSettings.width,
     height: descriptor.height ?? Texture.defaultSettings.height,
-    depth: descriptor.depth ?? Texture.defaultSettings.depth,
-    generateMipmaps: descriptor.generateMipmaps ?? Texture.defaultSettings.generateMipmaps
+    depth: descriptor.depth ?? Texture.defaultSettings.depth
   }
 }
 
@@ -89,8 +87,7 @@ export function descriptorFromTexture(texture) {
     format: texture.format,
     width: texture.width,
     height: texture.height,
-    depth: texture.depth,
-    generateMipmaps: texture.generateMipmaps
+    depth: texture.depth
   }
 
   return descriptor

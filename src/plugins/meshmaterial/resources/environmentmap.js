@@ -1,3 +1,4 @@
+import { TextureFilter } from "../../../constants/index.js"
 import { Sampler, Texture } from "../../../texture/index.js"
 
 export class EnvironmentMap {
@@ -16,7 +17,9 @@ export class EnvironmentMap {
    */
   constructor({
     texture = undefined,
-    sampler = Sampler.default()
+    sampler = new Sampler({
+      mipmapFilter: TextureFilter.Linear
+    })
   } = {}) {
     this.texture = texture
     this.sampler = sampler

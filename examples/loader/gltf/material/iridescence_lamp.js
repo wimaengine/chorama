@@ -64,8 +64,8 @@ const day = textureLoader.load({
     "/images/skybox/miramar_front.png",
   ],
   type: TextureType.TextureCubeMap,
+  generateMipmaps: true,
 })
-day.generateMipmaps = true
 
 environmentMap?.set(day)
 

@@ -155,7 +155,7 @@ export class WebGLRenderDevice {
    * @returns {GPUTexture}
    */
   createTexture(descriptor) {
-    const { width, height, depth = 1, type, format } = descriptor
+    const { width, height, depth = 1, mipmapCount = 1, type, format } = descriptor
     const { context } = this
     const texture = context.createTexture()
     const form = getWebGLTextureFormat(format)
@@ -177,7 +177,7 @@ export class WebGLRenderDevice {
         throw "The texture type is not supported."
     }
     const pixelSize = getTextureFormatSize(format)
-    return new GPUTexture(texture, type, form, format, width, height, depth, pixelSize)
+    return new GPUTexture(texture, type, form, format, width, height, depth, mipmapCount, pixelSize)
   }
 
   /**
@@ -188,6 +188,7 @@ export class WebGLRenderDevice {
     const { context } = this
 
     context.bindTexture(texture.type, texture.inner)
+
     switch (texture.type) {
       case TextureType.Texture2D:
         updateTexture2D(context, descriptor)

@@ -1,9 +1,46 @@
 /**@import { WebGLTextureDescriptor, WebGLWriteTextureDescriptor } from './descriptors.js'*/
-import { UniformType } from "../../constants/index.js"
+import { TextureType, UniformType } from "../../constants/index.js"
 import { WebGLTextureFormat, convertBufferToTypedArray } from "../../function.js"
 import { Vector3 } from "../../math/index.js"
 import { assert } from "../../utils/index.js"
 import { MeshVertexLayout, Uniform, UniformBufferLayout } from "../layouts/index.js"
+
+/**
+ * Returns the number of mip levels for the given base texture size.
+ * @param {TextureType} type
+ * @param {number} width
+ * @param {number} height
+ * @param {number} [depth=1]
+ * @returns {number}
+ */
+export function getMipmapCount(type, width, height, depth = 1) {
+  const maxDimension = type === TextureType.Texture3D
+    ? Math.max(width, height, depth)
+    : Math.max(width, height)
+
+  return Math.floor(Math.log2(Math.max(1, maxDimension))) + 1
+}
+
+/**
+ * Returns the dimensions for a specific mip level.
+ * @param {TextureType} type
+ * @param {number} width
+ * @param {number} height
+ * @param {number} [depth=1]
+ * @param {number} [mipmapLevel=0]
+ * @returns {{ width: number, height: number, depth: number }}
+ */
+export function getMipLevelSize(type, width, height, depth = 1, mipmapLevel = 0) {
+  const divisor = 2 ** mipmapLevel
+
+  return {
+    width: Math.max(1, Math.floor(width / divisor)),
+    height: Math.max(1, Math.floor(height / divisor)),
+    depth: type === TextureType.Texture3D
+      ? Math.max(1, Math.floor(depth / divisor))
+      : depth
+  }
+}
 
 /**
  * @param {WebGL2RenderingContext} context 
@@ -11,13 +48,19 @@ import { MeshVertexLayout, Uniform, UniformBufferLayout } from "../layouts/index
  * @param {WebGLTextureFormat} format 
  */
 export function allocateTexture2DArray(context, descriptor, format) {
+  const mipmapCount = descriptor.mipmapCount || 1
   context.texStorage3D(
     WebGL2RenderingContext.TEXTURE_2D_ARRAY,
-    1,
+    mipmapCount,
     format.internalFormat,
     descriptor.width,
     descriptor.height,
     descriptor.depth || 1
+  )
+  context.texParameteri(
+    WebGL2RenderingContext.TEXTURE_2D_ARRAY,
+    WebGL2RenderingContext.TEXTURE_MAX_LEVEL,
+    mipmapCount - 1
   )
 }
 
@@ -27,17 +70,29 @@ export function allocateTexture2DArray(context, descriptor, format) {
  * @param {WebGLTextureFormat} format 
  */
 export function allocateTexture2D(context, descriptor, format) {
-  context.texImage2D(
-    WebGL2RenderingContext.TEXTURE_2D,
-    0,
-    format.internalFormat,
-    descriptor.width,
-    descriptor.height,
-    0,
-    format.format,
-    format.dataType,
-    null
-  )
+  const mipmapCount = descriptor.mipmapCount || 1
+
+  for (let level = 0; level < mipmapCount; level++) {
+    const { width, height } = getMipLevelSize(
+      TextureType.Texture2D,
+      descriptor.width,
+      descriptor.height,
+      1,
+      level
+    )
+
+    context.texImage2D(
+      WebGL2RenderingContext.TEXTURE_2D,
+      level,
+      format.internalFormat,
+      width,
+      height,
+      0,
+      format.format,
+      format.dataType,
+      null
+    )
+  }
   context.texParameteri(
     WebGL2RenderingContext.TEXTURE_2D,
     WebGL2RenderingContext.TEXTURE_MIN_FILTER,
@@ -48,6 +103,11 @@ export function allocateTexture2D(context, descriptor, format) {
     WebGL2RenderingContext.TEXTURE_MAG_FILTER,
     WebGL2RenderingContext.NEAREST
   )
+  context.texParameteri(
+    WebGL2RenderingContext.TEXTURE_2D,
+    WebGL2RenderingContext.TEXTURE_MAX_LEVEL,
+    mipmapCount - 1
+  )
 }
 
 /**
@@ -56,19 +116,36 @@ export function allocateTexture2D(context, descriptor, format) {
  * @param {WebGLTextureFormat} format 
  */
 export function allocateCubemap(context, descriptor, format) {
-  for (let offset = 0; offset < 6; offset++) {
-    context.texImage2D(
-      WebGL2RenderingContext.TEXTURE_CUBE_MAP_POSITIVE_X + offset,
-      0,
-      format.internalFormat,
+  const mipmapCount = descriptor.mipmapCount || 1
+
+  for (let level = 0; level < mipmapCount; level++) {
+    const { width, height } = getMipLevelSize(
+      TextureType.TextureCubeMap,
       descriptor.width,
       descriptor.height,
-      0,
-      format.format,
-      format.dataType,
-      null
+      6,
+      level
     )
+
+    for (let offset = 0; offset < 6; offset++) {
+      context.texImage2D(
+        WebGL2RenderingContext.TEXTURE_CUBE_MAP_POSITIVE_X + offset,
+        level,
+        format.internalFormat,
+        width,
+        height,
+        0,
+        format.format,
+        format.dataType,
+        null
+      )
+    }
   }
+  context.texParameteri(
+    WebGL2RenderingContext.TEXTURE_CUBE_MAP,
+    WebGL2RenderingContext.TEXTURE_MAX_LEVEL,
+    mipmapCount - 1
+  )
 }
 
 /**
@@ -78,11 +155,21 @@ export function allocateCubemap(context, descriptor, format) {
 export function updateTexture2D(context, descriptor) {
   const {
     texture,
-    data,
+    data: rawData,
     mipmapLevel = 0,
     offset = new Vector3(0, 0, 0),
-    size = new Vector3(texture.width, texture.height, texture.depth)
+    size = (() => {
+      const levelSize = getMipLevelSize(
+        texture.type,
+        texture.width,
+        texture.height,
+        texture.depth,
+        mipmapLevel
+      )
+      return new Vector3(levelSize.width, levelSize.height, levelSize.depth)
+    })()
   } = descriptor
+  const data = /** @type {ArrayBufferLike} */ (rawData)
   const { format, dataType } = texture.format
 
   context.texSubImage2D(
@@ -105,11 +192,21 @@ export function updateTexture2D(context, descriptor) {
 export function updateTexture2DArray(context, descriptor) {
   const {
     texture,
-    data,
+    data: rawData,
     mipmapLevel = 0,
     offset = new Vector3(0, 0, 0),
-    size = new Vector3(texture.width, texture.height, texture.depth)
+    size = (() => {
+      const levelSize = getMipLevelSize(
+        texture.type,
+        texture.width,
+        texture.height,
+        texture.depth,
+        mipmapLevel
+      )
+      return new Vector3(levelSize.width, levelSize.height, levelSize.depth)
+    })()
   } = descriptor
+  const data = /** @type {ArrayBufferLike} */ (rawData)
   const { format, dataType } = texture.format
 
   context.texSubImage3D(
@@ -134,14 +231,24 @@ export function updateTexture2DArray(context, descriptor) {
 export function updateCubeMap(gl, descriptor) {
   const {
     texture,
-    data,
+    data: rawData,
     mipmapLevel = 0,
     offset = new Vector3(0, 0, 0),
-    size = new Vector3(texture.width, texture.height, texture.depth)
+    size = (() => {
+      const levelSize = getMipLevelSize(
+        texture.type,
+        texture.width,
+        texture.height,
+        texture.depth,
+        mipmapLevel
+      )
+      return new Vector3(levelSize.width, levelSize.height, levelSize.depth)
+    })()
   } = descriptor
+  const data = /** @type {ArrayBufferLike} */ (rawData)
   const { format, dataType } = texture.format
-  const { width, height, pixelSize } = texture
-  const sliceSize = pixelSize * width * height
+  const { pixelSize } = texture
+  const sliceSize = pixelSize * size.x * size.y
   const src = convertBufferToTypedArray(data, dataType)
 
   for (let i = 0; i < 6; i++) {

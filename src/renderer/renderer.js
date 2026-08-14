@@ -185,7 +185,7 @@ function createDefaultCubeTexture() {
     width,
     height,
     depth,
-    data: data.buffer,
+    data: [data.buffer],
     type: TextureType.TextureCubeMap,
   })
 }

@@ -25,8 +25,13 @@ export class TextureLoader extends Loader {
   async parse(buffers, destination, settings = {}) {
     const textureFormat = TextureFormat.RGBA8Unorm
     const pixelSize = getTextureFormatSize(textureFormat)
-    const { flipX = false, flipY = false } = settings
-    const data = buffers.map(async (buffer) => {
+    const {
+      flipX = false,
+      flipY = false,
+      generateMipmaps = false,
+      type = destination.type ?? TextureType.Texture2D
+    } = settings
+    const imagePromises = buffers.map(async (buffer) => {
       const blob = new Blob(
         [buffer],
         settings.mimeType ? { type: settings.mimeType } : undefined
@@ -51,7 +56,7 @@ export class TextureLoader extends Loader {
         })
       }
     })
-    const images = await Promise.all(data)
+    const images = await Promise.all(imagePromises)
     const firstImage = images[0]
     const width = firstImage?.width || 0
     const height = firstImage?.height || 0
@@ -69,7 +74,20 @@ export class TextureLoader extends Loader {
       const destView = new Uint8Array(buffer, sliceSize * i, sliceSize)
       destView.set(sourceView)
     })
-    destination.data = buffer
+
+    const textureData = generateMipmaps
+      ? Texture.generateMipmaps({
+        level0: buffer,
+        type,
+        format: textureFormat,
+        width,
+        height,
+        depth
+      })
+      : [buffer]
+
+    destination.data = textureData
+    destination.type = type
     destination.format = textureFormat
     destination.width = width
     destination.height = height
@@ -86,7 +104,7 @@ export class TextureLoader extends Loader {
     )
     const texture = new Texture({
       ...(settings.textureSettings || {}),
-      data: pixel.buffer,
+      data: [pixel.buffer],
       type: settings.type || TextureType.Texture2D,
       width: 1,
       height: 1,
@@ -104,6 +122,7 @@ export class TextureLoader extends Loader {
  * @property {string} [mimeType]
  * @property {boolean} [flipX]
  * @property {boolean} [flipY]
+ * @property {boolean} [generateMipmaps]
  * @property {TextureSettings} [textureSettings]
  */
 
@@ -114,5 +133,6 @@ export class TextureLoader extends Loader {
  * @property {string} [mimeType]
  * @property {boolean} [flipX]
  * @property {boolean} [flipY]
+ * @property {boolean} [generateMipmaps]
  * @property {TextureSettings} [textureSettings]
  */

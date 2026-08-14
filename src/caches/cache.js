@@ -91,6 +91,7 @@ export class Caches {
    */
   getTexture(device, texture) {
     const gpuTexture = this.textures.get(texture)
+    const mipmapCount = texture.data.length
 
     if (gpuTexture) {
       if (texture.changed) {
@@ -99,16 +100,21 @@ export class Caches {
           texture.format === gpuTexture.actualFormat &&
           texture.width === gpuTexture.width &&
           texture.height === gpuTexture.height &&
-          texture.depth === gpuTexture.depth
+          texture.depth === gpuTexture.depth &&
+          mipmapCount === gpuTexture.mipmapCount
         ) {
           // non-structural change, no need to create new gpu texture
 
-          if (texture.data) {
+          texture.data.forEach((data, mipmapLevel) => {
+            if (data === undefined) {
+              return
+            }
             device.writeTexture({
               texture: gpuTexture,
-              data: texture.data
+              data,
+              mipmapLevel
             })
-          }
+          })
           return gpuTexture
         } else {
           device.context.deleteTexture(gpuTexture.inner)
@@ -124,19 +130,19 @@ export class Caches {
       width: texture.width,
       height: texture.height,
       depth: texture.depth,
+      mipmapCount
     })
 
-    if (texture.data) {
+    texture.data.forEach((data, mipmapLevel) => {
+      if (data === undefined) {
+        return
+      }
       device.writeTexture({
         texture: newTex,
-        data: texture.data
+        data,
+        mipmapLevel
       })
-    }
-
-    if (texture.generateMipmaps) {
-      device.context.generateMipmap(texture.type)
-    }
-
+    })
     // Flush out any change detection that happened when the image was creates
     texture.changed
     this.textures.set(texture, newTex)
