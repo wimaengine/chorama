@@ -79,7 +79,8 @@ const examples = defineCollection({
 const guide = defineCollection({
   loader: glob({
     pattern: "**/*.md",
-    base: "./content/guide"
+    base: "./content/guide",
+    deferRender: true
   }),
   schema: z.object({
     title: z.string()

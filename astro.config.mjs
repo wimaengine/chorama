@@ -1,9 +1,8 @@
 import { defineConfig } from "astro/config";
+import { satteri } from "@astrojs/markdown-satteri";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import remarkGfm from "remark-gfm";
-import remarkGithubBlockquoteAlert from "remark-github-blockquote-alert";
-import remarkLinkBase from "./website/plugins/remark-link-base.js";
+import { markdownPlugins } from "./website/plugins/markdown-satteri.js";
 
 function glsl() {
   return {
@@ -20,7 +19,8 @@ function glsl() {
 }
 
 export default defineConfig({
-  output:'static',
+  output: "static",
+  compressHTML: true,
   srcDir: "./website",
   publicDir: "./assets",
   outDir: "./dist/website",
@@ -36,10 +36,11 @@ export default defineConfig({
     }
   },
   markdown: {
-    remarkPlugins: [
-      remarkGfm,
-      remarkGithubBlockquoteAlert,
-      remarkLinkBase,
-    ],
+    processor: satteri({
+      features: {
+        directive: true,
+      },
+      mdastPlugins: markdownPlugins,
+    }),
   },
 });
