@@ -1,8 +1,8 @@
-/** @import { WebGLBindGroupDescriptor, WebGLBindGroupEntry } from "./descriptors.js" */
+/** @import { WebGLBindGroupDescriptor, WebGLBindGroupEntry, WebGLBindGroupSamplerResource } from "./descriptors.js" */
 /** @import { WebGLBindGroupBufferResource, WebGLBindGroupTextureResource } from "./descriptors.js" */
 /** @import { WebGLBindGroupLayout, WebGLBindGroupLayoutEntry } from "../layouts/bindgroup.js" */
 /** @import { WebGLRenderPipeline } from "./renderpipeline.js" */
-import { BufferType, TextureFilter, TextureType } from "../../constants/index.js"
+import { BufferType, TextureType } from "../../constants/index.js"
 import { assert } from "../../utils/index.js"
 import { assertTrue } from "../../utils/index.js"
 
@@ -84,6 +84,11 @@ export class WebGLBindGroup {
 
       if (layoutEntry.texture !== undefined) {
         applyTextureBinding(context, pipeline, /** @type {WebGLBindGroupTextureResource} */ (entry.resource), layoutEntry)
+        continue
+      }
+
+      if (layoutEntry.sampler !== undefined) {
+        applySamplerBinding(context, pipeline, /** @type {WebGLBindGroupSamplerResource} */ (entry.resource), layoutEntry)
       }
     }
   }
@@ -96,6 +101,11 @@ export class WebGLBindGroup {
 function validateBindGroupResource(entry, layoutEntry) {
   if (layoutEntry.buffer !== undefined) {
     validateBufferResource(/** @type {WebGLBindGroupBufferResource} */ (entry.resource), layoutEntry)
+    return
+  }
+
+  if (layoutEntry.sampler !== undefined) {
+    validateSamplerResource(/** @type {WebGLBindGroupSamplerResource} */ (entry.resource), layoutEntry)
     return
   }
 
@@ -144,29 +154,13 @@ function validateTextureResource(resource, layoutEntry) {
 }
 
 /**
- * @param {WebGL2RenderingContext} context
- * @param {WebGLRenderPipeline} pipeline
- * @param {number} bindGroupIndex
+ * @param {WebGLBindGroupSamplerResource} resource
  * @param {WebGLBindGroupLayoutEntry} layoutEntry
- * @param {WebGLBindGroupBufferResource} resource
  */
-function applyBufferBinding(context, pipeline, bindGroupIndex, layoutEntry, resource) {
-  const point = pipeline.layout.getBindGroupBufferPoint(bindGroupIndex, layoutEntry.binding)
+function validateSamplerResource(resource, layoutEntry) {
+  const expectedType = layoutEntry.sampler?.type ?? "filtering"
 
-  assertTrue(point !== undefined, `Pipeline layout does not allocate a binding point for bind group ${bindGroupIndex} binding ${layoutEntry.binding}`)
-  const bindingPoint = /** @type {number} */ (point)
-
-  const { buffer, offset = 0, size } = resource
-
-  if (size !== undefined) {
-    context.bindBufferRange(buffer.type, bindingPoint, buffer.inner, offset, size)
-  } else {
-    context.bindBufferBase(buffer.type, bindingPoint, buffer.inner)
-  }
-
-  if (layoutEntry.name !== undefined) {
-    bindUniformBlock(context, pipeline, layoutEntry.name, bindingPoint)
-  }
+  assertTrue(resource.sampler.type === expectedType, `Bind group binding ${layoutEntry.binding} sampler type does not match the layout`)
 }
 
 /**
@@ -190,7 +184,7 @@ function bindUniformBlock(context, pipeline, name, bindingPoint) {
  * @param {WebGLBindGroupLayoutEntry} layoutEntry
  */
 function applyTextureBinding(context, pipeline, resource, layoutEntry) {
-  const { texture, sampler } = resource
+  const { texture } = resource
 
   if (!layoutEntry.name) {
     return
@@ -204,61 +198,50 @@ function applyTextureBinding(context, pipeline, resource, layoutEntry) {
 
   context.activeTexture(WebGL2RenderingContext.TEXTURE0 + uniform.texture_unit)
   context.bindTexture(texture.type, texture.inner)
-
-  if (sampler) {
-    updateTextureSampler(context, texture, sampler)
-  }
 }
 
 /**
  * @param {WebGL2RenderingContext} context
- * @param {import("../resources/index.js").GPUTexture} texture
- * @param {import("../../texture/index.js").Sampler} sampler
+ * @param {WebGLRenderPipeline} pipeline
+ * @param {WebGLBindGroupSamplerResource} resource
+ * @param {WebGLBindGroupLayoutEntry} layoutEntry
  */
-function updateTextureSampler(context, texture, sampler) {
-  const lod = sampler.lod
-  const anisotropyExtenstion = context.getExtension("EXT_texture_filter_anisotropic")
-
-  context.texParameteri(texture.type, context.TEXTURE_MAG_FILTER, sampler.magnificationFilter)
-  context.texParameteri(texture.type, context.TEXTURE_WRAP_S, sampler.wrapS)
-  context.texParameteri(texture.type, context.TEXTURE_WRAP_T, sampler.wrapT)
-  context.texParameteri(texture.type, context.TEXTURE_WRAP_R, sampler.wrapR)
-
-  if (lod) {
-    context.texParameteri(texture.type, context.TEXTURE_MIN_LOD, lod.min)
-    context.texParameteri(texture.type, context.TEXTURE_MAX_LOD, lod.max)
+function applySamplerBinding(context, pipeline, resource, layoutEntry) {
+  if (!layoutEntry.name) {
+    return
   }
 
-  if (sampler.mipmapFilter !== undefined) {
-    if (sampler.minificationFilter === TextureFilter.Linear) {
-      if (sampler.mipmapFilter === TextureFilter.Linear) {
-        context.texParameteri(texture.type, context.TEXTURE_MIN_FILTER, context.LINEAR_MIPMAP_LINEAR)
-      } else if (sampler.mipmapFilter === TextureFilter.Nearest) {
-        context.texParameteri(texture.type, context.TEXTURE_MIN_FILTER, context.LINEAR_MIPMAP_NEAREST)
-      }
-    } else if (sampler.minificationFilter === TextureFilter.Nearest) {
-      if (sampler.mipmapFilter === TextureFilter.Linear) {
-        context.texParameteri(texture.type, context.TEXTURE_MIN_FILTER, context.NEAREST_MIPMAP_LINEAR)
-      } else if (sampler.mipmapFilter === TextureFilter.Nearest) {
-        context.texParameteri(texture.type, context.TEXTURE_MIN_FILTER, context.NEAREST_MIPMAP_NEAREST)
-      }
-    }
+  const uniform = pipeline.uniforms.get(layoutEntry.name)
+
+  if (!uniform || uniform.texture_unit === undefined) {
+    return
+  }
+
+  context.bindSampler(uniform.texture_unit, resource.sampler.inner)
+}
+
+/**
+ * @param {WebGL2RenderingContext} context
+ * @param {WebGLRenderPipeline} pipeline
+ * @param {number} bindGroupIndex
+ * @param {WebGLBindGroupLayoutEntry} layoutEntry
+ * @param {WebGLBindGroupBufferResource} resource
+ */
+function applyBufferBinding(context, pipeline, bindGroupIndex, layoutEntry, resource) {
+  const point = pipeline.layout.getBindGroupBufferPoint(bindGroupIndex, layoutEntry.binding)
+
+  assertTrue(point !== undefined, `Pipeline layout does not allocate a binding point for bind group ${bindGroupIndex} binding ${layoutEntry.binding}`)
+  const bindingPoint = /** @type {number} */ (point)
+
+  const { buffer, offset = 0, size } = resource
+
+  if (size !== undefined) {
+    context.bindBufferRange(buffer.type, bindingPoint, buffer.inner, offset, size)
   } else {
-    if (sampler.minificationFilter === TextureFilter.Nearest) {
-      context.texParameteri(texture.type, context.TEXTURE_MIN_FILTER, context.NEAREST)
-    } else if (sampler.minificationFilter === TextureFilter.Linear) {
-      context.texParameteri(texture.type, context.TEXTURE_MIN_FILTER, context.LINEAR)
-    }
+    context.bindBufferBase(buffer.type, bindingPoint, buffer.inner)
   }
 
-  if (anisotropyExtenstion) {
-    context.texParameterf(texture.type, anisotropyExtenstion.TEXTURE_MAX_ANISOTROPY_EXT, sampler.anisotropy)
-  }
-
-  if (sampler.compare !== undefined) {
-    context.texParameteri(texture.type, context.TEXTURE_COMPARE_MODE, context.COMPARE_REF_TO_TEXTURE)
-    context.texParameteri(texture.type, context.TEXTURE_COMPARE_FUNC, sampler.compare)
-  } else {
-    context.texParameteri(texture.type, context.TEXTURE_COMPARE_MODE, context.NONE)
+  if (layoutEntry.name !== undefined) {
+    bindUniformBlock(context, pipeline, layoutEntry.name, bindingPoint)
   }
 }

@@ -53,6 +53,7 @@ export class CanvasBlitNode {
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, canvasSource.format)
         const mainTextureInfo = pipeline.uniforms.get("mainTexture")
         const textureUnit = mainTextureInfo?.texture_unit
+        const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
 
         assert(mainTextureInfo, "Canvas blit pipeline is missing the mainTexture uniform")
         if (textureUnit === undefined) {
@@ -74,6 +75,7 @@ export class CanvasBlitNode {
         pass.setPipeline(pipeline, renderer.caches.uniformBuffers)
         renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
         renderDevice.context.bindTexture(canvasTexture.type, canvasTexture.inner)
+        renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)
         pass.draw(3)
         pass.end()
 

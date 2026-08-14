@@ -107,9 +107,11 @@ export class SkeletonHelperPlugin extends Plugin {
     boneTextureResource.upload(device, renderer)
 
     const transformsTexture = caches.getTexture(device, boneTextureResource.texture)
+    const gpuSampler = caches.getSampler(device, renderer.defaults.textureNearestSampler)
 
     device.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + transformsInfo.texture_unit)
     device.context.bindTexture(boneTextureResource.texture.type, transformsTexture.inner)
+    device.context.bindSampler(transformsInfo.texture_unit, gpuSampler.inner)
 
     device.context.uniformMatrix4fv(modelInfo.location, false, [...Affine3.toMatrix4(object.skinnedMesh.transform.world)])
     device.context.bindVertexArray(null)

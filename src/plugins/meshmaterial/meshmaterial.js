@@ -185,57 +185,66 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object) {
 
     const sourceTexture = texture ?? defaults.texture2D
     const gpuTexture = caches.getTexture(device, sourceTexture)
+    const sourceSampler = sampler ?? defaults.textureSampler
+    const gpuSampler = caches.getSampler(device, sourceSampler)
 
-    bindings.push(createTextureBinding(
-      binding++,
+    bindings.push(...createTextureSamplerBindings(
+      binding,
       name,
       gpuTexture,
-      sampler ?? defaults.textureSampler,
+      gpuSampler,
       sourceTexture.type,
       sourceTexture.format
     ))
+    binding += 2
   }
 
   if (environmentMap && hasActiveTextureUniform(pipeline, "environment_map")) {
     const sourceTexture = environmentMap.texture ?? defaults.textureCube
     const gpuTexture = caches.getTexture(device, sourceTexture)
+    const gpuSampler = caches.getSampler(device, environmentMap.sampler ?? defaults.textureSampler)
 
-    bindings.push(createTextureBinding(
-      binding++,
+    bindings.push(...createTextureSamplerBindings(
+      binding,
       "environment_map",
       gpuTexture,
-      environmentMap.sampler ?? defaults.textureSampler,
+      gpuSampler,
       sourceTexture.type,
       sourceTexture.format
     ))
+    binding += 2
   }
 
   const shadowmap = renderer.getResource(ShadowMap)
 
   if (shadowmap && hasActiveTextureUniform(pipeline, "shadow_atlas")) {
     const gpuTexture = caches.getTexture(device, shadowmap.shadowAtlas)
+    const gpuSampler = caches.getSampler(device, shadowmap.sampler)
 
-    bindings.push(createTextureBinding(
-      binding++,
+    bindings.push(...createTextureSamplerBindings(
+      binding,
       "shadow_atlas",
       gpuTexture,
-      shadowmap.sampler,
+      gpuSampler,
       shadowmap.shadowAtlas.type,
       shadowmap.shadowAtlas.format
     ))
+    binding += 2
   }
 
   if (object.skin && skinTextureState && hasActiveTextureUniform(pipeline, "bone_transforms")) {
     const gpuTexture = caches.getTexture(device, skinTextureState.resource.texture)
+    const gpuSampler = caches.getSampler(device, defaults.textureNearestSampler)
 
-    bindings.push(createTextureBinding(
-      binding++,
+    bindings.push(...createTextureSamplerBindings(
+      binding,
       "bone_transforms",
       gpuTexture,
-      defaults.textureSampler,
+      gpuSampler,
       skinTextureState.resource.texture.type,
       skinTextureState.resource.texture.format
     ))
+    binding += 2
   }
 
   if (bindings.length === 0) {
@@ -378,7 +387,6 @@ function createBufferBinding(binding, name, buffer, minBindingSize) {
  * @param {number} binding
  * @param {string} name
  * @param {import("../../core/resources/index.js").GPUTexture} texture
- * @param {import("../../texture/index.js").Sampler} sampler
  * @param {TextureType} type
  * @param {TextureFormat} format
  * @returns {{
@@ -387,7 +395,7 @@ function createBufferBinding(binding, name, buffer, minBindingSize) {
  *   entry: import("../../core/webgl/descriptors.js").WebGLBindGroupEntry
  * }}
  */
-function createTextureBinding(binding, name, texture, sampler, type, format) {
+function createTextureBinding(binding, name, texture, type, format) {
   return {
     binding,
     layout: {
@@ -402,11 +410,55 @@ function createTextureBinding(binding, name, texture, sampler, type, format) {
     entry: {
       binding,
       resource: {
-        texture,
+        texture
+      }
+    }
+  }
+}
+
+/**
+ * @param {number} binding
+ * @param {string} name
+ * @param {import("../../core/resources/index.js").GPUSampler} sampler
+ * @returns {{
+ *   binding: number,
+ *   layout: import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry,
+ *   entry: import("../../core/webgl/descriptors.js").WebGLBindGroupEntry
+ * }}
+ */
+function createSamplerBinding(binding, name, sampler) {
+  return {
+    binding,
+    layout: {
+      binding,
+      name,
+      visibility: 0,
+      sampler: {
+        type: sampler.type
+      }
+    },
+    entry: {
+      binding,
+      resource: {
         sampler
       }
     }
   }
+}
+
+/**
+ * @param {number} binding
+ * @param {string} name
+ * @param {import("../../core/resources/index.js").GPUTexture} texture
+ * @param {import("../../core/resources/index.js").GPUSampler} sampler
+ * @param {TextureType} type
+ * @param {TextureFormat} format
+ */
+function createTextureSamplerBindings(binding, name, texture, sampler, type, format) {
+  return [
+    createTextureBinding(binding, name, texture, type, format),
+    createSamplerBinding(binding + 1, name, sampler)
+  ]
 }
 
 /**

@@ -71,6 +71,7 @@ export class TonemappingNode {
       })
 
       const source = renderer.caches.getTexture(renderDevice, colorSource)
+      const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
 
       const pass = renderDevice.beginRenderPass({
         width: outputColor.width,
@@ -86,6 +87,7 @@ export class TonemappingNode {
       pass.setPipeline(pipeline, renderer.caches.uniformBuffers)
       renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
       renderDevice.context.bindTexture(source.type, source.inner)
+      renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)
 
       if (exposureInfo) {
         renderDevice.context.uniform1f(exposureInfo.location, getToneMappingExposure(toneMapping))

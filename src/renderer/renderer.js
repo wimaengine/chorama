@@ -2,7 +2,7 @@ import { WebGLDeviceLimits, WebGLRenderDevice } from "../core/index.js"
 import { Object3D } from "../objects/index.js"
 import { colorShaderLib, commonShaderLib, lightShaderLib, mathShaderLib, tonemapShaderLib } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
-import { TextureType } from "../constants/index.js"
+import { TextureFilter, TextureType } from "../constants/index.js"
 import { assert } from '../utils/index.js'
 import { Caches } from "../caches/index.js"
 import { Attribute } from "../mesh/index.js"
@@ -168,6 +168,10 @@ export class Defaults {
   texture2D = Texture.default()
   textureCube = createDefaultCubeTexture()
   textureSampler = Sampler.default()
+  textureNearestSampler = new Sampler({
+    minificationFilter: TextureFilter.Nearest,
+    magnificationFilter: TextureFilter.Nearest
+  })
 }
 
 function createDefaultCubeTexture() {

@@ -181,10 +181,26 @@ function getSkyboxRenderPipeline(device, renderer) {
       },
       {
         binding: 2,
+        name: "day",
+        visibility: 0,
+        sampler: {
+          type: "filtering"
+        }
+      },
+      {
+        binding: 3,
         name: "night",
         visibility: 0,
         texture: {
           viewDimension: "cube"
+        }
+      },
+      {
+        binding: 4,
+        name: "night",
+        visibility: 0,
+        sampler: {
+          type: "filtering"
         }
       }
     ]
@@ -211,7 +227,7 @@ function getSkyboxRenderPipeline(device, renderer) {
 function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, night, object) {
   const dayTexture = renderer.caches.getTexture(device, day)
   const nightTexture = renderer.caches.getTexture(device, night)
-  const sampler = renderer.defaults.textureSampler
+  const gpuSampler = renderer.caches.getSampler(device, renderer.defaults.textureSampler)
   const uniformBuffer = getSkyboxUniformBuffer(device, renderer, layout, object)
   const bindGroupLayout = skyboxPipeline.bindGroupLayout
 
@@ -232,15 +248,25 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
       {
         binding: 1,
         resource: {
-          texture: dayTexture,
-          sampler
+          texture: dayTexture
         }
       },
       {
         binding: 2,
         resource: {
-          texture: nightTexture,
-          sampler
+          sampler: gpuSampler
+        }
+      },
+      {
+        binding: 3,
+        resource: {
+          texture: nightTexture
+        }
+      },
+      {
+        binding: 4,
+        resource: {
+          sampler: gpuSampler
         }
       }
     ]
