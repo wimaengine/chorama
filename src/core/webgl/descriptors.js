@@ -1,4 +1,4 @@
-import { BufferUsage, BufferType, TextureType, TextureFormat, CullFace, FrontFaceDirection, PrimitiveTopology } from "../../constants/index.js";
+import { BufferUsage, BufferType, TextureType, TextureFormat, TextureFilter, TextureWrap, CullFace, FrontFaceDirection, PrimitiveTopology } from "../../constants/index.js";
 import { Vector3 } from "../../math/index.js";
 import { ViewRectangle } from "../../utils/index.js";
 import { CompareFunction } from "../constants.js";
@@ -6,7 +6,7 @@ import { MeshVertexLayout } from "../layouts/index.js";
 import { BlendParams, GPUTexture } from "../resources/index.js";
 import { Shader } from "../shader.js";
 /** @import { GPUBuffer } from "../resources/index.js" */
-/** @import { Sampler } from "../../texture/index.js" */
+/** @import { GPUSampler } from "../resources/index.js" */
 
 /**
  * @typedef {"load" | "clear"} WebGLLoadOp
@@ -81,16 +81,28 @@ import { Shader } from "../shader.js";
 /**
  * @typedef WebGLBindGroupTextureResource
  * @property {GPUTexture} texture
- * @property {Sampler} [sampler]
  */
 
 /**
  * @typedef WebGLBindGroupSamplerResource
- * @property {Sampler} sampler
+ * @property {GPUSampler} sampler
  */
 
 /**
  * @typedef {WebGLBindGroupBufferResource | WebGLBindGroupTextureResource | WebGLBindGroupSamplerResource} WebGLBindGroupResource
+ */
+
+/**
+ * @typedef WebGLSamplerDescriptor
+ * @property {TextureFilter} magnificationFilter
+ * @property {TextureFilter} minificationFilter
+ * @property {TextureFilter | undefined} [mipmapFilter]
+ * @property {TextureWrap} wrapS
+ * @property {TextureWrap} wrapT
+ * @property {TextureWrap} wrapR
+ * @property {{ min: number, max: number } | undefined} [lod]
+ * @property {number} anisotropy
+ * @property {CompareFunction | undefined} [compare]
  */
 
 /**

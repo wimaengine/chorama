@@ -1,5 +1,5 @@
-/**@import { WebGLTextureDescriptor, WebGLWriteTextureDescriptor } from './descriptors.js'*/
-import { TextureType, UniformType } from "../../constants/index.js"
+/**@import { WebGLSamplerDescriptor, WebGLTextureDescriptor, WebGLWriteTextureDescriptor } from './descriptors.js'*/
+import { TextureFilter, TextureType, UniformType } from "../../constants/index.js"
 import { WebGLTextureFormat, convertBufferToTypedArray } from "../../function.js"
 import { Vector3 } from "../../math/index.js"
 import { assert } from "../../utils/index.js"
@@ -95,19 +95,67 @@ export function allocateTexture2D(context, descriptor, format) {
   }
   context.texParameteri(
     WebGL2RenderingContext.TEXTURE_2D,
-    WebGL2RenderingContext.TEXTURE_MIN_FILTER,
-    WebGL2RenderingContext.NEAREST
-  )
-  context.texParameteri(
-    WebGL2RenderingContext.TEXTURE_2D,
-    WebGL2RenderingContext.TEXTURE_MAG_FILTER,
-    WebGL2RenderingContext.NEAREST
-  )
-  context.texParameteri(
-    WebGL2RenderingContext.TEXTURE_2D,
     WebGL2RenderingContext.TEXTURE_MAX_LEVEL,
     mipmapCount - 1
   )
+}
+
+/**
+ * Configures a WebGL sampler object from the forward-facing sampler settings.
+ * @param {WebGL2RenderingContext} context
+ * @param {WebGLSampler} sampler
+ * @param {WebGLSamplerDescriptor} descriptor
+ */
+export function configureSampler(context, sampler, descriptor) {
+  const lod = descriptor.lod
+  const anisotropyExtension = context.getExtension("EXT_texture_filter_anisotropic")
+
+  context.samplerParameteri(sampler, context.TEXTURE_MAG_FILTER, descriptor.magnificationFilter)
+  context.samplerParameteri(sampler, context.TEXTURE_WRAP_S, descriptor.wrapS)
+  context.samplerParameteri(sampler, context.TEXTURE_WRAP_T, descriptor.wrapT)
+  context.samplerParameteri(sampler, context.TEXTURE_WRAP_R, descriptor.wrapR)
+
+  if (lod) {
+    context.samplerParameterf(sampler, context.TEXTURE_MIN_LOD, lod.min)
+    context.samplerParameterf(sampler, context.TEXTURE_MAX_LOD, lod.max)
+  }
+
+  if (descriptor.mipmapFilter !== undefined) {
+    if (descriptor.minificationFilter === TextureFilter.Linear) {
+      if (descriptor.mipmapFilter === TextureFilter.Linear) {
+        context.samplerParameteri(sampler, context.TEXTURE_MIN_FILTER, context.LINEAR_MIPMAP_LINEAR)
+      } else if (descriptor.mipmapFilter === TextureFilter.Nearest) {
+        context.samplerParameteri(sampler, context.TEXTURE_MIN_FILTER, context.LINEAR_MIPMAP_NEAREST)
+      }
+    } else if (descriptor.minificationFilter === TextureFilter.Nearest) {
+      if (descriptor.mipmapFilter === TextureFilter.Linear) {
+        context.samplerParameteri(sampler, context.TEXTURE_MIN_FILTER, context.NEAREST_MIPMAP_LINEAR)
+      } else if (descriptor.mipmapFilter === TextureFilter.Nearest) {
+        context.samplerParameteri(sampler, context.TEXTURE_MIN_FILTER, context.NEAREST_MIPMAP_NEAREST)
+      }
+    }
+  } else {
+    if (descriptor.minificationFilter === TextureFilter.Nearest) {
+      context.samplerParameteri(sampler, context.TEXTURE_MIN_FILTER, context.NEAREST)
+    } else if (descriptor.minificationFilter === TextureFilter.Linear) {
+      context.samplerParameteri(sampler, context.TEXTURE_MIN_FILTER, context.LINEAR)
+    }
+  }
+
+  if (anisotropyExtension) {
+    context.samplerParameterf(
+      sampler,
+      anisotropyExtension.TEXTURE_MAX_ANISOTROPY_EXT,
+      descriptor.anisotropy
+    )
+  }
+
+  if (descriptor.compare !== undefined) {
+    context.samplerParameteri(sampler, context.TEXTURE_COMPARE_MODE, context.COMPARE_REF_TO_TEXTURE)
+    context.samplerParameteri(sampler, context.TEXTURE_COMPARE_FUNC, descriptor.compare)
+  } else {
+    context.samplerParameteri(sampler, context.TEXTURE_COMPARE_MODE, context.NONE)
+  }
 }
 
 /**

@@ -1,4 +1,4 @@
-/**@import { WebGLBindGroupDescriptor, WebGLBufferDescriptor, WebGLRenderPipelineDescriptor, WebGLTextureDescriptor, WebGLWriteTextureDescriptor } from './descriptors.js' */
+/**@import { WebGLBindGroupDescriptor, WebGLBufferDescriptor, WebGLRenderPipelineDescriptor, WebGLSamplerDescriptor, WebGLTextureDescriptor, WebGLWriteTextureDescriptor } from './descriptors.js' */
 /**@import { WebGLBindGroupLayoutDescriptor, WebGLPipelineLayoutDescriptor } from '../layouts/index.js' */
 import { CullFace, FrontFaceDirection, TextureFormat, TextureType, getTextureFormatSize } from "../../constants/index.js"
 import { assert, assertTrue } from "../../utils/index.js"
@@ -8,8 +8,8 @@ import { WebGLBindGroupLayout, WebGLPipelineLayout } from "../layouts/index.js"
 import { WebGLBindGroup } from "./bindgroup.js"
 import { WebGLRenderPipeline } from "./renderpipeline.js"
 import { WebGLRenderPassEncoder } from "./renderpassencoder.js"
-import { GPUBuffer, GPUTexture } from "../resources/index.js"
-import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, updateTexture2D, updateCubeMap, updateTexture2DArray, createProgramFromSrc } from "./utils.js"
+import { GPUBuffer, GPUSampler, GPUTexture } from "../resources/index.js"
+import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, updateTexture2D, updateCubeMap, updateTexture2DArray, createProgramFromSrc, configureSampler } from "./utils.js"
 import { CompareFunction } from "../constants.js"
 
 export class WebGLRenderDevice {
@@ -178,6 +178,20 @@ export class WebGLRenderDevice {
     }
     const pixelSize = getTextureFormatSize(format)
     return new GPUTexture(texture, type, form, format, width, height, depth, mipmapCount, pixelSize)
+  }
+
+  /**
+   * @param {WebGLSamplerDescriptor} sampler
+   * @returns {GPUSampler}
+   */
+  createSampler(sampler) {
+    const { context } = this
+    const webglSampler = context.createSampler()
+
+    assert(webglSampler, "Invalid sampler")
+    configureSampler(context, webglSampler, sampler)
+
+    return new GPUSampler(webglSampler, sampler.compare !== undefined ? "comparison" : "filtering")
   }
 
   /**
