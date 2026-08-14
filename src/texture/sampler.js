@@ -2,43 +2,48 @@ import { TextureFilter, TextureWrap } from '../constants/index.js'
 import { CompareFunction } from '../core/index.js'
 export class Sampler {
   /**
-   * @type {TextureFilter}
+   * Tracks if the sampler has changed since last checked.
+   * @type {boolean}
    */
+  #changed = false
 
-  magnificationFilter
   /**
    * @type {TextureFilter}
    */
-  minificationFilter
+  #magnificationFilter
+  /**
+   * @type {TextureFilter}
+   */
+  #minificationFilter
   /**
    * @type {TextureFilter | undefined}
    */
-  mipmapFilter
+  #mipmapFilter
   
   /**
    * @type {TextureWrap}
    */
-  wrapS
+  #wrapS
   /**
    * @type {TextureWrap}
    */
-  wrapT
+  #wrapT
   /**
    * @type {TextureWrap}
    */
-  wrapR
+  #wrapR
   /**
    * @type {number}
    */
-  anisotropy
+  #anisotropy
   /**
-   * @type {SamplerLODSettings}
+   * @type {SamplerLODSettings | undefined}
    */
-  lod
+  #lod
   /**
    * @type {CompareFunction | undefined}
    */
-  compare
+  #compare
   /**
    * @param {SamplerSettings} settings 
    */
@@ -53,15 +58,90 @@ export class Sampler {
     anisotropy = Sampler.defaultSettings.anisotropy,
     compare = Sampler.defaultSettings.compare
   } = Sampler.defaultSettings) {
-    this.minificationFilter = minificationFilter
-    this.magnificationFilter = magnificationFilter
-    this.mipmapFilter = mipmapFilter
-    this.wrapS = wrapS
-    this.wrapT = wrapT
-    this.wrapR = wrapR
-    this.anisotropy = anisotropy
-    this.lod = lod
-    this.compare = compare
+    this.#minificationFilter = minificationFilter
+    this.#magnificationFilter = magnificationFilter
+    this.#mipmapFilter = mipmapFilter
+    this.#wrapS = wrapS
+    this.#wrapT = wrapT
+    this.#wrapR = wrapR
+    this.#anisotropy = anisotropy
+    this.#lod = lod
+    this.#compare = compare
+  }
+
+  /**
+   * @package
+   * @returns {boolean}
+   */
+  get changed() {
+    const previous = this.#changed
+    this.#changed = false
+    return previous
+  }
+
+  /** @type {TextureFilter} */
+  get magnificationFilter() { return this.#magnificationFilter }
+  set magnificationFilter(value) {
+    this.#magnificationFilter = value
+    this.#changed = true
+  }
+
+  /** @type {TextureFilter} */
+  get minificationFilter() { return this.#minificationFilter }
+  set minificationFilter(value) {
+    this.#minificationFilter = value
+    this.#changed = true
+  }
+
+  /** @type {TextureFilter | undefined} */
+  get mipmapFilter() { return this.#mipmapFilter }
+  set mipmapFilter(value) {
+    this.#mipmapFilter = value
+    this.#changed = true
+  }
+
+  /** @type {TextureWrap} */
+  get wrapS() { return this.#wrapS }
+  set wrapS(value) {
+    this.#wrapS = value
+    this.#changed = true
+  }
+
+  /** @type {TextureWrap} */
+  get wrapT() { return this.#wrapT }
+  set wrapT(value) {
+    this.#wrapT = value
+    this.#changed = true
+  }
+
+  /** @type {TextureWrap} */
+  get wrapR() { return this.#wrapR }
+  set wrapR(value) {
+    this.#wrapR = value
+    this.#changed = true
+  }
+
+  /** @type {number} */
+  get anisotropy() { return this.#anisotropy }
+  set anisotropy(value) {
+    this.#anisotropy = value
+    this.#changed = true
+  }
+
+  /** @type {Readonly<SamplerLODSettings> | undefined} */
+  get lod() {
+    return this.#lod
+  }
+  set lod(value) {
+    this.#lod = value
+    this.#changed = true
+  }
+
+  /** @type {CompareFunction | undefined} */
+  get compare() { return this.#compare }
+  set compare(value) {
+    this.#compare = value
+    this.#changed = true
   }
 
   static default(){
