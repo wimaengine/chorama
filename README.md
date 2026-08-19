@@ -1,4 +1,6 @@
-# Chorama
+---
+title: Chorama
+---
 
 A modular WebGL2 rendering library built in JavaScript.
 
