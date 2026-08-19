@@ -19,7 +19,13 @@
   "license": "MIT",
   "author": "Wayne Mwashuma",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/index.module.js",
+  "module": "dist/index.module.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.module.js"
+    }
+  },
   "directories": {
     "example": "examples"
   },
@@ -28,7 +34,7 @@
     "dev": "astro dev",
     "test": "node test",
     "tsc": "tsc -b tsconfig.json",
-    "build-website": "npm run build-src && astro build && node scripts/stage-chorama.mjs",
+    "build-website": "npm run build-src && astro build",
     "build-src": "rollup --config rollup.config.js",
     "build": "npm run build-website"
   },
@@ -40,6 +46,7 @@
     "@types/stats.js": "^0.17.4",
     "astro": "^7.2.2",
     "dat.gui": "^0.7.9",
+    "resolve.exports": "^2.0.3",
     "rollup": "^4.52.5",
     "typescript": "^5.9.3",
     "vite": "^8.2.1"

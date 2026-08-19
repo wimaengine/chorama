@@ -1,5 +1,5 @@
 import { GUI } from 'dat.gui';
-import { addRenderGraphGuiAddon } from "@examples/rendergraph_gui"
+import { addRenderGraphGuiAddon } from "chorama"
 import Stats from "stats.js";
 import {
   MeshMaterial3D,

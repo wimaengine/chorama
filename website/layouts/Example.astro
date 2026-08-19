@@ -1,7 +1,6 @@
 ---
 import { withBase } from "../utils/url";
-import packageJson from "../../package.json";
-import path from "node:path";
+import { buildImportMap } from "../utils/import-map";
 
 interface Props {
   source: string;
@@ -11,62 +10,7 @@ interface Props {
 const { source, title = "Example" } = Astro.props;
 const isProd = import.meta.env.PROD;
 
-const datGuiVersion = packageJson.devDependencies["dat.gui"].replace(
-  /^[^\d]*/,
-  "",
-);
-const statsVersion = packageJson.dependencies["stats.js"].replace(
-  /^[^\d]*/,
-  "",
-);
-const marangiVersion = packageJson.dependencies["marangi"].replace(
-  /^[^\d]*/,
-  "",
-);
-const hisabatiVersion = packageJson.dependencies["hisabati"].replace(
-  /^[^\d]*/,
-  "",
-);
-const vifaaVersion = packageJson.dependencies["vifaa"].replace(
-  /^[^\d]*/,
-  "",
-);
-const datGuiUrl = isProd
-  ? `https://cdn.jsdelivr.net/npm/dat.gui@${datGuiVersion}/build/dat.gui.module.js`
-  : "/node_modules/dat.gui/build/dat.gui.module.js";
-const statsUrl = isProd
-  ? `https://cdn.jsdelivr.net/npm/stats.js@${statsVersion}/src/Stats.js`
-  : "/node_modules/stats.js/src/Stats.js";
-const marangiUrl = isProd
-  ? `https://cdn.jsdelivr.net/npm/marangi@${marangiVersion}/build/index.module.js`
-  : "/node_modules/marangi/build/index.module.js";
-const hisabatiUrl = isProd
-  ? `https://cdn.jsdelivr.net/npm/hisabati@${hisabatiVersion}/build/index.module.js`
-  : "/node_modules/hisabati/build/index.module.js";
-const vifaaUrl = isProd
-  ? `https://cdn.jsdelivr.net/npm/vifaa@${vifaaVersion}/build/index.module.js`
-  : "/node_modules/vifaa/build/index.module.js";
-const addonsEntry = path
-  .resolve("./examples/addons/rendergraph_gui.js")
-  .split(path.sep)
-  .join("/");
-const renderGraphAddonUrl = isProd
-  ? withBase("/examples/addons/rendergraph_gui.js")
-  : `/@fs/${addonsEntry}`;
-
-const importMap = JSON.stringify({
-  imports: {
-    chorama: isProd
-      ? withBase("/vendor/chorama/index.module.js")
-      : "/src/index.js",
-    marangi: marangiUrl,
-    hisabati: hisabatiUrl,
-    vifaa: vifaaUrl,
-    "dat.gui": datGuiUrl,
-    "stats.js": statsUrl,
-    "@examples/rendergraph_gui": renderGraphAddonUrl,
-  },
-});
+const importMap = buildImportMap(isProd);
 
 const rewriteAssetLiterals = (script: string): string =>
   script.replace(

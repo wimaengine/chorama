@@ -17,7 +17,7 @@ import {
   CameraPlugin
 } from "chorama"
 import { GUI } from "dat.gui";
-import { addRenderGraphGuiAddon } from "@examples/rendergraph_gui";
+import { addRenderGraphGuiAddon } from "chorama";
 
 const canvas = document.createElement('canvas')
 const renderDevice = new WebGLRenderDevice(canvas,{
