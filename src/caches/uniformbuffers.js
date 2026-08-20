@@ -48,7 +48,7 @@ export class UniformBuffers {
         return ubo
       }
 
-      device.context.deleteBuffer(ubo.buffer.inner)
+      ubo.destroy()
     }
 
     return this.set(device, name, layout)
@@ -74,6 +74,10 @@ export class UniformBuffer {
   constructor(buffer) {
     this.buffer = buffer
     this.size = buffer.size
+  }
+
+  destroy() {
+    this.buffer.destroy()
   }
 
   /**

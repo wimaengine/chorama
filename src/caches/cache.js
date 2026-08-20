@@ -57,7 +57,7 @@ export class Caches {
 
     const [layout, layoutId] = this.getLayout(mesh, attributes)
     const vao = device.context.createVertexArray()
-    const newMesh = new GPUMesh(vao, 0, layoutId)
+    const newMesh = new GPUMesh(device.context, vao, 0, layoutId)
 
     // Flush out any change detection that happened when the mesh was creates
     mesh.changed
@@ -65,7 +65,7 @@ export class Caches {
     updateVAO(device, layout, mesh, newMesh)
     this.meshes.set(mesh, newMesh)
     if (gpuMesh) {
-      deleteMesh(device.context, gpuMesh)
+      gpuMesh.destroy()
     }
 
     return newMesh
@@ -124,7 +124,7 @@ export class Caches {
           })
           return gpuTexture
         } else {
-          device.context.deleteTexture(gpuTexture.inner)
+          gpuTexture.destroy()
         }
       } else {
         return gpuTexture
@@ -171,7 +171,7 @@ export class Caches {
       }
 
       const newSampler = device.createSampler(createSamplerDescriptor(sampler))
-      device.context.deleteSampler(gpuSampler.inner)
+      gpuSampler.destroy()
       this.samplers.set(sampler, newSampler)
       return newSampler
     }
@@ -197,7 +197,7 @@ export class Caches {
           device.queue.writeBuffer(gpuBuffer, data)
           return gpuBuffer
         } else {
-          device.context.deleteBuffer(gpuBuffer.inner)
+          gpuBuffer.destroy()
         }
       } else {
         return gpuBuffer
@@ -325,22 +325,6 @@ function updateVAO(device, layout, mesh, gpuMesh) {
   } else {
     gpuMesh.count = 0
   }
-}
-
-/**
- * @param {WebGL2RenderingContext} context
- * @param {GPUMesh} gpuMesh
- */
-function deleteMesh(context, gpuMesh) {
-  for (const buffer of gpuMesh.attributeBuffers) {
-    context.deleteBuffer(buffer.inner)
-  }
-
-  if (gpuMesh.indexBuffer) {
-    context.deleteBuffer(gpuMesh.indexBuffer.inner)
-  }
-
-  context.deleteVertexArray(gpuMesh.inner)
 }
 
 /**

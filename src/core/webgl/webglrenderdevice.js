@@ -139,7 +139,7 @@ export class WebGLRenderDevice {
     context.bindBuffer(type, buffer)
     context.bufferData(type, size, usage)
 
-    return new GPUBuffer(buffer, type, size)
+    return new GPUBuffer(context, buffer, type, size)
   }
 
   /**
@@ -169,7 +169,7 @@ export class WebGLRenderDevice {
         throw "The texture type is not supported."
     }
     const pixelSize = getTextureFormatSize(format)
-    return new GPUTexture(texture, type, form, format, width, height, depth, mipmapCount, pixelSize)
+    return new GPUTexture(context, texture, type, form, format, width, height, depth, mipmapCount, pixelSize)
   }
 
   /**
@@ -183,7 +183,7 @@ export class WebGLRenderDevice {
     assert(webglSampler, "Invalid sampler")
     configureSampler(context, webglSampler, sampler)
 
-    return new GPUSampler(webglSampler, sampler.compare !== undefined ? "comparison" : "filtering")
+    return new GPUSampler(context, webglSampler, sampler.compare !== undefined ? "comparison" : "filtering")
   }
 
   /**

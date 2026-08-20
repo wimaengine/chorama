@@ -3,6 +3,16 @@ import { WebGLTextureFormat } from "../../function.js"
 
 export class GPUTexture {
   /**
+   * @type {WebGL2RenderingContext}
+   */
+  #context
+
+  /**
+   * @type {boolean}
+   */
+  #destroyed = false
+
+  /**
    * @readonly
    * @type {WebGLTexture}
    */
@@ -57,6 +67,7 @@ export class GPUTexture {
   pixelSize
 
   /**
+   * @param {WebGL2RenderingContext} context
    * @param {WebGLTexture} texture
    * @param {TextureType} type
    * @param {WebGLTextureFormat} format
@@ -67,7 +78,8 @@ export class GPUTexture {
    * @param {number} mipmapCount
    * @param {number} pixelSize
    */
-  constructor(texture, type, format, actualFormat, width, height, depth, mipmapCount, pixelSize){
+  constructor(context, texture, type, format, actualFormat, width, height, depth, mipmapCount, pixelSize){
+    this.#context = context
     this.inner = texture
     this.type = type
     this.format = format
@@ -77,5 +89,14 @@ export class GPUTexture {
     this.mipmapCount = mipmapCount
     this.pixelSize = pixelSize
     this.actualFormat = actualFormat
+  }
+
+  destroy() {
+    if (this.#destroyed) {
+      return
+    }
+
+    this.#context.deleteTexture(this.inner)
+    this.#destroyed = true
   }
 }
