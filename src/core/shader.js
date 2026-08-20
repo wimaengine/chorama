@@ -9,18 +9,19 @@ export class Shader {
   /**
    * @type {Map<string,string>}
    */
-  includes = new Map()
+  includes
 
   /**
    * @type {Map<string,string>}
    */
-  defines = new Map()
+  defines
   /**
-   * @param {ShaderModuleDescriptor} descriptor 
+   * @param {ShaderDescriptor} descriptor 
    */
-  constructor({ source }) {
-    this.source = source
-    this.defines = new Map()
+  constructor({ source, code, defines, includes } = {}) {
+    this.source = source ?? code ?? ""
+    this.defines = new Map(defines ?? [])
+    this.includes = new Map(includes ?? [])
   }
 
   /**
@@ -41,9 +42,11 @@ const shaderPrecision = [
 ].join("\n")
 
 /**
- * @typedef ShaderModuleDescriptor
- * @property {string} source
+ * @typedef ShaderDescriptor
+ * @property {string} [source]
+ * @property {string} [code]
  * @property {Map<string,string>} [defines]
+ * @property {Map<string,string>} [includes]
  */
 
 // TODO: Maybe add error as a return type when something unexpected happens
