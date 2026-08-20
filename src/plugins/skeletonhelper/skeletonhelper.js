@@ -104,8 +104,6 @@ export class SkeletonHelperPlugin extends Plugin {
     })
 
     pass.setPipeline(pipeline, caches.uniformBuffers)
-    boneTextureResource.upload(device, renderer)
-
     const transformsTexture = caches.getTexture(device, boneTextureResource.texture)
     const gpuSampler = caches.getSampler(device, renderer.defaults.textureNearestSampler)
 

@@ -44,8 +44,6 @@ export class MeshMaterialNode {
       })
     }
 
-    boneTexture.upload(renderDevice, renderer)
-
     for (const view of views.items()) {
       if (view.tag !== Camera.name) {
         continue

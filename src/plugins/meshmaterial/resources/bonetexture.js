@@ -1,5 +1,5 @@
-import { Affine3, Vector3 } from "../../../math/index.js"
-import { TextureFormat, TextureType } from "../../../constants/index.js"
+import { Affine3 } from "../../../math/index.js"
+import { TextureFormat, TextureType, getTextureFormatSize } from "../../../constants/index.js"
 import { Texture } from "../../../texture/index.js"
 
 export class BoneTextureResource {
@@ -10,25 +10,27 @@ export class BoneTextureResource {
   constructor(maxHeight = 2048, maxLayers = 1) {
     this.#maxHeight = maxHeight
     this.#maxLayers = maxLayers
+
+    this.texture = new Texture({
+      type: TextureType.Texture2DArray,
+      width: 4,
+      height: 1,
+      depth: 1,
+      format: TextureFormat.RGBA32Float,
+      data: [new ArrayBuffer(0)]
+    })
   }
 
-  texture = new Texture({
-    type: TextureType.Texture2DArray,
-    width: 4,
-    height: 0,
-    depth: 0,
-    format: TextureFormat.RGBA32Float,
-  })
+  /**
+   * GPU-facing texture descriptor owned by the shared cache.
+   * @type {Texture}
+   */
+  texture
 
   /**
-   * @type {WeakMap<import("../../../objects/index.js").Skin, BoneTextureSlot>}
+   * @type {Map<import("../../../objects/index.js").Skin, BoneTextureSlot>}
    */
-  #slots = new WeakMap()
-
-  /**
-   * @type {number}
-   */
-  #nextBoneRow = 0
+  #slots = new Map()
 
   /**
    * @type {number}
@@ -39,17 +41,6 @@ export class BoneTextureResource {
    * @type {number}
    */
   #maxLayers
-
-  /**
-   * CPU-side staging buffer for the shared bone texture.
-   * @type {Float32Array}
-   */
-  #boneTransforms = new Float32Array(0)
-
-  /**
-   * @type {boolean}
-   */
-  #dirty = false
 
   /**
    * @param {import("../../../objects/index.js").Skin} skin
@@ -63,14 +54,17 @@ export class BoneTextureResource {
       return existing
     }
 
+    if (existing) {
+      this.#slots.delete(skin)
+    }
+
     const slot = {
-      index: this.#nextBoneRow,
+      index: this.#getRowCount(),
       boneCount
     }
 
     if (boneCount > 0) {
-      this.#nextBoneRow += boneCount
-      this.#ensureCapacity(this.#nextBoneRow)
+      this.#ensureCapacity(slot.index + boneCount)
     }
 
     this.#slots.set(skin, slot)
@@ -84,7 +78,12 @@ export class BoneTextureResource {
   collect(skin) {
     const slot = this.getOrAllocate(skin)
     const { bones, inverseBindPose } = skin
+    if (bones.length === 0) {
+      return slot
+    }
 
+    const buffer = this.#ensureCapacity(slot.index + bones.length)
+    const boneTransforms = new Float32Array(buffer)
     for (let i = 0; i < bones.length; i++) {
       const offset = (slot.index + i) * 16
       const bone = /** @type {import("../../../objects/index.js").Bone3D} */ (bones[i])
@@ -94,76 +93,79 @@ export class BoneTextureResource {
         pose
       )
 
-      this.#boneTransforms[offset + 0] = world.a
-      this.#boneTransforms[offset + 1] = world.b
-      this.#boneTransforms[offset + 2] = world.c
-      this.#boneTransforms[offset + 3] = 0
-      this.#boneTransforms[offset + 4] = world.d
-      this.#boneTransforms[offset + 5] = world.e
-      this.#boneTransforms[offset + 6] = world.f
-      this.#boneTransforms[offset + 7] = 0
-      this.#boneTransforms[offset + 8] = world.g
-      this.#boneTransforms[offset + 9] = world.h
-      this.#boneTransforms[offset + 10] = world.i
-      this.#boneTransforms[offset + 11] = 0
-      this.#boneTransforms[offset + 12] = world.x
-      this.#boneTransforms[offset + 13] = world.y
-      this.#boneTransforms[offset + 14] = world.z
-      this.#boneTransforms[offset + 15] = 1
+      boneTransforms[offset + 0] = world.a
+      boneTransforms[offset + 1] = world.b
+      boneTransforms[offset + 2] = world.c
+      boneTransforms[offset + 3] = 0
+      boneTransforms[offset + 4] = world.d
+      boneTransforms[offset + 5] = world.e
+      boneTransforms[offset + 6] = world.f
+      boneTransforms[offset + 7] = 0
+      boneTransforms[offset + 8] = world.g
+      boneTransforms[offset + 9] = world.h
+      boneTransforms[offset + 10] = world.i
+      boneTransforms[offset + 11] = 0
+      boneTransforms[offset + 12] = world.x
+      boneTransforms[offset + 13] = world.y
+      boneTransforms[offset + 14] = world.z
+      boneTransforms[offset + 15] = 1
     }
 
-    this.#dirty = true
+    this.texture.data = [buffer]
     return slot
   }
 
   /**
-   * @param {import("../../../core/index.js").WebGLRenderDevice} device
-   * @param {import("../../../renderer/index.js").WebGLRenderer} renderer
-   */
-  upload(device, renderer) {
-    if (!this.#dirty || this.texture.height === 0 || this.texture.depth === 0) {
-      return
-    }
-
-    const gpuTexture = renderer.caches.getTexture(device, this.texture)
-
-    device.queue.writeTexture({
-      texture: gpuTexture,
-      data: /** @type {ArrayBuffer} */ (this.#boneTransforms.buffer),
-      size: new Vector3(4, this.texture.height, this.texture.depth)
-    })
-
-    this.#dirty = false
-  }
-
-  /**
    * @param {number} rows
+   * @returns {ArrayBuffer}
    */
   #ensureCapacity(rows) {
-    if (rows <= 0) {
-      return
+    const currentBuffer = this.texture.data[0]
+    const currentRows = currentBuffer ? currentBuffer.byteLength / this.#rowSizeBytes() : 0
+
+    if (rows <= currentRows) {
+      return /** @type {ArrayBuffer} */ (currentBuffer ?? new ArrayBuffer(0))
     }
 
     const nextHeight = Math.min(rows, this.#maxHeight)
     const nextDepth = Math.ceil(rows / nextHeight)
 
-    if (
-      nextHeight <= this.texture.height &&
-      nextDepth <= this.texture.depth
-    ) {
-      return
-    }
-
     if (nextDepth > this.#maxLayers) {
       throw new Error("Bone texture array capacity exceeded")
     }
 
-    const nextTransforms = new Float32Array(nextHeight * nextDepth * 16)
+    const nextCapacityRows = nextHeight * nextDepth
+    const nextBuffer = new ArrayBuffer(nextCapacityRows * this.#rowSizeBytes())
+    if (currentBuffer) {
+      new Uint8Array(nextBuffer).set(new Uint8Array(currentBuffer))
+    }
 
-    nextTransforms.set(this.#boneTransforms)
-    this.#boneTransforms = nextTransforms
     this.texture.height = nextHeight
     this.texture.depth = nextDepth
+
+    this.texture.data = [nextBuffer]
+    return nextBuffer
+  }
+
+  /**
+   * @returns {number}
+   */
+  #rowSizeBytes() {
+    return this.texture.width * getTextureFormatSize(this.texture.format)
+  }
+
+  /**
+   * Returns the number of populated bone rows currently stored in the texture buffer.
+   * @returns {number}
+   */
+  #getRowCount() {
+    let rows = 0
+
+    for (const slot of this.#slots.values()) {
+      rows = Math.max(rows, slot.index + slot.boneCount)
+    }
+
+    return rows
   }
 }
 
