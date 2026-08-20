@@ -127,7 +127,7 @@ export class BoneTextureResource {
 
     const gpuTexture = renderer.caches.getTexture(device, this.texture)
 
-    device.writeTexture({
+    device.queue.writeTexture({
       texture: gpuTexture,
       data: /** @type {ArrayBuffer} */ (this.#boneTransforms.buffer),
       size: new Vector3(4, this.texture.height, this.texture.depth)

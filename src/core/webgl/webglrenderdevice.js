@@ -1,4 +1,4 @@
-/**@import { WebGLBindGroupDescriptor, WebGLBufferDescriptor, WebGLRenderPipelineDescriptor, WebGLSamplerDescriptor, WebGLTextureDescriptor, WebGLWriteTextureDescriptor } from './descriptors.js' */
+/**@import { WebGLBindGroupDescriptor, WebGLBufferDescriptor, WebGLRenderPipelineDescriptor, WebGLSamplerDescriptor, WebGLTextureDescriptor } from './descriptors.js' */
 /**@import { WebGLBindGroupLayoutDescriptor, WebGLPipelineLayoutDescriptor } from '../layouts/index.js' */
 import { CullFace, FrontFaceDirection, TextureFormat, TextureType, getTextureFormatSize } from "../../constants/index.js"
 import { assert, assertTrue } from "../../utils/index.js"
@@ -6,10 +6,11 @@ import { getFramebufferAttachment, getWebGLTextureFormat, mapWebGLAttachmentToBu
 import { WebGLExtensions } from "../extensions.js"
 import { WebGLBindGroupLayout, WebGLPipelineLayout } from "../layouts/index.js"
 import { WebGLBindGroup } from "./bindgroup.js"
+import { WebGLGPUQueue } from "./gpuqueue.js"
 import { WebGLRenderPipeline } from "./renderpipeline.js"
 import { WebGLRenderPassEncoder } from "./renderpassencoder.js"
 import { GPUBuffer, GPUSampler, GPUTexture } from "../resources/index.js"
-import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, updateTexture2D, updateCubeMap, updateTexture2DArray, createProgramFromSrc, configureSampler } from "./utils.js"
+import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, createProgramFromSrc, configureSampler } from "./utils.js"
 import { CompareFunction } from "../constants.js"
 
 export class WebGLRenderDevice {
@@ -40,9 +41,16 @@ export class WebGLRenderDevice {
    * @type {WebGL2RenderingContext}
    */
   context
+
+  /**
+   * @readonly
+   * @type {WebGLGPUQueue}
+   */
+  queue
+
   /**
    * @param {HTMLCanvasElement} [canvas]
-   * @param {WebGLContextAttributes} [options] 
+   * @param {WebGLContextAttributes} [options]
    */
   constructor(canvas, options) {
     this.canvas = canvas || document.createElement('canvas')
@@ -53,14 +61,15 @@ export class WebGLRenderDevice {
     this.drawBuffer = context.createFramebuffer()
     this.readBuffer = context.createFramebuffer()
     this.context = context
+    this.queue = new WebGLGPUQueue(this.context)
     this.extensions = new WebGLExtensions(this.context)
     this.extensions.get("OES_texture_float_linear")
     this.extensions.get("EXT_color_buffer_float")
   }
 
   /**
-   * 
-   * @param {WebGLRenderPipelineDescriptor} descriptor 
+   *
+   * @param {WebGLRenderPipelineDescriptor} descriptor
    */
   createRenderPipeline(descriptor) {
     const programInfo = createProgramFromSrc(
@@ -71,7 +80,7 @@ export class WebGLRenderDevice {
     )
 
     assert(programInfo, 'Cannot create webgl render pipeline')
-    
+
     return new WebGLRenderPipeline({
       program: programInfo.program,
       layout: descriptor.layout ?? new WebGLPipelineLayout({ bindGroupLayouts: [] }),
@@ -116,7 +125,7 @@ export class WebGLRenderDevice {
   }
 
   /**
-   * @param {WebGLBufferDescriptor} descriptor 
+   * @param {WebGLBufferDescriptor} descriptor
    * @returns {GPUBuffer}
    */
   createBuffer({
@@ -134,24 +143,7 @@ export class WebGLRenderDevice {
   }
 
   /**
-   * @param {GPUBuffer} buffer
-   * @param {ArrayBuffer | ArrayBufferView} data
-   * @param {number} bufferOffset
-   * @param {number} dataOffset
-   * @param {number} size
-   */
-  writeBuffer(buffer, data, bufferOffset = 0, dataOffset = 0, size = data.byteLength) {
-    const { context } = this
-    const source = data instanceof ArrayBuffer
-      ? new Uint8Array(data)
-      : new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
-
-    context.bindBuffer(buffer.type, buffer.inner)
-    context.bufferSubData(buffer.type, bufferOffset, source, dataOffset, size)
-  }
-
-  /**
-   * @param {WebGLTextureDescriptor} descriptor 
+   * @param {WebGLTextureDescriptor} descriptor
    * @returns {GPUTexture}
    */
   createTexture(descriptor) {
@@ -192,30 +184,6 @@ export class WebGLRenderDevice {
     configureSampler(context, webglSampler, sampler)
 
     return new GPUSampler(webglSampler, sampler.compare !== undefined ? "comparison" : "filtering")
-  }
-
-  /**
-   * @param {WebGLWriteTextureDescriptor} descriptor
-   */
-  writeTexture(descriptor) {
-    const { texture } = descriptor
-    const { context } = this
-
-    context.bindTexture(texture.type, texture.inner)
-
-    switch (texture.type) {
-      case TextureType.Texture2D:
-        updateTexture2D(context, descriptor)
-        break;
-      case TextureType.TextureCubeMap:
-        updateCubeMap(context, descriptor)
-        break
-      case TextureType.Texture2DArray:
-        updateTexture2DArray(context, descriptor)
-        break
-      default:
-        throw "Unsupported texture type."
-    }
   }
 
   /**

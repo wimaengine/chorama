@@ -116,7 +116,7 @@ export class Caches {
             if (data === undefined) {
               return
             }
-            device.writeTexture({
+            device.queue.writeTexture({
               texture: gpuTexture,
               data,
               mipmapLevel
@@ -144,7 +144,7 @@ export class Caches {
       if (data === undefined) {
         return
       }
-      device.writeTexture({
+      device.queue.writeTexture({
         texture: newTex,
         data,
         mipmapLevel
@@ -194,7 +194,7 @@ export class Caches {
       if (uniformBuffer.changed) {
         if (gpuBuffer.size >= data.byteLength) {
           // non-structural change, no need to create new gpu buffer
-          device.writeBuffer(gpuBuffer, data)
+          device.queue.writeBuffer(gpuBuffer, data)
           return gpuBuffer
         } else {
           device.context.deleteBuffer(gpuBuffer.inner)
@@ -211,7 +211,7 @@ export class Caches {
     })
 
     uniformBuffer.changed
-    device.writeBuffer(newBuffer, data)
+    device.queue.writeBuffer(newBuffer, data)
     this.newUniformBuffers.set(uniformBuffer, newBuffer)
     return newBuffer
   }
@@ -282,7 +282,7 @@ function updateVAO(device, layout, mesh, gpuMesh) {
       usage: BufferUsage.Static,
       size: indices.byteLength
     })
-    device.writeBuffer(buffer, indices)
+    device.queue.writeBuffer(buffer, indices)
     gpuMesh.indexType = mapToIndicesType(indices)
     gpuMesh.indexBuffer = buffer
   }
@@ -305,7 +305,7 @@ function updateVAO(device, layout, mesh, gpuMesh) {
     const params = mapVertexFormatToWebGL(attribute.format)
     const count = data.byteLength / (getVertexFormatComponentSize(attribute.format) * getVertexFormatComponentNumber(attribute.format))
 
-    device.writeBuffer(buffer, data)
+    device.queue.writeBuffer(buffer, data)
     setVertexAttribute(device.context, attribute.id, params)
     gpuMesh.attributeBuffers.push(buffer)
 
