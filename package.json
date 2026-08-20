@@ -46,10 +46,10 @@
     "@types/stats.js": "^0.17.4",
     "astro": "^7.2.2",
     "dat.gui": "^0.7.9",
-    "resolve.exports": "^2.0.3",
     "rollup": "^4.52.5",
     "typescript": "^5.9.3",
-    "vite": "^8.2.1"
+    "vite": "^8.2.1",
+    "wima-docs-website-template": "^0.0.0"
   },
   "dependencies": {
     "hash-it": "^7.0.2",
