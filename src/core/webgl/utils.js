@@ -317,31 +317,22 @@ export function updateCubeMap(gl, descriptor) {
 
 /**
  * @param {WebGL2RenderingContext} gl
- * @param {string} vshader
- * @param {string} fshader
+ * @param {WebGLShader} vshader
+ * @param {WebGLShader} fshader
  * @param {MeshVertexLayout} vertexLayout
  */
-export function createProgramFromSrc(gl, vshader, fshader, vertexLayout) {
-  let v = createshader(gl, vshader, gl.VERTEX_SHADER)
-  let f = createshader(gl, fshader, gl.FRAGMENT_SHADER)
-  if (f == null || v == null) {
-    gl.deleteShader(v)
-    gl.deleteShader(f)
-    return null
-  }
-  let program = createProgram(gl, v, f, vertexLayout)
-
-  return program
+export function createProgramFromShaders(gl, vshader, fshader, vertexLayout) {
+  return createProgram(gl, vshader, fshader, vertexLayout, false)
 }
 
 /**
  * @param {WebGL2RenderingContext} gl
- * @param {WebGLShader} vshader 
+ * @param {WebGLShader} vshader
  * @param {WebGLShader} fshader
  * @param {MeshVertexLayout} vertexLayout
- * 
+ * @param {boolean} deleteShaders
  */
-function createProgram(gl, vshader, fshader, vertexLayout) {
+function createProgram(gl, vshader, fshader, vertexLayout, deleteShaders) {
   let program = gl.createProgram()
   gl.attachShader(program, vshader)
   gl.attachShader(program, fshader)
@@ -372,8 +363,10 @@ function createProgram(gl, vshader, fshader, vertexLayout) {
   gl.useProgram(program)
   gl.detachShader(program, vshader)
   gl.detachShader(program, fshader)
-  gl.deleteShader(vshader)
-  gl.deleteShader(fshader)
+  if (deleteShaders) {
+    gl.deleteShader(vshader)
+    gl.deleteShader(fshader)
+  }
   return {
     program,
     uniforms: getActiveUniforms(gl, program),
@@ -487,11 +480,13 @@ function getUniformBufferLayout(gl, program, index) {
 }
 
 /**
+ * Compiles a shader from source.
  * @param {WebGL2RenderingContext} gl
  * @param {string} src
  * @param {number} type
+ * @returns {WebGLShader | null}
  */
-function createshader(gl, src, type) {
+export function createShaderFromSrc(gl, src, type) {
   let shader = gl.createShader(type)
 
   assert(shader, "No shader created")

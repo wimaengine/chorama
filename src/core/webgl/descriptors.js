@@ -4,7 +4,6 @@ import { ViewRectangle } from "../../utils/index.js";
 import { CompareFunction } from "../constants.js";
 import { MeshVertexLayout } from "../layouts/index.js";
 import { BlendParams, GPUTexture } from "../resources/index.js";
-import { Shader } from "../shader.js";
 /** @import { GPUBuffer } from "../resources/index.js" */
 /** @import { GPUSampler } from "../resources/index.js" */
 
@@ -18,6 +17,15 @@ import { Shader } from "../shader.js";
 
 /**
  * @typedef {readonly [number, number, number, number]} WebGLColorValue
+ */
+
+/**
+ * WebGL shader module descriptor.
+ * The `code` field must contain preprocessed GLSL source.
+ * @typedef WebGLShaderModuleDescriptor
+ * @property {string} code
+ * @property {"vertex" | "fragment"} stage
+ * @property {string} [label]
  */
 
 /**
@@ -134,8 +142,8 @@ import { Shader } from "../shader.js";
 /**
  * @typedef WebGLRenderPipelineDescriptor
  * @property {import("../layouts/index.js").WebGLPipelineLayout} [layout]
- * @property {Shader} vertex
- * @property {{ source: Shader, targets:RenderTargetDescriptor[]}} [fragment]
+ * @property {import("../resources/webglshadermodule.js").WebGLShaderModule} vertex
+ * @property {{ source: import("../resources/webglshadermodule.js").WebGLShaderModule, targets:RenderTargetDescriptor[]}} [fragment]
  * @property {MeshVertexLayout} vertexLayout
  * @property {PrimitiveTopology} topology
  * @property {CullFace} [cullFace]

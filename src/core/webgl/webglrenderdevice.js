@@ -1,4 +1,4 @@
-/**@import { WebGLBindGroupDescriptor, WebGLBufferDescriptor, WebGLRenderPipelineDescriptor, WebGLSamplerDescriptor, WebGLTextureDescriptor } from './descriptors.js' */
+/**@import { WebGLBindGroupDescriptor, WebGLBufferDescriptor, WebGLRenderPipelineDescriptor, WebGLSamplerDescriptor, WebGLShaderModuleDescriptor, WebGLTextureDescriptor } from './descriptors.js' */
 /**@import { WebGLBindGroupLayoutDescriptor, WebGLPipelineLayoutDescriptor } from '../layouts/index.js' */
 import { CullFace, FrontFaceDirection, TextureFormat, TextureType, getTextureFormatSize } from "../../constants/index.js"
 import { assert, assertTrue } from "../../utils/index.js"
@@ -9,8 +9,8 @@ import { WebGLBindGroup } from "./bindgroup.js"
 import { WebGLGPUQueue } from "./gpuqueue.js"
 import { WebGLRenderPipeline } from "./renderpipeline.js"
 import { WebGLRenderPassEncoder } from "./renderpassencoder.js"
-import { GPUBuffer, GPUSampler, GPUTexture } from "../resources/index.js"
-import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, createProgramFromSrc, configureSampler } from "./utils.js"
+import { GPUBuffer, GPUSampler, GPUTexture, WebGLShaderModule } from "../resources/index.js"
+import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, createProgramFromShaders, createShaderFromSrc, configureSampler } from "./utils.js"
 import { CompareFunction } from "../constants.js"
 
 export class WebGLRenderDevice {
@@ -49,6 +49,13 @@ export class WebGLRenderDevice {
   queue
 
   /**
+   * @private
+   * @readonly
+   * @type {WebGLShaderModule}
+   */
+  noopFragmentShaderModule
+
+  /**
    * @param {HTMLCanvasElement} [canvas]
    * @param {WebGLContextAttributes} [options]
    */
@@ -65,6 +72,11 @@ export class WebGLRenderDevice {
     this.extensions = new WebGLExtensions(this.context)
     this.extensions.get("OES_texture_float_linear")
     this.extensions.get("EXT_color_buffer_float")
+    this.noopFragmentShaderModule = this.createShaderModule({
+      code: noopFragment,
+      stage: "fragment",
+      label: "noopFragment"
+    })
   }
 
   /**
@@ -72,10 +84,11 @@ export class WebGLRenderDevice {
    * @param {WebGLRenderPipelineDescriptor} descriptor
    */
   createRenderPipeline(descriptor) {
-    const programInfo = createProgramFromSrc(
+    const fragmentShaderModule = descriptor.fragment?.source ?? this.noopFragmentShaderModule
+    const programInfo = createProgramFromShaders(
       this.context,
-      descriptor.vertex.compile(),
-      descriptor.fragment?.source?.compile() || noopFragment,
+      descriptor.vertex.inner,
+      fragmentShaderModule.inner,
       descriptor.vertexLayout
     )
 
@@ -94,6 +107,21 @@ export class WebGLRenderDevice {
       depthCompare: descriptor.depthCompare ?? CompareFunction.Less,
       depthWrite: descriptor.depthWrite ?? true
     })
+  }
+
+  /**
+   * @param {WebGLShaderModuleDescriptor} descriptor
+   * @returns {WebGLShaderModule}
+   */
+  createShaderModule(descriptor) {
+    const type = descriptor.stage === "fragment"
+      ? this.context.FRAGMENT_SHADER
+      : this.context.VERTEX_SHADER
+    const inner = createShaderFromSrc(this.context, descriptor.code, type)
+
+    assert(inner, "Cannot create webgl shader module")
+
+    return new WebGLShaderModule(this.context, inner, descriptor.stage, descriptor.label)
   }
 
   /**
