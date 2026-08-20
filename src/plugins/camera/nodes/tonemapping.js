@@ -120,10 +120,14 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
   }
 
   const vertexShader = new Shader({
-    source: fullscreenVertex
+    source: fullscreenVertex,
+    defines: new Map(renderer.defines),
+    includes: new Map(renderer.includes)
   })
   const fragmentShader = new Shader({
-    source: tonemappingFragment
+    source: tonemappingFragment,
+    defines: new Map(renderer.defines),
+    includes: new Map(renderer.includes)
   })
 
   if (toneMapping instanceof ReinhardToneMapping) {
@@ -147,27 +151,25 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
     cullFace: CullFace.None,
     topology: PrimitiveTopology.Triangles,
     vertexLayout: new MeshVertexLayout([]),
-    vertex: vertexShader,
+    vertex: device.createShaderModule({
+      code: vertexShader.compile(),
+      stage: "vertex"
+    }),
     fragment: {
-      source: fragmentShader,
+      source: device.createShaderModule({
+        code: fragmentShader.compile(),
+        stage: "fragment"
+      }),
       targets: [{
         format: TextureFormat.RGBA8Unorm
       }]
     }
   }
 
-  for (const [name, value] of renderer.defines) {
-    vertexShader.defines.set(name, value)
-    fragmentShader.defines.set(name, value)
-  }
-  for (const [name, value] of renderer.includes) {
-    vertexShader.includes.set(name, value)
-    fragmentShader.includes.set(name, value)
-  }
 
-  const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
-  pipelineState.pipelineIds.set(key, newId)
-  return pipeline
+    const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
+    pipelineState.pipelineIds.set(key, newId)
+    return pipeline
 }
 
 /**

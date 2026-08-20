@@ -79,29 +79,27 @@ function getRenderPipelineId(device, renderer, mesh, pipelines) {
     const layout = caches.getMeshVertexLayout(mesh.layoutHash)
 
     assert(layout, "Invalid mesh layout")
+    const vertexShader = new Shader({
+        source: basicVertex,
+        defines: new Map(globalDefines),
+        includes: new Map(includes)
+    })
+
     /**
-     * @type {import("src/core").WebGLRenderPipelineDescriptor}
+     * @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor}
      */
     const descriptor = {
         //cullFace:CullFace.None,
         depthWrite: true,
         topology: PrimitiveTopology.Triangles,
         vertexLayout: layout,
-        vertex: new Shader({
-            source: basicVertex
+        vertex: device.createShaderModule({
+            code: vertexShader.compile(),
+            stage: "vertex"
         })
     }
+    const [, newId] = caches.createRenderPipeline(device, descriptor)
 
-
-    for (const [name, value] of globalDefines) {
-        descriptor.vertex.defines.set(name, value)
-        descriptor.fragment?.source?.defines?.set(name, value)
-    }
-    for (const [name, value] of includes) {
-        descriptor.vertex.includes.set(name, value)
-        descriptor.fragment?.source?.includes?.set(name, value)
-    }
-    const [_, newId] = caches.createRenderPipeline(device, descriptor)
 
     pipelines.set(mesh.layoutHash, newId)
     return newId

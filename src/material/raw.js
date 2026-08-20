@@ -1,4 +1,4 @@
-/**@import { WebGLRenderPipelineDescriptor } from '../core/webgl/descriptors.js' */
+import { CullFace, FrontFaceDirection } from "src/constants/others.js"
 import { Sampler, Texture } from "../texture/index.js"
 import { abstractClass, abstractMethod } from "../utils/index.js"
 
@@ -53,7 +53,19 @@ export class RawMaterial {
   }
 
   /**
-   * @param {WebGLRenderPipelineDescriptor} _descriptor
+   * @param {MaterialSpecializeDescriptor} _descriptor
    */
   specialize(_descriptor) { }
 }
+
+/**
+ * Descriptor passed to `specialize()` before shaders are compiled.
+ * @typedef MaterialSpecializeDescriptor
+ * @property {CullFace} [cullFace]
+ * @property {FrontFaceDirection} [frontFace]
+ * @property {boolean} [depthWrite]
+ * @property {{
+ *   source?: import("../core/shader.js").Shader,
+ *   targets?: Array<{ blend?: unknown }>
+ * }} [fragment]
+ */

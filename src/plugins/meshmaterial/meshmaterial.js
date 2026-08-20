@@ -1,5 +1,5 @@
 /**@import { Brand } from '../../utils/index.js' */
-/**@import { WebGLRenderPipeline, WebGLRenderPipelineDescriptor } from '../../core/index.js' */
+/**@import { WebGLRenderPipeline } from '../../core/index.js' */
 import { assert } from '../../utils/index.js'
 import { MeshVertexLayout, Shader, WebGLRenderDevice } from "../../core/index.js";
 import { Mesh, Attribute } from "../../mesh/index.js";
@@ -63,37 +63,54 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
       const { defines, includes } = renderer
       assert(meshLayout, "Mesh layout not available")
       const shaderdefs = getShaderDefs(meshLayout, keyMeshBits, defines)
-      /**
-       * @type {WebGLRenderPipelineDescriptor}
-       */
+      const vertexShader = new Shader({
+        source: material.vertex(),
+        defines: new Map(defines),
+        includes: new Map(includes)
+      })
+      const fragmentShader = new Shader({
+        source: material.fragment(),
+        defines: new Map(defines),
+        includes: new Map(includes)
+      })
+
+      for (const shaderdef of shaderdefs) {
+        vertexShader.defines.set(shaderdef[0], shaderdef[1])
+        fragmentShader.defines.set(shaderdef[0], shaderdef[1])
+      }
       const descriptor = {
         topology: mesh.topology,
         vertexLayout: meshLayout,
-        vertex: new Shader({
-          source: material.vertex()
-        }),
+        vertex: vertexShader,
         fragment: {
-          source: new Shader({
-            source: material.fragment()
-          }),
+          source: fragmentShader,
           targets: [{
             format: TextureFormat.RGBA8Unorm
           }]
         }
       }
 
-      for (const shaderdef of shaderdefs) {
-        descriptor.vertex.defines.set(shaderdef[0], shaderdef[1])
-        descriptor.fragment?.source?.defines?.set(shaderdef[0], shaderdef[1])
-      }
-      for (const [name, value] of includes) {
-        descriptor.vertex.includes.set(name, value)
-        descriptor.fragment?.source?.includes?.set(name, value)
-      }
-
       material.specialize(descriptor)
 
-      const [_, newId] = caches.createRenderPipeline(device, descriptor)
+      const pipelineDescriptor = {
+        ...descriptor,
+        vertex: device.createShaderModule({
+          code: descriptor.vertex.compile(),
+          stage: "vertex"
+        }),
+        fragment: descriptor.fragment
+          ? {
+              ...descriptor.fragment,
+              source: device.createShaderModule({
+                code: descriptor.fragment.source.compile(),
+                stage: "fragment"
+              })
+            }
+          : undefined
+      }
+
+      const [, newId] = caches.createRenderPipeline(device, pipelineDescriptor)
+
 
       return newId
   })

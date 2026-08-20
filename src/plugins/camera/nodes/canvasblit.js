@@ -111,6 +111,17 @@ function getCanvasBlitPipeline(device, renderer, pipelineState, format) {
     pipelineState.pipelineIds.delete(format)
   }
 
+  const vertexShader = new Shader({
+    source: fullscreenVertex,
+    defines: new Map(renderer.defines),
+    includes: new Map(renderer.includes)
+  })
+  const fragmentShader = new Shader({
+    source: blitFragment,
+    defines: new Map(renderer.defines),
+    includes: new Map(renderer.includes)
+  })
+
   /**
    * @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor}
    */
@@ -120,12 +131,14 @@ function getCanvasBlitPipeline(device, renderer, pipelineState, format) {
     cullFace: CullFace.None,
     topology: PrimitiveTopology.Triangles,
     vertexLayout: new MeshVertexLayout([]),
-    vertex: new Shader({
-      source: fullscreenVertex
+    vertex: device.createShaderModule({
+      code: vertexShader.compile(),
+      stage: "vertex"
     }),
     fragment: {
-      source: new Shader({
-        source: blitFragment
+      source: device.createShaderModule({
+        code: fragmentShader.compile(),
+        stage: "fragment"
       }),
       targets: [{
         format
@@ -133,14 +146,6 @@ function getCanvasBlitPipeline(device, renderer, pipelineState, format) {
     }
   }
 
-  for (const [name, value] of renderer.defines) {
-    descriptor.vertex.defines.set(name, value)
-    descriptor.fragment?.source?.defines?.set(name, value)
-  }
-  for (const [name, value] of renderer.includes) {
-    descriptor.vertex.includes.set(name, value)
-    descriptor.fragment?.source?.includes?.set(name, value)
-  }
 
   const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
   pipelineState.pipelineIds.set(format, newId)

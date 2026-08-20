@@ -123,6 +123,17 @@ function getSkyboxRenderPipeline(device, renderer) {
   if (skyboxPipeline.pipelineId !== undefined) {
     return skyboxPipeline.pipelineId
   }
+  const vertexShader = new Shader({
+    source: skyboxVertex,
+    defines: new Map(globalDefines),
+    includes: new Map(includes)
+  })
+  const fragmentShader = new Shader({
+    source: skyboxFragment,
+    defines: new Map(globalDefines),
+    includes: new Map(includes)
+  })
+
   /**
    * @type {WebGLRenderPipelineDescriptor}
    */
@@ -132,12 +143,14 @@ function getSkyboxRenderPipeline(device, renderer) {
     cullFace: CullFace.Front,
     topology: PrimitiveTopology.Triangles,
     vertexLayout: new MeshVertexLayout([]),
-    vertex: new Shader({
-      source: skyboxVertex
+    vertex: device.createShaderModule({
+      code: vertexShader.compile(),
+      stage: "vertex"
     }),
     fragment: {
-      source: new Shader({
-        source: skyboxFragment
+      source: device.createShaderModule({
+        code: fragmentShader.compile(),
+        stage: "fragment"
       }),
       targets: [{
         format: TextureFormat.RGBA8Unorm
@@ -145,16 +158,8 @@ function getSkyboxRenderPipeline(device, renderer) {
     }
   }
 
-  for (const [name, value] of globalDefines) {
-    descriptor.vertex.defines.set(name, value)
-    descriptor.fragment?.source?.defines?.set(name, value)
-  }
-  for (const [name, value] of includes) {
-    descriptor.vertex.includes.set(name, value)
-    descriptor.fragment?.source?.includes?.set(name, value)
-  }
-
   const [pipeline, newId] = caches.createRenderPipeline(device, descriptor)
+
   const skyboxBlockLayout = pipeline.uniformBlocks.get("SkyBoxBlock")
 
   assert(skyboxBlockLayout, "SkyBoxBlock uniform block missing")

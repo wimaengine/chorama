@@ -154,6 +154,17 @@ export class SkeletonHelperPlugin extends Plugin {
       }
     }
 
+    const vertexShader = new Shader({
+      source: skeletonVertex,
+      defines: new Map(globalDefines),
+      includes: new Map(includes)
+    })
+    const fragmentShader = new Shader({
+      source: skeletonFragment,
+      defines: new Map(globalDefines),
+      includes: new Map(includes)
+    })
+
     /**
      * @type {WebGLRenderPipelineDescriptor}
      */
@@ -162,28 +173,28 @@ export class SkeletonHelperPlugin extends Plugin {
       depthCompare: CompareFunction.Always,
       topology: PrimitiveTopology.Lines,
       vertexLayout: new MeshVertexLayout([]),
-      vertex: new Shader({
-        source: skeletonVertex
+      vertex: device.createShaderModule({
+        code: vertexShader.compile(),
+        stage: "vertex"
       }),
       fragment: {
-        source: new Shader({
-          source: skeletonFragment
+        source: device.createShaderModule({
+          code: fragmentShader.compile(),
+          stage: "fragment"
         }),
         targets: [{
           format: TextureFormat.RGBA8Unorm
         }]
       }
     }
-
-    for (const [name, value] of globalDefines) {
-      descriptor.vertex.defines.set(name, value)
-      descriptor.fragment?.source?.defines?.set(name, value)
+    let newRenderPipeline
+    let newId
+    try {
+      [newRenderPipeline, newId] = caches.createRenderPipeline(device, descriptor)
+    } finally {
+      descriptor.vertex.destroy()
+      descriptor.fragment?.source.destroy()
     }
-    for (const [name, value] of includes) {
-      descriptor.vertex.includes.set(name, value)
-      descriptor.fragment?.source?.includes?.set(name, value)
-    }
-    const [newRenderPipeline, newId] = caches.createRenderPipeline(device, descriptor)
 
     this.pipelineId = newId
     return newRenderPipeline

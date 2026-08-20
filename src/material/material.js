@@ -1,5 +1,3 @@
-/**@import { WebGLRenderPipelineDescriptor } from '../core/webgl/descriptors.js' */
-
 import {
   CullFace,
   FrontFaceDirection
@@ -102,7 +100,7 @@ export class Material extends RawMaterial {
 
   /**
    * @override
-   * @param {WebGLRenderPipelineDescriptor} descriptor
+   * @param {import("./raw.js").MaterialSpecializeDescriptor} descriptor
    */
   specialize(descriptor) {
     const alphaBlendMode = this.alphaBlendMode()
