@@ -2,8 +2,12 @@
   "include": [
     "../env.d.ts",
     "../src",
-    "../examples",
-    "../libs/color.js"
+    "../examples"
+  ],
+  "exclude":[
+    "../node_modules",
+    "../dist",
+    "../src/content.config.js"
   ],
   "compilerOptions": {
     "strict": true,
@@ -26,12 +30,11 @@
     "allowSyntheticDefaultImports": true,
     "target": "es2022",
     "preserveSymlinks": true,
-    "baseUrl": "..",
     "checkJs": true,
     "skipLibCheck": true,
     "paths": {
       "chorama": [
-        "./src/index.js"
+        "../src/index.js"
       ]
     },
     "composite": true,
