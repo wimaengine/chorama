@@ -1,7 +1,8 @@
-import { Affine3, Matrix4 } from "../../math/index.js"
+import { Affine3, Color, Matrix4 } from "../../math/index.js"
 import { Object3D } from "../object3d.js"
 import { RenderTarget } from "../../rendertarget/index.js"
 import { PerspectiveProjection, Projection } from "./projection.js"
+import { Range, ViewRectangle } from "../../utils/index.js"
 
 export class ReinhardToneMapping {
 	/**
@@ -79,6 +80,36 @@ export class Camera extends Object3D {
 	near = 0.1
 	
 	far = 2000
+
+	/**
+	 * @type {Color | undefined}
+	 */
+	clearColor = new Color(0, 0, 0, 1)
+
+	/**
+	 * @type {number | undefined}
+	 */
+	clearDepth = 1
+
+	/**
+	 * @type {number | undefined}
+	 */
+	clearStencil = 0
+
+	/**
+	 * @type {ViewRectangle}
+	 */
+	viewport = new ViewRectangle()
+
+	/**
+	 * @type {ViewRectangle | undefined}
+	 */
+	scissor
+
+	/**
+	 * @type {Range}
+	 */
+	depthRange = new Range()
 
 	/**
 	 * @type {RenderTarget}

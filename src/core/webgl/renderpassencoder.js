@@ -488,8 +488,10 @@ function attachTextureToFramebuffer(context, attachment, texture, mipLevel, laye
  * @param {WebGLRenderPassDescriptor} descriptor
  */
 function setInitialViewportAndScissor(context, descriptor) {
-  const { viewport, scissor } = descriptor
+  const { viewport, scissor, depthRange } = descriptor
   const viewportPixels = rectangleToPixels(descriptor, viewport)
+  const minDepth = depthRange?.start ?? 0
+  const maxDepth = depthRange?.end ?? 1
 
   context.viewport(
     viewportPixels.x,
@@ -497,6 +499,7 @@ function setInitialViewportAndScissor(context, descriptor) {
     viewportPixels.width,
     viewportPixels.height
   )
+  context.depthRange(minDepth, maxDepth)
 
   const scissorRectangle = scissor || viewport
 

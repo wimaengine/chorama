@@ -98,24 +98,24 @@ const settings = {
   enableScissors: false
 }
 const controls = new GUI()
-const canvasopts = controls.addFolder("Canvas Render Target")
-canvasopts.add(renderTarget.viewport.offset, 'x', 0, 1).name("Viewport X")
-canvasopts.add(renderTarget.viewport.offset, 'y', 0, 1).name("Viewport Y")
-canvasopts.add(renderTarget.viewport.size, 'x', 0, 1).name("Viewport Width")
-canvasopts.add(renderTarget.viewport.size, 'y', 0, 1).name("Viewport Hieght")
+const canvasopts = controls.addFolder("Camera View")
+canvasopts.add(camera.viewport.offset, 'x', 0, 1).name("Viewport X")
+canvasopts.add(camera.viewport.offset, 'y', 0, 1).name("Viewport Y")
+canvasopts.add(camera.viewport.size, 'x', 0, 1).name("Viewport Width")
+canvasopts.add(camera.viewport.size, 'y', 0, 1).name("Viewport Hieght")
 /**@type {GUI} */
 let scissorsFolder
 canvasopts.add(settings, "enableScissors").onChange((value) => {
   if (value) {
-    renderTarget.scissor = new ViewRectangle()
+    camera.scissor = new ViewRectangle()
     scissorsFolder = canvasopts.addFolder('Scissors')
-    scissorsFolder.add(renderTarget.scissor.offset, 'x', 0, 1).name("Scissor X")
-    scissorsFolder.add(renderTarget.scissor.offset, 'y', 0, 1).name("Scissor Y")
-    scissorsFolder.add(renderTarget.scissor.size, 'x', 0, 1).name("Scissor Width")
-    scissorsFolder.add(renderTarget.scissor.size, 'y', 0, 1).name("Scissor Hieght")
+    scissorsFolder.add(camera.scissor.offset, 'x', 0, 1).name("Scissor X")
+    scissorsFolder.add(camera.scissor.offset, 'y', 0, 1).name("Scissor Y")
+    scissorsFolder.add(camera.scissor.size, 'x', 0, 1).name("Scissor Width")
+    scissorsFolder.add(camera.scissor.size, 'y', 0, 1).name("Scissor Hieght")
   } else {
     canvasopts.removeFolder(scissorsFolder)
-    renderTarget.scissor = undefined
+    camera.scissor = undefined
   }
 })
 canvasopts.open()

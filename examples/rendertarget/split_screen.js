@@ -68,10 +68,10 @@ camera1.renderMask.clear().on(LEFT_VIEW)
 camera2.renderMask.clear().on(RIGHT_VIEW)
 
 // set up render targets
-renderTarget1.viewport.offset.set(0, 0)
-renderTarget1.viewport.size.set(0.5, 1)
-renderTarget2.viewport.offset.set(0.5, 0)
-renderTarget2.viewport.size.set(0.5, 1)
+camera1.viewport.offset.set(0, 0)
+camera1.viewport.size.set(0.5, 1)
+camera2.viewport.offset.set(0.5, 0)
+camera2.viewport.size.set(0.5, 1)
 
 //set up the cameras
 camera1.transform.position.z = 5

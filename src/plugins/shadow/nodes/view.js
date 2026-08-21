@@ -13,7 +13,7 @@ export class ShadowViewNode {
     }
 
     /**
-     * @param {import("src/renderer").RenderGraphContext} graphcontext
+     * @param {import("../../../renderer").RenderGraphContext} graphcontext
      */
     execute(graphcontext){
     const {renderDevice: device, renderer, objects } = graphcontext

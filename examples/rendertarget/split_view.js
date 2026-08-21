@@ -73,8 +73,8 @@ camera1.renderMask.clear().on(LEFT_VIEW)
 camera2.renderMask.clear().on(RIGHT_VIEW)
 
 // set up scissors
-renderTarget1.scissor = new ViewRectangle()
-renderTarget2.scissor = new ViewRectangle()
+camera1.scissor = new ViewRectangle()
+camera2.scissor = new ViewRectangle()
 
 //set up the cameras
 camera1.transform.position.z = 5
@@ -128,10 +128,10 @@ screenFolder.open()
  * @param {number} value
  */
 function updateRenderTargets(value) {
-  if (renderTarget1.scissor && renderTarget2.scissor) {
-    renderTarget1.scissor.size.set(value, 1)
-    renderTarget2.scissor.offset.set(value, 0)
-    renderTarget2.scissor.size.set(1 - value, 1)
+  if (camera1.scissor && camera2.scissor) {
+    camera1.scissor.size.set(value, 1)
+    camera2.scissor.offset.set(value, 0)
+    camera2.scissor.size.set(1 - value, 1)
   }
 }
 addRenderGraphGuiAddon({

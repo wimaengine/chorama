@@ -37,15 +37,16 @@ export class CanvasBlitNode {
         continue
       }
 
-      const cameraColorTarget = colorTargets.get(view.object)
+      const camera = view.object
+      const cameraColorTarget = colorTargets.get(camera)
       if (!cameraColorTarget) {
         continue
       }
 
       const canvasSource = cameraColorTarget.target
 
-      if (view.object.target instanceof CanvasTarget && canvasSource) {
-        const canvasTarget = /**@type {CanvasTarget} */ (view.object.target)
+      if (camera.target instanceof CanvasTarget && canvasSource) {
+        const canvasTarget = /**@type {CanvasTarget} */ (camera.target)
         const canvasTexture = renderer.caches.getTexture(renderDevice, canvasSource)
 
         canvasTarget.changed()
@@ -68,8 +69,9 @@ export class CanvasBlitNode {
             loadOp: "load",
             storeOp: "store"
           }],
-          viewport: canvasTarget.viewport,
-          scissor: canvasTarget.scissor || canvasTarget.viewport
+          viewport: camera.viewport,
+          scissor: camera.scissor || camera.viewport,
+          depthRange: camera.depthRange
         })
 
         pass.setPipeline(pipeline, renderer.caches.uniformBuffers)

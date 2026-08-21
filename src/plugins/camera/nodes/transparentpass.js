@@ -52,8 +52,9 @@ function renderItems(view, device, renderer, colorTargets) {
       depthStoreOp: "store",
       depthReadOnly: true
     }) : undefined,
-    viewport: renderTarget.viewport,
-    scissor: renderTarget.scissor || renderTarget.viewport
+    viewport: camera.viewport,
+    scissor: camera.scissor || camera.viewport,
+    depthRange: camera.depthRange
   })
 
   transparentStage.renderItems(pass, device.context, caches, view)

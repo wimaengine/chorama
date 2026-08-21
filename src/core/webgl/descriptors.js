@@ -1,6 +1,6 @@
 import { BufferUsage, BufferType, TextureType, TextureFormat, TextureFilter, TextureWrap, CullFace, FrontFaceDirection, PrimitiveTopology } from "../../constants/index.js";
 import { Vector3 } from "../../math/index.js";
-import { ViewRectangle } from "../../utils/index.js";
+import { Range, ViewRectangle } from "../../utils/index.js";
 import { CompareFunction } from "../constants.js";
 import { MeshVertexLayout } from "../layouts/index.js";
 import { BlendParams, GPUTexture } from "../resources/index.js";
@@ -39,6 +39,7 @@ import { BlendParams, GPUTexture } from "../resources/index.js";
  * @property {WebGLRenderPassDepthStencilAttachment} [depthStencilAttachment]
  * @property {ViewRectangle} [viewport]
  * @property {ViewRectangle} [scissor]
+ * @property {Range} [depthRange]
  */
 
 /**

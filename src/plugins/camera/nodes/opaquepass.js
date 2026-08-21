@@ -37,7 +37,7 @@ function renderItems(view, device, renderer, colorTargets) {
 
   const width = renderTarget.width
   const height = renderTarget.height
-  const clearColor = renderTarget.clearColor
+  const clearColor = camera.clearColor
   const clearValue = clearColor ? /** @type {const} */ ([clearColor.r, clearColor.g, clearColor.b, clearColor.a]) : undefined
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
@@ -52,12 +52,13 @@ function renderItems(view, device, renderer, colorTargets) {
     }],
     depthStencilAttachment: depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
       texture: depthTexture,
-      depthLoadOp: renderTarget.clearDepth !== undefined ? "clear" : "load",
+      depthLoadOp: camera.clearDepth !== undefined ? "clear" : "load",
       depthStoreOp: "store",
-      depthClearValue: renderTarget.clearDepth
+      depthClearValue: camera.clearDepth
     }) : undefined,
-    viewport: renderTarget.viewport,
-    scissor: renderTarget.scissor || renderTarget.viewport
+    viewport: camera.viewport,
+    scissor: camera.scissor || camera.viewport,
+    depthRange: camera.depthRange
   })
 
 

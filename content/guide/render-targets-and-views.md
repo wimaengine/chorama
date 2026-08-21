@@ -11,7 +11,7 @@ Here, we focus on where the camera renders and how to split output.
 
 - a canvas render target
 - an offscreen image render target
-- viewport/scissor based view layouts
+- viewport/scissor based camera layouts
 
 ## Step 1: Import Render Target APIs
 
@@ -38,6 +38,7 @@ const camera = new Camera(canvasTarget);
 ```
 
 This is the default path for rendering directly to the page.
+The camera now owns viewport, scissor, clear, and depth-range state for the pass.
 
 ## Step 3: Render a Scene to the Canvas Target
 
@@ -97,21 +98,21 @@ Use multiple `CanvasTarget` instances on the same canvas.
 const leftTarget = new CanvasTarget(canvas);
 const rightTarget = new CanvasTarget(canvas);
 
-leftTarget.viewport.offset.set(0, 0);
-leftTarget.viewport.size.set(0.5, 1);
+const leftCamera = new Camera(leftTarget);
+const rightCamera = new Camera(rightTarget);
 
-rightTarget.viewport.offset.set(0.5, 0);
-rightTarget.viewport.size.set(0.5, 1);
+leftCamera.viewport.offset.set(0, 0);
+leftCamera.viewport.size.set(0.5, 1);
+
+rightCamera.viewport.offset.set(0.5, 0);
+rightCamera.viewport.size.set(0.5, 1);
 ```
 
-Viewport values are normalized (0 to 1) relative to full canvas size.
+Viewport values are normalized (0 to 1) relative to full canvas size and are read from the camera.
 
 ## Step 8: Bind Cameras to Each View and Render Once
 
 ```js
-const leftCamera = new Camera(leftTarget);
-const rightCamera = new Camera(rightTarget);
-
 renderer.render([scene, leftCamera, rightCamera], device);
 ```
 
@@ -120,17 +121,17 @@ This gives independent camera views in a single canvas. If a camera should see a
 ## Step 9: Use Scissor for Hard Split/Masking
 
 ```js
-leftTarget.scissor = new ViewRectangle();
-rightTarget.scissor = new ViewRectangle();
+leftCamera.scissor = new ViewRectangle();
+rightCamera.scissor = new ViewRectangle();
 
-leftTarget.scissor.offset.set(0, 0);
-leftTarget.scissor.size.set(0.5, 1);
+leftCamera.scissor.offset.set(0, 0);
+leftCamera.scissor.size.set(0.5, 1);
 
-rightTarget.scissor.offset.set(0.5, 0);
-rightTarget.scissor.size.set(0.5, 1);
+rightCamera.scissor.offset.set(0.5, 0);
+rightCamera.scissor.size.set(0.5, 1);
 ```
 
-Scissor restricts actual draw area, useful for editor layouts and split bars.
+Scissor restricts actual draw area, useful for editor layouts and split bars. It also lives on the camera now.
 
 ## Resize Rule for Multi-View Scenes
 

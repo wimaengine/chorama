@@ -64,14 +64,14 @@ const skyBox = new SkyBox({
   night:day
 })
 // set up render target viewports
-renderTarget1.viewport.offset.set(0, 0)
-renderTarget1.viewport.size.set(0.5, 0.5)
-renderTarget2.viewport.offset.set(0.5, 0)
-renderTarget2.viewport.size.set(0.5, 0.5)
-renderTarget3.viewport.offset.set(0, 0.5)
-renderTarget3.viewport.size.set(0.5, 0.5)
-renderTarget4.viewport.offset.set(0.5, 0.5)
-renderTarget4.viewport.size.set(0.5, 0.5)
+camera1.viewport.offset.set(0, 0)
+camera1.viewport.size.set(0.5, 0.5)
+camera2.viewport.offset.set(0.5, 0)
+camera2.viewport.size.set(0.5, 0.5)
+camera3.viewport.offset.set(0, 0.5)
+camera3.viewport.size.set(0.5, 0.5)
+camera4.viewport.offset.set(0.5, 0.5)
+camera4.viewport.size.set(0.5, 0.5)
 
 //set up the cameras
 camera1.transform.position.z = 5

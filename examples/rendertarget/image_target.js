@@ -86,7 +86,7 @@ camera1.renderMask.clear().on(OFFSCREEN_VIEW)
 camera2.renderMask.clear().on(MAIN_VIEW)
 
 //set up the cameras
-renderTarget.clearColor = Color.CYAN.clone()
+camera1.clearColor = Color.CYAN.clone()
 camera1.target = renderTarget
 camera1.transform.position.z = 5
 camera2.transform.position.z = 5
