@@ -1,6 +1,6 @@
 {
   "name": "chorama",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A rendering library",
   "keywords": [
     "rendering",
@@ -8,13 +8,13 @@
     "draw",
     "game"
   ],
-  "homepage": "https://github.com/waynemwashuma/chorama#readme",
+  "homepage": "https://github.com/wimaengine/chorama#readme",
   "bugs": {
-    "url": "https://github.com/waynemwashuma/chorama/issues"
+    "url": "https://github.com/wimaengine/chorama/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/waynemwashuma/chorama.git"
+    "url": "git+https://github.com/wimaengine/chorama.git"
   },
   "license": "MIT",
   "author": "Wayne Mwashuma",
