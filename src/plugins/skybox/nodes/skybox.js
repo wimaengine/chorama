@@ -3,7 +3,7 @@ import { CompareFunction, MeshVertexLayout, Shader } from "../../../core/index.j
 import { CullFace, PrimitiveTopology, TextureFormat, UniformType } from "../../../constants/index.js"
 import { Affine3 } from "../../../math/index.js"
 import { Camera, Object3D, SkyBox } from "../../../objects/index.js"
-import { RenderItem, Views } from "../../../renderer/index.js"
+import { RenderItem, ViewBindGroups, Views } from "../../../renderer/index.js"
 import { skyboxFragment, skyboxVertex } from "../../../shader/index.js"
 import { assert } from "../../../utils/index.js"
 import { SkyboxPipeline, SkyBoxMesh } from "../resources/index.js"
@@ -48,7 +48,7 @@ export class SkyBoxNode {
             return true
           }
 
-          const item = createSkyboxRenderItem(child, renderDevice, renderer)
+          const item = createSkyboxRenderItem(child, renderDevice, renderer, view)
 
           if (item) {
             opaqueStage.add(item)
@@ -65,9 +65,10 @@ export class SkyBoxNode {
  * @param {SkyBox} object
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/index.js").WebGLRenderer} renderer
+ * @param {import("../../../renderer/index.js").View} view
  * @returns {RenderItem | undefined}
  */
-function createSkyboxRenderItem(object, device, renderer) {
+function createSkyboxRenderItem(object, device, renderer, view) {
   const skyboxMesh = renderer.getResource(SkyBoxMesh)
   const skyboxPipeline = renderer.getResource(SkyboxPipeline)
 
@@ -82,7 +83,7 @@ function createSkyboxRenderItem(object, device, renderer) {
   }
 
   const mesh = renderer.caches.getMesh(device, skyboxMesh.cube, renderer.attributes)
-  const pipelineId = getSkyboxRenderPipeline(device, renderer)
+  const pipelineId = getSkyboxRenderPipeline(device, renderer, view)
   const pipeline = renderer.caches.getRenderPipeline(pipelineId)
   const skyboxBlockLayout = pipeline?.uniformBlocks.get("SkyBoxBlock")
 
@@ -113,12 +114,22 @@ function createSkyboxRenderItem(object, device, renderer) {
 /**
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/index.js").WebGLRenderer} renderer
+ * @param {import("../../../renderer/index.js").View} view
  */
-function getSkyboxRenderPipeline(device, renderer) {
+function getSkyboxRenderPipeline(device, renderer, view) {
   const skyboxPipeline = renderer.getResource(SkyboxPipeline)
+  const sceneBindGroups = renderer.getResource(ViewBindGroups)
   const { caches, includes, defines: globalDefines } = renderer
 
   assert(skyboxPipeline, "SkyboxPipeline resource missing")
+  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  const object = view.object
+
+  assert(object, "View object missing")
+  const sceneBindGroup = sceneBindGroups.getOrSet(device, object)
+
+  assert(sceneBindGroup, "Scene bind group missing")
+  assert(sceneBindGroup.layout, "SceneBindGroup layout missing")
 
   if (skyboxPipeline.pipelineId !== undefined) {
     return skyboxPipeline.pipelineId
@@ -213,7 +224,14 @@ function getSkyboxRenderPipeline(device, renderer) {
 
   skyboxPipeline.bindGroupLayout = bindGroupLayout
   skyboxPipeline.pipelineLayout = pipeline.layout
-  skyboxPipeline.pipelineLayout.setBindGroupLayout(0, bindGroupLayout)
+
+  const sceneLayout = skyboxPipeline.pipelineLayout.getBindGroupLayout(0)
+
+  if (!sceneLayout) {
+    skyboxPipeline.pipelineLayout.setBindGroupLayout(0, sceneBindGroup.layout)
+  }
+
+  skyboxPipeline.pipelineLayout.setBindGroupLayout(1, bindGroupLayout)
 
   skyboxPipeline.pipelineId = newId
 

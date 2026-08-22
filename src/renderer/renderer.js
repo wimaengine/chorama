@@ -9,6 +9,7 @@ import { Attribute } from "../mesh/index.js"
 import { Plugin } from "./plugin.js"
 import { RenderGraph, SortViewsNode } from "./graph/index.js"
 import { Views } from "./views.js"
+import { ViewBindGroups } from "./resources/index.js"
 
 export class WebGLRenderer {
 
@@ -84,6 +85,7 @@ export class WebGLRenderer {
       .set(Attribute.JointIndex.name, Attribute.JointIndex)
       .set(Attribute.JointWeight.name, Attribute.JointWeight)
     this.setResource(new Views())
+    this.setResource(new ViewBindGroups())
 
     this.renderGraph = new RenderGraph()
     this.renderGraph.addNode(SortViewsNode.name, new SortViewsNode())

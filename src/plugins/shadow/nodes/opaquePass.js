@@ -1,5 +1,6 @@
 import { Camera } from "../../../objects/index.js"
 import { RenderItem, Views } from "../../../renderer/index.js"
+import { ViewBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { Affine3 } from "../../../math/index.js"
 import { ImageRenderTarget } from "../../../rendertarget/index.js"
@@ -15,6 +16,7 @@ function renderItems(view, device, renderer) {
 
   const context = device.context
   const caches = renderer.caches
+  const sceneBindGroups = renderer.getResource(ViewBindGroups)
 
   if (!(renderTarget instanceof ImageRenderTarget)) {
     throw "Shadow opaque pass expects an image render target"
@@ -59,6 +61,12 @@ function renderItems(view, device, renderer) {
     scissor: imageTarget.scissor || imageTarget.viewport
   })
 
+  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  const object = view.object
+
+  assert(object, "View object missing")
+  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches))
+
   for (let i = 0; i < opaqueStage.items.length; i++) {
     // SAFETY: List is dense
     const { pipelineId, mesh, bindGroup, transform } = /**@type {RenderItem}*/(opaqueStage.items[i])
@@ -77,7 +85,7 @@ function renderItems(view, device, renderer) {
       context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))
     }
     if (bindGroup) {
-      pass.setBindGroup(0, bindGroup)
+      pass.setBindGroup(1, bindGroup)
     }
     pass.draw(mesh)
   }

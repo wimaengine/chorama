@@ -153,7 +153,7 @@ export class RenderStage {
       }
 
       if (bindGroup) {
-        pass.setBindGroup(0, bindGroup)
+        pass.setBindGroup(1, bindGroup)
       }
       pass.draw(mesh)
     }
@@ -201,7 +201,7 @@ export class SortedRenderStage extends RenderStage {
       }
 
       if (bindGroup) {
-        pass.setBindGroup(0, bindGroup)
+        pass.setBindGroup(1, bindGroup)
       }
 
       pass.draw(mesh)

@@ -1,7 +1,7 @@
 import { Affine3, Matrix4, Vector3 } from "hisabati"
 import { DirectionalLight, SpotLight, PointLight, PCFShadowFilter, PCSSShadowFilter } from "../../../objects"
 import { Object3D, PerspectiveProjection } from "../../../objects"
-import { Views, View } from "../../../renderer"
+import { Views, View, ViewBindGroups } from "../../../renderer"
 import { ShadowMap } from "../resources/ShadowMap"
 import { assert } from "../../../utils"
 
@@ -20,11 +20,13 @@ export class ShadowViewNode {
     const { context } = device
     const shadowMap = renderer.getResource(ShadowMap)
     const views = renderer.getResource(Views)
+    const sceneBindGroups = renderer.getResource(ViewBindGroups)
     /** @type {ShadowItem[]}*/
     const blocks = []
     
     assert(shadowMap, "Shadow map not set up.")
     assert(views, "Views resource missing")
+    assert(sceneBindGroups, "SceneBindGroups resource missing")
 
     shadowMap.reset()
     for (let i = 0; i < objects.length; i++) {
@@ -48,6 +50,12 @@ export class ShadowViewNode {
         area.spaceIndex = blocks.length
         blocks.push(items[0])
         items[1].forEach(e => e.order = -100)
+        items[1].forEach((view) => {
+          const object = view.object
+
+          assert(object, "View object missing")
+          sceneBindGroups.getOrSet(device, object)
+        })
         views.push(...items[1])
 
         return true

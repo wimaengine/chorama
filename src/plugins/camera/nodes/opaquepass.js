@@ -1,5 +1,5 @@
 import { Camera } from "../../../objects/index.js"
-import { Views } from "../../../renderer/index.js"
+import { ViewBindGroups, Views } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 
@@ -15,6 +15,7 @@ function renderItems(view, device, renderer, colorTargets) {
 
   const context = device.context
   const caches = renderer.caches
+  const sceneBindGroups = renderer.getResource(ViewBindGroups)
 
   if (!(view.object instanceof Camera)) {
     throw "Camera opaque pass expects a camera view"
@@ -26,6 +27,10 @@ function renderItems(view, device, renderer, colorTargets) {
 
   assert(cameraColorTarget, "Camera color target missing")
   assert(renderTarget, "Camera render target missing")
+  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  const object = view.object
+
+  assert(object, "View object missing")
 
   const colorTarget = cameraColorTarget.target
 
@@ -61,6 +66,7 @@ function renderItems(view, device, renderer, colorTargets) {
     depthRange: camera.depthRange
   })
 
+  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches))
 
   opaqueStage.renderItems(pass, context, caches)
   alphaMaskStage.renderItems(pass, context, caches)

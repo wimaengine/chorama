@@ -1,7 +1,7 @@
 import { assert } from "../../../utils/index.js"
 import { Camera, MeshMaterial3D, Object3D } from "../../../objects/index.js"
 import { AlphaMaskMode, TransparentMode } from "../../../material/index.js"
-import { Views } from "../../../renderer/index.js"
+import { ViewBindGroups, Views } from "../../../renderer/index.js"
 import { BoneTextureResource, MeshMaterialPipelines } from "../resources/index.js"
 import { createMeshMaterialRenderItem } from "../meshmaterial.js"
 
@@ -49,6 +49,14 @@ export class MeshMaterialNode {
         continue
       }
 
+      const sceneBindGroups = renderer.getResource(ViewBindGroups)
+
+      assert(sceneBindGroups, "SceneBindGroups resource missing")
+      const object = view.object
+
+      assert(object, "View object missing")
+      sceneBindGroups.getOrSet(renderDevice, object)
+
       for (let i = 0; i < objects.length; i++) {
         // SAFETY: Asssume the list is dense
         const object = /**@type {Object3D}*/(objects[i])
@@ -62,7 +70,7 @@ export class MeshMaterialNode {
             return true
           }
 
-          const item = createMeshMaterialRenderItem(child, renderDevice, renderer, pipelines)
+          const item = createMeshMaterialRenderItem(child, renderDevice, renderer, pipelines, view)
 
           if (item) {
             const alphaBlendMode = child.material.alphaBlendMode()
