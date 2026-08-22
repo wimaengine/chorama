@@ -32,6 +32,12 @@ export class WebGLBindGroup {
   entryMap = new Map()
 
   /**
+   * @private
+   * @type {readonly number[]}
+   */
+  dynamicBufferBindings = []
+
+  /**
    * @param {WebGLBindGroupDescriptor} descriptor
    */
   constructor({ label, layout, entries }) {
@@ -52,6 +58,11 @@ export class WebGLBindGroup {
     for (const layoutEntry of layout.entries) {
       assertTrue(this.entryMap.has(layoutEntry.binding), `Bind group is missing binding ${layoutEntry.binding}`)
     }
+
+    this.dynamicBufferBindings = layout.entries
+      .filter((entry) => entry.buffer?.hasDynamicOffset)
+      .map((entry) => entry.binding)
+      .sort((a, b) => a - b)
   }
 
   /**
@@ -66,8 +77,11 @@ export class WebGLBindGroup {
    * @param {WebGL2RenderingContext} context
    * @param {WebGLRenderPipeline} pipeline
    * @param {number} bindGroupIndex
+   * @param {ReadonlyArray<number>} [dynamicOffsets] Offsets for dynamic uniform-buffer bindings, in ascending binding order.
    */
-  apply(context, pipeline, bindGroupIndex) {
+  apply(context, pipeline, bindGroupIndex, dynamicOffsets = []) {
+    const dynamicOffsetsByBinding = resolveDynamicOffsets(this.dynamicBufferBindings, dynamicOffsets, this.label)
+
     for (const entry of this.entries) {
       const layoutEntry = /** @type {WebGLBindGroupLayoutEntry} */ (this.layout.getEntry(entry.binding))
 
@@ -77,7 +91,8 @@ export class WebGLBindGroup {
           pipeline,
           bindGroupIndex,
           layoutEntry,
-          /** @type {WebGLBindGroupBufferResource} */ (entry.resource)
+          /** @type {WebGLBindGroupBufferResource} */ (entry.resource),
+          dynamicOffsetsByBinding.get(layoutEntry.binding) ?? 0
         )
         continue
       }
@@ -164,6 +179,33 @@ function validateSamplerResource(resource, layoutEntry) {
 }
 
 /**
+ * @param {readonly number[]} dynamicBufferBindings
+ * @param {ReadonlyArray<number>} dynamicOffsets
+ * @param {string | undefined} [label]
+ * @returns {Map<number, number>}
+ */
+function resolveDynamicOffsets(dynamicBufferBindings, dynamicOffsets, label) {
+  const labelSuffix = label !== undefined ? ` ${label}` : ""
+
+  assertTrue(
+    dynamicOffsets.length === dynamicBufferBindings.length,
+    `Bind group${labelSuffix} expects ${dynamicBufferBindings.length} dynamic offset${dynamicBufferBindings.length === 1 ? "" : "s"}, got ${dynamicOffsets.length}`
+  )
+
+  const offsetsByBinding = new Map()
+
+  for (let i = 0; i < dynamicBufferBindings.length; i++) {
+    const binding = dynamicBufferBindings[i]
+    const dynamicOffset = /** @type {number} */ (dynamicOffsets[i])
+
+    assertTrue(Number.isInteger(dynamicOffset) && dynamicOffset >= 0, `Bind group${labelSuffix} dynamic offset for binding ${binding} is invalid`)
+    offsetsByBinding.set(binding, dynamicOffset)
+  }
+
+  return offsetsByBinding
+}
+
+/**
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPipeline} pipeline
  * @param {string} name
@@ -226,17 +268,24 @@ function applySamplerBinding(context, pipeline, resource, layoutEntry) {
  * @param {number} bindGroupIndex
  * @param {WebGLBindGroupLayoutEntry} layoutEntry
  * @param {WebGLBindGroupBufferResource} resource
+ * @param {number} [dynamicOffset=0]
  */
-function applyBufferBinding(context, pipeline, bindGroupIndex, layoutEntry, resource) {
+function applyBufferBinding(context, pipeline, bindGroupIndex, layoutEntry, resource, dynamicOffset = 0) {
   const point = pipeline.layout.getBindGroupBufferPoint(bindGroupIndex, layoutEntry.binding)
 
   assertTrue(point !== undefined, `Pipeline layout does not allocate a binding point for bind group ${bindGroupIndex} binding ${layoutEntry.binding}`)
   const bindingPoint = /** @type {number} */ (point)
 
   const { buffer, offset = 0, size } = resource
+  const bindingOffset = offset + dynamicOffset
+  const bindingSize = size ?? (buffer.size - offset)
 
-  if (size !== undefined) {
-    context.bindBufferRange(buffer.type, bindingPoint, buffer.inner, offset, size)
+  if (bindingOffset !== 0 || size !== undefined) {
+    const alignment = context.getParameter(context.UNIFORM_BUFFER_OFFSET_ALIGNMENT)
+
+    assertTrue(bindingOffset % alignment === 0, `Bind group binding ${layoutEntry.binding} offset must be aligned to ${alignment}`)
+    assertTrue(bindingOffset + bindingSize <= buffer.size, `Bind group binding ${layoutEntry.binding} range exceeds the buffer size`)
+    context.bindBufferRange(buffer.type, bindingPoint, buffer.inner, bindingOffset, bindingSize)
   } else {
     context.bindBufferBase(buffer.type, bindingPoint, buffer.inner)
   }

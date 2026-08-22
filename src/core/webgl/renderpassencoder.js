@@ -7,6 +7,12 @@ import { assert } from "../../utils/index.js"
 import { assertTrue } from "../../utils/index.js"
 
 /**
+ * @typedef WebGLBoundBindGroup
+ * @property {WebGLBindGroup} bindGroup
+ * @property {ReadonlyArray<number>} dynamicOffsets
+ */
+
+/**
  * @typedef WebGLVertexBufferBinding
  * @property {GPUBuffer} buffer
  * @property {number} offset
@@ -26,7 +32,7 @@ export class WebGLRenderPassEncoder {
   pipeline
   /**
    * @private
-   * @type {(WebGLBindGroup | undefined)[]}
+   * @type {(WebGLBoundBindGroup | undefined)[]}
    */
   bindGroups = []
   /**
@@ -125,10 +131,10 @@ export class WebGLRenderPassEncoder {
     }
 
     for (let index = 0; index < this.bindGroups.length; index++) {
-      const bindGroup = this.bindGroups[index]
+      const bindGroupState = this.bindGroups[index]
 
-      if (bindGroup) {
-        bindGroup.apply(this.context, pipeline, index)
+      if (bindGroupState) {
+        bindGroupState.bindGroup.apply(this.context, pipeline, index, bindGroupState.dynamicOffsets)
       }
     }
 
@@ -145,17 +151,22 @@ export class WebGLRenderPassEncoder {
    * Makeshift bind-group entry point for future expansion.
    * @param {number} index
    * @param {WebGLBindGroup} bindGroup
+   * @param {ReadonlyArray<number>} [dynamicOffsets] Offsets for dynamic uniform-buffer bindings, in ascending binding order.
    */
-  setBindGroup(index, bindGroup) {
+  setBindGroup(index, bindGroup, dynamicOffsets = []) {
     this.assertActive()
     assertTrue(Number.isInteger(index) && index >= 0, `Invalid bind group index ${index}`)
+    const storedDynamicOffsets = Array.from(dynamicOffsets)
 
     if (this.pipeline) {
       validateBindGroupCompatibility(this.pipeline, index, bindGroup)
-      bindGroup.apply(this.context, this.pipeline, index)
+      bindGroup.apply(this.context, this.pipeline, index, storedDynamicOffsets)
     }
 
-    this.bindGroups[index] = bindGroup
+    this.bindGroups[index] = {
+      bindGroup,
+      dynamicOffsets: storedDynamicOffsets
+    }
   }
 
   /**
@@ -749,19 +760,19 @@ function getIndexFormatSize(indexType) {
 /**
  * Keeps only bind groups that still match the active pipeline layout at the same index.
  * @param {import("./renderpipeline.js").WebGLRenderPipeline} pipeline
- * @param {Array<WebGLBindGroup | undefined>} bindGroups
+ * @param {Array<WebGLBoundBindGroup | undefined>} bindGroups
  */
 function retainCompatibleBindGroups(pipeline, bindGroups) {
   for (let index = 0; index < bindGroups.length; index++) {
-    const bindGroup = bindGroups[index]
+    const bindGroupState = bindGroups[index]
 
-    if (!bindGroup) {
+    if (!bindGroupState) {
       continue
     }
 
     const expectedLayout = pipeline.layout.getBindGroupLayout(index)
 
-    if (!expectedLayout || !expectedLayout.compatibleWith(bindGroup.layout)) {
+    if (!expectedLayout || !expectedLayout.compatibleWith(bindGroupState.bindGroup.layout)) {
       bindGroups[index] = undefined
     }
   }
@@ -769,7 +780,7 @@ function retainCompatibleBindGroups(pipeline, bindGroups) {
 
 /**
  * @param {import("./renderpipeline.js").WebGLRenderPipeline} pipeline
- * @param {ReadonlyArray<WebGLBindGroup | undefined>} bindGroups
+ * @param {ReadonlyArray<WebGLBoundBindGroup | undefined>} bindGroups
  */
 function validateRequiredBindGroups(pipeline, bindGroups) {
   for (let i = 0; i < pipeline.layout.bindGroupLayouts.length; i++) {
