@@ -27,6 +27,7 @@ const renderDevice = new WebGLRenderDevice(canvas,{
   depth:true
 })
 const renderer = new WebGLRenderer({
+  renderDevice,
   plugins:[
     new CameraPlugin(),
     new SkyboxPlugin(),

@@ -28,6 +28,7 @@ const canvas = document.createElement("canvas")
 const renderTarget = new CanvasTarget(canvas)
 const renderDevice = new WebGLRenderDevice(canvas)
 const renderer = new WebGLRenderer({
+  renderDevice,
   plugins: [
     new CameraPlugin(),
     new LightPlugin(),

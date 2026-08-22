@@ -25,6 +25,7 @@ const renderDevice = new WebGLRenderDevice(canvas,{
   depth:true
 })
 const renderer = new WebGLRenderer({
+  renderDevice,
   plugins:[
     new CameraPlugin(),
     new MeshMaterialPlugin(),
@@ -110,7 +111,7 @@ function update() {
   }
 
   if (objects.length > 0) {
-    renderer.render([...objects, camera], renderDevice, )
+    renderer.render([...objects, camera], renderDevice)
   }
 
   stats.end()

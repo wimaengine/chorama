@@ -2,8 +2,6 @@
 title: "Materials and Lighting"
 ---
 
-# Materials and Lighting
-
 This guide assumes you already have a working scene from [First Scene](/guide/first-scene).
 Here, you will add lit materials and light objects in small steps.
 
@@ -62,6 +60,7 @@ If you keep `BasicMaterial` as the material of the object, lights will not chang
 
 ```js
 const renderer = new WebGLRenderer({
+  renderDevice: device,
   plugins: [
     new LightPlugin(),
     new MeshMaterialPlugin(),

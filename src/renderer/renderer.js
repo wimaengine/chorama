@@ -68,7 +68,7 @@ export class WebGLRenderer {
   /**
    * @param {WebGLRendererOptions} options 
    */
-  constructor({ plugins = [] } = {}) {
+  constructor({ plugins = [], renderDevice }) {
     const dummy = new OffscreenCanvas(100, 100)
     const context = dummy.getContext('webgl2')
 
@@ -93,7 +93,7 @@ export class WebGLRenderer {
     for (let i = 0; i < plugins.length; i++) {
       const plugin = /**@type {Plugin} */ (plugins[i]);
 
-      plugin.init(this)
+      plugin.init(this, renderDevice)
     }
 
     this.includes
@@ -164,6 +164,7 @@ export class WebGLRenderer {
 /**
  * @typedef WebGLRendererOptions
  * @property {Plugin[]} [plugins]
+ * @property {WebGLRenderDevice} renderDevice
  */
 
 export class Defaults {

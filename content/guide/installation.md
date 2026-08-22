@@ -2,8 +2,6 @@
 title: "Installation"
 ---
 
-# Installation
-
 Choose how you want to use the library:
 
 - If you want to use it now: use **Manual Installation**.
@@ -138,11 +136,12 @@ Use the ESM file with an import map:
   <body>
     <canvas id="app"></canvas>
     <script type="module">
-      import { WebGLRenderer, MeshMaterialPlugin, CameraPlugin } from "chorama";
+      import { WebGLRenderer, WebGLRenderDevice, MeshMaterialPlugin, CameraPlugin } from "chorama";
 
       const canvas = document.getElementById("app");
+      const device = new WebGLRenderDevice(canvas);
       const renderer = new WebGLRenderer({
-        canvas,
+        renderDevice: device,
         plugins: [new MeshMaterialPlugin(), new CameraPlugin()]
       });
     </script>
@@ -166,11 +165,12 @@ Use the UMD build if you do not want modules:
   <body>
     <canvas id="app"></canvas>
     <script>
-      const { WebGLRenderer, MeshMaterialPlugin, CameraPlugin } = window.CHORAMA;
+      const { WebGLRenderer, WebGLRenderDevice, MeshMaterialPlugin, CameraPlugin } = window.CHORAMA;
       const canvas = document.getElementById("app");
+      const device = new WebGLRenderDevice(canvas);
 
       const renderer = new WebGLRenderer({
-        canvas,
+        renderDevice: device,
         plugins: [new MeshMaterialPlugin(), new CameraPlugin()]
       });
     </script>

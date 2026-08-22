@@ -29,6 +29,7 @@ const renderDevice = new WebGLRenderDevice(canvas,{
 const renderTarget1 = new CanvasTarget(canvas)
 const renderTarget2 = new CanvasTarget(canvas)
 const renderer = new WebGLRenderer({
+  renderDevice,
   plugins:[
     new CameraPlugin(),
     new SkyboxPlugin(),

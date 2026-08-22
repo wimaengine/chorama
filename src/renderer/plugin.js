@@ -1,3 +1,4 @@
+/** @import { WebGLRenderDevice } from "../core/index.js" */
 /** @import { WebGLRenderer } from "./renderer.js" */
 import { abstractClass } from "../utils/index.js";
 
@@ -11,6 +12,7 @@ export class Plugin {
 
   /**
    * @param {WebGLRenderer} _renderer
+   * @param {WebGLRenderDevice} _renderDevice
    */
-  init( _renderer){}
+  init( _renderer, _renderDevice){}
 }

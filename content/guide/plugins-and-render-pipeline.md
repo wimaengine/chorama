@@ -2,10 +2,9 @@
 title: "Plugins and Render Pipeline"
 ---
 
-# Plugins and Render Pipeline
-
 This renderer is plugin-driven.
 Plugins discover scene objects, prepare render data, and contribute render work.
+The snippets below assume you already have a `device` variable that points to the `WebGLRenderDevice` you render with.
 
 ## What You Will Add
 
@@ -32,6 +31,7 @@ Add others only when features require them.
 
 ```js
 const renderer = new WebGLRenderer({
+  renderDevice: device,
   plugins: [
     new MeshMaterialPlugin(),
     new CameraPlugin()
@@ -45,6 +45,7 @@ This stack is enough for camera + mesh/material scenes without lighting.
 
 ```js
 const renderer = new WebGLRenderer({
+  renderDevice: device,
   plugins: [
     new LightPlugin(),
     new MeshMaterialPlugin(),
@@ -60,6 +61,7 @@ Without it, lit materials may render incorrectly.
 
 ```js
 const renderer = new WebGLRenderer({
+  renderDevice: device,
   plugins: [
     new ShadowPlugin(),
     new LightPlugin(),

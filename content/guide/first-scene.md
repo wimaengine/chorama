@@ -2,8 +2,6 @@
 title: "First Scene"
 ---
 
-# First Scene
-
 This guide helps you render your first object on screen with the smallest useful setup.
 You will build one scene with:
 
@@ -73,6 +71,7 @@ The `target` is the camera output surface.
 
 ```js
 const renderer = new WebGLRenderer({
+  renderDevice: device,
   plugins: [new MeshMaterialPlugin(), new CameraPlugin()]
 });
 ```
@@ -173,4 +172,3 @@ If you want to compare against an example, see:
 - [Rotating Cube](/examples/other/rotatingCube)
 
 After this works, continue with [Camera and Controls](/guide/camera-and-controls).
-

@@ -47,26 +47,3 @@ Use this if you want direct WebGL2 control but still want reusable building bloc
 8. [Plugins and Render Pipeline](/guide/plugins-and-render-pipeline)
 9. [API Map](/guide/api-map)
 10. [Troubleshooting](/guide/troubleshooting)
-
-## Core Flow
-
-The snippet below creates the minimum pieces needed to render a scene:
-
-```js
-import { WebGLRenderDevice, CanvasTarget, WebGLRenderer, Camera } from "chorama";
-
-const canvas = document.createElement("canvas");
-const device = new WebGLRenderDevice(canvas, { depth: true });
-const target = new CanvasTarget(canvas);
-const renderer = new WebGLRenderer();
-const camera = new Camera(target);
-```
-The `canvas` is the HTML surface where we draw on (or in a more technical terms, render to).
-The `WebGLRenderDevice` executes our draw commands.
-The `CanvasTarget` tells the camera where to render to. There is another type of target but thats for later.
-The `WebGLRenderer` runs the render pipeline each frame.
-The `Camera` provides view/projection data the renderer needs.
-
-This snippet exists to show the baseline setup used in almost every example, so later chapters can add one concept at a time without repeating setup details.
-
-For a complete runnable example, start with [Rotating Cube](/examples/other/rotatingCube).
