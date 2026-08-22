@@ -1,9 +1,10 @@
 import { Affine3, Matrix4, Vector3 } from "hisabati"
 import { DirectionalLight, SpotLight, PointLight, PCFShadowFilter, PCSSShadowFilter } from "../../../objects"
 import { Object3D, PerspectiveProjection } from "../../../objects"
-import { Views, View, ViewBindGroups } from "../../../renderer"
+import { Views, View, ViewBindGroups, ViewBindings } from "../../../renderer"
 import { ShadowMap } from "../resources/ShadowMap"
 import { assert } from "../../../utils"
+import { BoneTextureResource } from "../../meshmaterial/resources/index.js"
 
 const SHADOW_ITEM_BYTE_SIZE = 96
 
@@ -20,13 +21,13 @@ export class ShadowViewNode {
     const { context } = device
     const shadowMap = renderer.getResource(ShadowMap)
     const views = renderer.getResource(Views)
-    const sceneBindGroups = renderer.getResource(ViewBindGroups)
+    const viewBindGroups = renderer.getResource(ViewBindGroups)
     /** @type {ShadowItem[]}*/
     const blocks = []
     
     assert(shadowMap, "Shadow map not set up.")
     assert(views, "Views resource missing")
-    assert(sceneBindGroups, "SceneBindGroups resource missing")
+    assert(viewBindGroups, "ViewBindGroups resource missing")
 
     shadowMap.reset()
     for (let i = 0; i < objects.length; i++) {
@@ -54,7 +55,8 @@ export class ShadowViewNode {
           const object = view.object
 
           assert(object, "View object missing")
-          sceneBindGroups.getOrSet(device, object)
+          const viewBindGroup = viewBindGroups.getOrSet(device, object)
+          populateShadowViewBindGroup(viewBindGroup, renderer)
         })
         views.push(...items[1])
 
@@ -75,6 +77,21 @@ export class ShadowViewNode {
       data
     })
     }
+}
+
+/**
+ * @param {import("../../../renderer/resources/viewbindgroup.js").ViewBindGroup} viewBindGroup
+ * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
+ */
+function populateShadowViewBindGroup(viewBindGroup, renderer) {
+  const boneTexture = renderer.getResource(BoneTextureResource)
+
+  if (!boneTexture) {
+    return
+  }
+
+  viewBindGroup.setOrReplace(ViewBindings.boneTransforms.texture, "bone_transforms", boneTexture.texture)
+  viewBindGroup.setOrReplace(ViewBindings.boneTransforms.sampler, "bone_transforms", renderer.defaults.textureNearestSampler)
 }
 
 /**

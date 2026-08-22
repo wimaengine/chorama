@@ -5,7 +5,9 @@ import { assert } from "../../../utils/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
 import { TextureFormat } from "../../../constants/index.js"
 import { CameraColorTargets } from "../resources/index.js"
-import { ViewBindGroups } from "../../../renderer/resources/index.js"
+import { ViewBindGroups, ViewBindings } from "../../../renderer/resources/index.js"
+import { EnvironmentMap, BoneTextureResource } from "../../meshmaterial/resources/index.js"
+import { ShadowMap } from "../../shadow/resources/index.js"
 
 export class CameraViewNode {
   subgraph() {
@@ -20,12 +22,12 @@ export class CameraViewNode {
     const views = renderer.getResource(Views)
     const targetPool = renderer.getResource(Texture2DPool)
     const colorTargets = renderer.getResource(CameraColorTargets)
-    const sceneBindGroups = renderer.getResource(ViewBindGroups)
+    const viewBindGroups = renderer.getResource(ViewBindGroups)
 
     assert(views, "Views resource missing")
     assert(targetPool, "Render target pool resource missing")
     assert(colorTargets, "Camera color targets resource missing")
-    assert(sceneBindGroups, "SceneBindGroups resource missing")
+    assert(viewBindGroups, "ViewBindGroups resource missing")
 
     for (let i = 0; i < objects.length; i++) {
       const camera = /**@type {Object3D} */(objects[i])
@@ -73,9 +75,36 @@ export class CameraViewNode {
       const object = cameraView.object
 
       assert(object, "View object missing")
-      sceneBindGroups.getOrSet(renderDevice, object)
+      const viewBindGroup = viewBindGroups.getOrSet(renderDevice, object)
+      populateCameraViewBindGroup(viewBindGroup, renderer)
 
       views.push(cameraView)
     }
+  }
+}
+
+/**
+ * @param {import("../../../renderer/resources/viewbindgroup.js").ViewBindGroup} viewBindGroup
+ * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
+ */
+function populateCameraViewBindGroup(viewBindGroup, renderer) {
+  const environmentMap = renderer.getResource(EnvironmentMap)
+  const shadowMap = renderer.getResource(ShadowMap)
+  const boneTexture = renderer.getResource(BoneTextureResource)
+  const { defaults } = renderer
+
+  if (environmentMap) {
+    viewBindGroup.setOrReplace(ViewBindings.environmentMap.texture, "environment_map", environmentMap.texture ?? defaults.textureCube)
+    viewBindGroup.setOrReplace(ViewBindings.environmentMap.sampler, "environment_map", environmentMap.sampler ?? defaults.textureSampler)
+  }
+
+  if (shadowMap) {
+    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.texture, "shadow_atlas", shadowMap.shadowAtlas)
+    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.sampler, "shadow_atlas", shadowMap.sampler)
+  }
+
+  if (boneTexture) {
+    viewBindGroup.setOrReplace(ViewBindings.boneTransforms.texture, "bone_transforms", boneTexture.texture)
+    viewBindGroup.setOrReplace(ViewBindings.boneTransforms.sampler, "bone_transforms", defaults.textureNearestSampler)
   }
 }

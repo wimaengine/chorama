@@ -7,7 +7,6 @@ import { AlphaMaskMode } from "../../material/index.js";
 import { MeshMaterial3D, Object3D } from "../../objects/index.js";
 import { Plugin, RenderItem, ViewBindGroups, SortViewsNode, WebGLRenderer } from "../../renderer/index.js";
 import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../../constants/index.js';
-import { ShadowMap } from '../shadow/index.js';
 import { CameraViewNode } from '../camera/index.js';
 import { MeshMaterialNode } from './nodes/index.js';
 import { BoneTextureResource, EnvironmentMap, MaterialUniformBuffers, MeshMaterialPipelines } from './resources/index.js';
@@ -141,8 +140,7 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
 function createMaterialBindGroup(device, renderer, pipeline, material, object, view) {
   const { caches, defaults } = renderer
   const materialUniformBuffers = renderer.getResource(MaterialUniformBuffers)
-  const environmentMap = renderer.getResource(EnvironmentMap)
-  const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const viewBindGroups = renderer.getResource(ViewBindGroups)
   const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
   /**
    * @type {Array<{
@@ -158,20 +156,19 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
   let binding = 0
 
   assert(materialUniformBuffers, "MaterialUniformBuffers resource missing")
-  assert(environmentMap, "EnvironmentMap resource missing")
-  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(viewBindGroups, "ViewBindGroups resource missing")
 
   const viewObject = view.object
 
   assert(viewObject, "View object missing")
-  const sceneBindGroup = sceneBindGroups.getOrSet(device, viewObject)
+  const viewBindGroup = viewBindGroups.getOrSet(device, viewObject)
 
-  assert(sceneBindGroup.layout, "Scene bind group layout missing")
+  assert(viewBindGroup.layout, "View bind group layout missing")
 
-  const sceneBindGroupLayout = pipeline.layout.getBindGroupLayout(0)
+  const viewBindGroupLayout = pipeline.layout.getBindGroupLayout(0)
 
-  if (!sceneBindGroupLayout) {
-    pipeline.layout.setBindGroupLayout(0, sceneBindGroup.layout)
+  if (!viewBindGroupLayout) {
+    pipeline.layout.setBindGroupLayout(0, viewBindGroup.layout)
   }
 
   if (materialBlockLayout) {
@@ -229,54 +226,6 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
       gpuSampler,
       sourceTexture.type,
       sourceTexture.format
-    ))
-    binding += 2
-  }
-
-  if (environmentMap && hasActiveTextureUniform(pipeline, "environment_map")) {
-    const sourceTexture = environmentMap.texture ?? defaults.textureCube
-    const gpuTexture = caches.getTexture(device, sourceTexture)
-    const gpuSampler = caches.getSampler(device, environmentMap.sampler ?? defaults.textureSampler)
-
-    bindings.push(...createTextureSamplerBindings(
-      binding,
-      "environment_map",
-      gpuTexture,
-      gpuSampler,
-      sourceTexture.type,
-      sourceTexture.format
-    ))
-    binding += 2
-  }
-
-  const shadowmap = renderer.getResource(ShadowMap)
-
-  if (shadowmap && hasActiveTextureUniform(pipeline, "shadow_atlas")) {
-    const gpuTexture = caches.getTexture(device, shadowmap.shadowAtlas)
-    const gpuSampler = caches.getSampler(device, shadowmap.sampler)
-
-    bindings.push(...createTextureSamplerBindings(
-      binding,
-      "shadow_atlas",
-      gpuTexture,
-      gpuSampler,
-      shadowmap.shadowAtlas.type,
-      shadowmap.shadowAtlas.format
-    ))
-    binding += 2
-  }
-
-  if (object.skin && skinTextureState && hasActiveTextureUniform(pipeline, "bone_transforms")) {
-    const gpuTexture = caches.getTexture(device, skinTextureState.resource.texture)
-    const gpuSampler = caches.getSampler(device, defaults.textureNearestSampler)
-
-    bindings.push(...createTextureSamplerBindings(
-      binding,
-      "bone_transforms",
-      gpuTexture,
-      gpuSampler,
-      skinTextureState.resource.texture.type,
-      skinTextureState.resource.texture.format
     ))
     binding += 2
   }

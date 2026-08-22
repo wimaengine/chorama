@@ -3,9 +3,9 @@
 import { ViewBindGroup } from "./viewbindgroup.js"
 
 /**
- * Per-object scene bind-group cache.
+ * Per-view bind-group cache.
  *
- * Each view resolves its source object to a cached SceneBindGroup instance.
+ * Each view resolves its source object to a cached ViewBindGroup instance.
  */
 export class ViewBindGroups {
   /**
@@ -14,7 +14,7 @@ export class ViewBindGroups {
   #groups = new WeakMap()
 
   /**
-   * Returns the cached scene bind group for an object, creating it if needed.
+   * Returns the cached view bind group for an object, creating it if needed.
    *
    * @param {WebGLRenderDevice} device
    * @param {Object3D} object
@@ -28,14 +28,14 @@ export class ViewBindGroups {
       return existing
     }
 
-    const sceneBindGroup = new ViewBindGroup()
-    sceneBindGroup.update(device)
-    this.#groups.set(object, sceneBindGroup)
-    return sceneBindGroup
+    const viewBindGroup = new ViewBindGroup()
+    viewBindGroup.update(device)
+    this.#groups.set(object, viewBindGroup)
+    return viewBindGroup
   }
 
   /**
-   * Returns the cached scene bind group for an object, if any.
+   * Returns the cached view bind group for an object, if any.
    *
    * @param {Object3D} object
    * @returns {ViewBindGroup | undefined}

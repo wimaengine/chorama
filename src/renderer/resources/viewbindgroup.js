@@ -7,7 +7,7 @@ import { Sampler, Texture } from "../../texture/index.js"
 import { assert, assertTrue } from "../../utils/index.js"
 
 /**
- * Per-object scene bind group state shared by the renderer and plugins.
+ * Per-view bind group state shared by the renderer and plugins.
  *
  * Plugins register named resources at explicit binding points and the
  * renderer keeps the layout current while callers create transient bind groups
@@ -15,7 +15,7 @@ import { assert, assertTrue } from "../../utils/index.js"
  */
 export class ViewBindGroup {
   /**
-   * @type {Map<number, SceneBindGroupItem>}
+   * @type {Map<number, ViewBindGroupItem>}
    */
   #items = new Map()
 
@@ -39,25 +39,41 @@ export class ViewBindGroup {
    * @returns {this}
    */
   set(binding, name, resource) {
-    assertTrue(binding >= 0, `Invalid scene bind group binding ${binding}`)
-    assertTrue(name.length > 0, `Scene bind group binding ${binding} requires a name`)
-    assertTrue(!this.#items.has(binding), `Scene bind group binding ${binding} is already occupied`)
+    assertTrue(binding >= 0, `Invalid view bind group binding ${binding}`)
+    assertTrue(name.length > 0, `View bind group binding ${binding} requires a name`)
+    assertTrue(!this.#items.has(binding), `View bind group binding ${binding} is already occupied`)
 
-    this.#items.set(binding, {
-      binding,
-      name,
-      resource
-    })
+    this.#writeItem(binding, name, resource)
+    return this
+  }
 
-    this.layout = undefined
-    this.#dirty = true
+  /**
+   * Registers or replaces a resource at a binding point.
+   * Use this for resources that may change between frames.
+   *
+   * @param {number} binding
+   * @param {string} name
+   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @returns {this}
+   */
+  setOrReplace(binding, name, resource) {
+    assertTrue(binding >= 0, `Invalid view bind group binding ${binding}`)
+    assertTrue(name.length > 0, `View bind group binding ${binding} requires a name`)
+
+    const existing = this.#items.get(binding)
+
+    if (existing && existing.name === name && existing.resource === resource) {
+      return this
+    }
+
+    this.#writeItem(binding, name, resource)
     return this
   }
 
   /**
    * Returns the registered item at the binding point, if any.
    * @param {number} binding
-   * @returns {SceneBindGroupItem | undefined}
+   * @returns {ViewBindGroupItem | undefined}
    */
   get(binding) {
     return this.#items.get(binding)
@@ -65,14 +81,14 @@ export class ViewBindGroup {
 
   /**
    * Returns all registered items in ascending binding order.
-   * @returns {SceneBindGroupItem[]}
+   * @returns {ViewBindGroupItem[]}
    */
   items() {
     return [...this.#items.values()].sort((a, b) => a.binding - b.binding)
   }
 
   /**
-   * Ensures the scene bind group layout is up to date.
+   * Ensures the view bind group layout is up to date.
    *
    * @param {WebGLRenderDevice} device
    * @returns {WebGLBindGroupLayout}
@@ -83,18 +99,18 @@ export class ViewBindGroup {
 
     if (this.layout === undefined || this.#dirty) {
       this.layout = device.createBindGroupLayout({
-        label: "SceneBindGroupLayout",
+        label: "ViewBindGroupLayout",
         entries: layoutEntries
       })
       this.#dirty = false
     }
 
-    assert(this.layout, "Scene bind group layout missing")
+    assert(this.layout, "View bind group layout missing")
     return this.layout
   }
 
   /**
-   * Creates a transient scene bind group for the current layout.
+   * Creates a transient view bind group for the current layout.
    *
    * @param {WebGLRenderDevice} device
    * @param {Caches} caches
@@ -106,22 +122,38 @@ export class ViewBindGroup {
     const bindGroupEntries = items.map((item) => createBindGroupEntry(device, caches, item))
 
     return device.createBindGroup({
-      label: "SceneBindGroup",
+      label: "ViewBindGroup",
       layout,
       entries: bindGroupEntries
     })
   }
+
+  /**
+   * @param {number} binding
+   * @param {string} name
+   * @param {Texture | Sampler | NewUniformBuffer} resource
+   */
+  #writeItem(binding, name, resource) {
+    this.#items.set(binding, {
+      binding,
+      name,
+      resource
+    })
+
+    this.layout = undefined
+    this.#dirty = true
+  }
 }
 
 /**
- * @typedef SceneBindGroupItem
+ * @typedef ViewBindGroupItem
  * @property {number} binding
  * @property {string} name
  * @property {Texture | Sampler | NewUniformBuffer} resource
  */
 
 /**
- * @param {SceneBindGroupItem} item
+ * @param {ViewBindGroupItem} item
  * @returns {import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry}
  */
 function createLayoutEntry(item) {
@@ -162,13 +194,13 @@ function createLayoutEntry(item) {
     }
   }
 
-  throw new Error(`Scene bind group binding ${binding} uses an unsupported resource type`)
+  throw new Error(`View bind group binding ${binding} uses an unsupported resource type`)
 }
 
 /**
  * @param {WebGLRenderDevice} device
  * @param {Caches} caches
- * @param {SceneBindGroupItem} item
+ * @param {ViewBindGroupItem} item
  * @returns {import("../../core/webgl/descriptors.js").WebGLBindGroupEntry}
  */
 function createBindGroupEntry(device, caches, item) {
@@ -201,7 +233,7 @@ function createBindGroupEntry(device, caches, item) {
     }
   }
 
-  throw new Error(`Scene bind group binding ${binding} uses an unsupported resource type`)
+  throw new Error(`View bind group binding ${binding} uses an unsupported resource type`)
 }
 
 /**
