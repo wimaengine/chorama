@@ -21,10 +21,7 @@ export class SkeletonHelperPlugin extends Plugin {
    */
   init(renderer) {
     if (!renderer.getResource(BoneTextureResource)) {
-      renderer.setResource(new BoneTextureResource(
-        renderer.limits.textures.maxTextureSize,
-        renderer.limits.textures.maxArrayTextureLayers
-      ))
+      renderer.setResource(new BoneTextureResource())
     }
   }
 
@@ -46,7 +43,7 @@ export class SkeletonHelperPlugin extends Plugin {
     const skin = object.skinnedMesh.skin
     const boneIndices = new Map(skin.bones.map((bone, index) => [bone, index]))
     const pipeline = this.getRenderPipeline(device, renderer)
-    const skinSlot = boneTextureResource?.collect(skin)
+    const skinSlot = boneTextureResource?.collect(skin, device.limits)
     const transformsInfo = pipeline.uniforms.get("transforms")
     const modelInfo = pipeline.uniforms.get("model")
     const parentInfo = pipeline.uniforms.get("parent_index")

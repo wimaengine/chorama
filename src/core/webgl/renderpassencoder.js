@@ -1,4 +1,5 @@
 /** @import { GPUMesh, GPUBuffer } from "../resources/index.js" */
+/** @import { WebGLDeviceLimits } from "../limits.js" */
 /** @import { WebGLBindGroup } from "./bindgroup.js" */
 /** @import { WebGLColorValue, WebGLRenderPassDescriptor } from "./descriptors.js" */
 import { BufferType, TextureType, hasDepthComponent, hasStencilComponent } from "../../constants/index.js"
@@ -75,13 +76,15 @@ export class WebGLRenderPassEncoder {
    * @param {WebGL2RenderingContext} context
    * @param {WebGLFramebuffer} drawBuffer
    * @param {WebGLRenderPassDescriptor} descriptor
+   * @param {WebGLDeviceLimits} limits
    */
-  constructor(context, drawBuffer, descriptor) {
+  constructor(context, drawBuffer, descriptor, limits) {
     this.context = context
     this.depthReadOnly = descriptor.depthStencilAttachment?.depthReadOnly ?? false
     this.stencilReadOnly = descriptor.depthStencilAttachment?.stencilReadOnly ?? false
 
-    beginRenderPass(context, drawBuffer, descriptor, this.discardAttachments)
+    assert(limits, "Render pass device limits missing")
+    beginRenderPass(context, drawBuffer, descriptor, this.discardAttachments, limits)
   }
 
   /**
@@ -370,15 +373,16 @@ function validateBindGroupCompatibility(pipeline, index, bindGroup) {
  * @param {WebGLFramebuffer} drawBuffer
  * @param {WebGLRenderPassDescriptor} descriptor
  * @param {GLenum[]} discardAttachments
+ * @param {WebGLDeviceLimits} limits
  */
-function beginRenderPass(context, drawBuffer, descriptor, discardAttachments) {
+function beginRenderPass(context, drawBuffer, descriptor, discardAttachments, limits) {
   const useDefaultFramebuffer = descriptor.defaultFramebuffer ?? false
-  const drawBuffers = resolveDrawBuffers(context, descriptor)
+  const drawBuffers = resolveDrawBuffers(context, descriptor, limits)
 
   context.bindFramebuffer(context.FRAMEBUFFER, useDefaultFramebuffer ? null : drawBuffer)
 
   if (!useDefaultFramebuffer) {
-    configureFramebufferAttachments(context, descriptor)
+    configureFramebufferAttachments(context, descriptor, limits)
   }
 
   context.drawBuffers(drawBuffers)
@@ -391,16 +395,18 @@ function beginRenderPass(context, drawBuffer, descriptor, discardAttachments) {
 /**
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPassDescriptor} descriptor
+ * @param {WebGLDeviceLimits} limits
  * @returns {GLenum[]}
  */
-function resolveDrawBuffers(context, descriptor) {
+function resolveDrawBuffers(context, descriptor, limits) {
   const { colorAttachments, defaultFramebuffer = false } = descriptor
+  const maxColorAttachments = limits.maxColorAttachments
 
   if (colorAttachments.length === 0) {
     return [context.NONE]
   }
 
-  return colorAttachments.map((attachment, index) => {
+  return colorAttachments.slice(0, maxColorAttachments).map((attachment, index) => {
     if (!attachment) {
       return context.NONE
     }
@@ -416,9 +422,10 @@ function resolveDrawBuffers(context, descriptor) {
 /**
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPassDescriptor} descriptor
+ * @param {WebGLDeviceLimits} limits
  */
-function configureFramebufferAttachments(context, descriptor) {
-  const maxColorAttachments = /** @type {number} */ (context.getParameter(context.MAX_COLOR_ATTACHMENTS))
+function configureFramebufferAttachments(context, descriptor, limits) {
+  const maxColorAttachments = limits.maxColorAttachments
 
   for (let i = 0; i < maxColorAttachments; i++) {
     const attachment = descriptor.colorAttachments[i]

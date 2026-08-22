@@ -19,16 +19,14 @@ export class MeshMaterialPlugin extends Plugin {
   /**
    * @override
    * @param {WebGLRenderer} renderer
+   * @param {WebGLRenderDevice} renderDevice
    */
-  init(renderer) {
+  init(renderer, renderDevice) {
     renderer.setResource(new MeshMaterialPipelines())
     renderer.setResource(new MaterialUniformBuffers())
     renderer.setResource(new EnvironmentMap())
     if (!renderer.getResource(BoneTextureResource)) {
-      renderer.setResource(new BoneTextureResource(
-        renderer.limits.textures.maxTextureSize,
-        renderer.limits.textures.maxArrayTextureLayers
-      ))
+      renderer.setResource(new BoneTextureResource(renderDevice.limits))
     }
     renderer.renderGraph.addNode(MeshMaterialNode.name, new MeshMaterialNode())
     renderer.renderGraph.addDependency(CameraViewNode.name, MeshMaterialNode.name)

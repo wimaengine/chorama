@@ -1,4 +1,4 @@
-import { WebGLDeviceLimits, WebGLRenderDevice } from "../core/index.js"
+import { WebGLRenderDevice } from "../core/index.js"
 import { Object3D } from "../objects/index.js"
 import { colorShaderLib, commonShaderLib, lightShaderLib, mathShaderLib, tonemapShaderLib } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
@@ -17,12 +17,6 @@ export class WebGLRenderer {
    * @type {Map<string, unknown>}
    */
   resources = new Map()
-
-  /**
-   * @readonly
-   * @type {WebGLDeviceLimits}
-   */
-  limits
 
   /**
    * @readonly
@@ -69,12 +63,7 @@ export class WebGLRenderer {
    * @param {WebGLRendererOptions} options 
    */
   constructor({ plugins = [], renderDevice }) {
-    const dummy = new OffscreenCanvas(100, 100)
-    const context = dummy.getContext('webgl2')
-
-    assert(context, "Webgl context creation failed")
     this.plugins = plugins
-    this.limits = new WebGLDeviceLimits(context)
     this.attributes = new Map()
       .set(Attribute.Position.name, Attribute.Position)
       .set(Attribute.UV.name, Attribute.UV)

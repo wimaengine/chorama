@@ -4,13 +4,9 @@ import { Texture } from "../../../texture/index.js"
 
 export class BoneTextureResource {
   /**
-   * @param {number} maxHeight
-   * @param {number} maxLayers
+   * @param {import("../../../core/limits.js").WebGLDeviceLimits} limits
    */
-  constructor(maxHeight = 2048, maxLayers = 1) {
-    this.#maxHeight = maxHeight
-    this.#maxLayers = maxLayers
-
+  constructor(limits) {
     this.texture = new Texture({
       type: TextureType.Texture2DArray,
       width: 4,
@@ -19,6 +15,10 @@ export class BoneTextureResource {
       format: TextureFormat.RGBA32Float,
       data: [new ArrayBuffer(0)]
     })
+
+    this.#maxHeight = limits.maxTextureDimension2D
+    this.#maxLayers = limits.maxTextureArrayLayers
+ 
   }
 
   /**
