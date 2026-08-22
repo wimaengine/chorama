@@ -91,14 +91,14 @@ function populateShadowViewBindGroup(viewBindGroup, renderer) {
   const boneTexture = renderer.getResource(BoneTextureResource)
 
   assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
-  viewBindGroup.setOrReplace(ViewBindings.camera, "CameraBlock", viewUniformBuffer)
+  viewBindGroup.setOrReplace(ViewBindings.camera, viewUniformBuffer.buffer)
 
   if (!boneTexture) {
     return
   }
 
-  viewBindGroup.setOrReplace(ViewBindings.boneTransforms.texture, "bone_transforms", boneTexture.texture)
-  viewBindGroup.setOrReplace(ViewBindings.boneTransforms.sampler, "bone_transforms", renderer.defaults.textureNearestSampler)
+  viewBindGroup.setOrReplace(ViewBindings.boneTransforms.texture, boneTexture.texture)
+  viewBindGroup.setOrReplace(ViewBindings.boneTransforms.sampler, renderer.defaults.textureNearestSampler)
 }
 
 /**

@@ -97,20 +97,20 @@ function populateCameraViewBindGroup(viewBindGroup, renderer) {
   const { defaults } = renderer
 
   assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
-  viewBindGroup.setOrReplace(ViewBindings.camera, "CameraBlock", viewUniformBuffer)
+  viewBindGroup.setOrReplace(ViewBindings.camera, viewUniformBuffer.buffer)
 
   if (environmentMap) {
-    viewBindGroup.setOrReplace(ViewBindings.environmentMap.texture, "environment_map", environmentMap.texture ?? defaults.textureCube)
-    viewBindGroup.setOrReplace(ViewBindings.environmentMap.sampler, "environment_map", environmentMap.sampler ?? defaults.textureSampler)
+    viewBindGroup.setOrReplace(ViewBindings.environmentMap.texture, environmentMap.texture ?? defaults.textureCube)
+    viewBindGroup.setOrReplace(ViewBindings.environmentMap.sampler, environmentMap.sampler ?? defaults.textureSampler)
   }
 
   if (shadowMap) {
-    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.texture, "shadow_atlas", shadowMap.shadowAtlas)
-    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.sampler, "shadow_atlas", shadowMap.sampler)
+    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.texture, shadowMap.shadowAtlas)
+    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.sampler, shadowMap.sampler)
   }
 
   if (boneTexture) {
-    viewBindGroup.setOrReplace(ViewBindings.boneTransforms.texture, "bone_transforms", boneTexture.texture)
-    viewBindGroup.setOrReplace(ViewBindings.boneTransforms.sampler, "bone_transforms", defaults.textureNearestSampler)
+    viewBindGroup.setOrReplace(ViewBindings.boneTransforms.texture, boneTexture.texture)
+    viewBindGroup.setOrReplace(ViewBindings.boneTransforms.sampler, defaults.textureNearestSampler)
   }
 }

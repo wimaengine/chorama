@@ -6,15 +6,44 @@ import { TextureFormat, TextureType } from "../../constants/index.js"
 import { snapUp } from "../../math/index.js"
 import { Sampler, Texture } from "../../texture/index.js"
 import { assert, assertTrue } from "../../utils/index.js"
-import { View } from "../core/index.js"
-import { ViewUniformBuffer } from "./viewuniformbuffer.js"
+
+/**
+ * Descriptor for a uniform-buffer slot in the shared view bind group.
+ * @typedef {object} ViewUniformSlot
+ * @property {"uniform"} kind
+ * @property {number} binding
+ * @property {string} name
+ * @property {number} minBindingSize
+ * @property {boolean} [hasDynamicOffset]
+ */
+
+/**
+ * Descriptor for a texture slot in the shared view bind group.
+ * @typedef {object} ViewTextureSlot
+ * @property {"texture"} kind
+ * @property {number} binding
+ * @property {string} name
+ * @property {"2d" | "2d-array" | "cube" | "3d"} [viewDimension]
+ */
+
+/**
+ * Descriptor for a sampler slot in the shared view bind group.
+ * @typedef {object} ViewSamplerSlot
+ * @property {"sampler"} kind
+ * @property {number} binding
+ * @property {string} name
+ */
+
+/**
+ * Shared slot descriptor used by the renderer and plugins.
+ * @typedef {ViewUniformSlot | ViewTextureSlot | ViewSamplerSlot} ViewBindGroupSlot
+ */
 
 /**
  * Per-view bind group state shared by the renderer and plugins.
  *
- * Plugins register named resources at explicit binding points and the
- * renderer keeps the layout current while callers create transient bind groups
- * on demand.
+ * Plugins register explicit slot descriptors and the renderer keeps the layout
+ * current while callers create transient bind groups on demand.
  */
 export class ViewBindGroup {
   /**
@@ -33,43 +62,132 @@ export class ViewBindGroup {
   layout
 
   /**
-   * Registers a resource at a binding point.
-   * The binding point must be empty.
+   * Creates a uniform-buffer slot descriptor.
    *
    * @param {number} binding
    * @param {string} name
-   * @param {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
+   * @param {number} minBindingSize
+   * @param {boolean} [hasDynamicOffset=false]
+   * @returns {ViewUniformSlot}
+   */
+  static uniform(binding, name, minBindingSize, hasDynamicOffset = false) {
+    return {
+      kind: "uniform",
+      binding,
+      name,
+      minBindingSize,
+      hasDynamicOffset
+    }
+  }
+
+  /**
+   * Creates a texture slot descriptor.
+   *
+   * @param {number} binding
+   * @param {string} name
+   * @param {"2d" | "2d-array" | "cube" | "3d"} [viewDimension]
+   * @returns {ViewTextureSlot}
+   */
+  static texture(binding, name, viewDimension) {
+    return viewDimension === undefined ? {
+      kind: "texture",
+      binding,
+      name
+    } : {
+      kind: "texture",
+      binding,
+      name,
+      viewDimension
+    }
+  }
+
+  /**
+   * Creates a sampler slot descriptor.
+   *
+   * @param {number} binding
+   * @param {string} name
+   * @returns {ViewSamplerSlot}
+   */
+  static sampler(binding, name) {
+    return {
+      kind: "sampler",
+      binding,
+      name
+    }
+  }
+
+  /**
+   * Registers a slot/resource pair.
+   * The slot binding must be empty.
+   *
+   * @overload
+   * @param {ViewUniformSlot} slot
+   * @param {NewUniformBuffer} resource
    * @returns {this}
    */
-  set(binding, name, resource) {
-    assertTrue(binding >= 0, `Invalid view bind group binding ${binding}`)
-    assertTrue(name.length > 0, `View bind group binding ${binding} requires a name`)
-    assertTrue(!this.#items.has(binding), `View bind group binding ${binding} is already occupied`)
+  /**
+   * @overload
+   * @param {ViewTextureSlot} slot
+   * @param {Texture} resource
+   * @returns {this}
+   */
+  /**
+   * @overload
+   * @param {ViewSamplerSlot} slot
+   * @param {Sampler} resource
+   * @returns {this}
+   */
+  /**
+   * @param {ViewBindGroupSlot} slot
+   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @returns {this}
+   */
+  set(slot, resource) {
+    assertTrue(slot.binding >= 0, `Invalid view bind group binding ${slot.binding}`)
+    assertTrue(slot.name.length > 0, `View bind group binding ${slot.binding} requires a name`)
+    assertTrue(!this.#items.has(slot.binding), `View bind group binding ${slot.binding} is already occupied`)
 
-    this.#writeItem(binding, name, resource)
+    this.#writeItem(slot, resource)
     return this
   }
 
   /**
-   * Registers or replaces a resource at a binding point.
+   * Registers or replaces a slot/resource pair.
    * Use this for resources that may change between frames.
    *
-   * @param {number} binding
-   * @param {string} name
-   * @param {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
+   * @overload
+   * @param {ViewUniformSlot} slot
+   * @param {NewUniformBuffer} resource
    * @returns {this}
    */
-  setOrReplace(binding, name, resource) {
-    assertTrue(binding >= 0, `Invalid view bind group binding ${binding}`)
-    assertTrue(name.length > 0, `View bind group binding ${binding} requires a name`)
+  /**
+   * @overload
+   * @param {ViewTextureSlot} slot
+   * @param {Texture} resource
+   * @returns {this}
+   */
+  /**
+   * @overload
+   * @param {ViewSamplerSlot} slot
+   * @param {Sampler} resource
+   * @returns {this}
+   */
+  /**
+   * @param {ViewBindGroupSlot} slot
+   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @returns {this}
+   */
+  setOrReplace(slot, resource) {
+    assertTrue(slot.binding >= 0, `Invalid view bind group binding ${slot.binding}`)
+    assertTrue(slot.name.length > 0, `View bind group binding ${slot.binding} requires a name`)
 
-    const existing = this.#items.get(binding)
+    const existing = this.#items.get(slot.binding)
 
-    if (existing && existing.name === name && existing.resource === resource) {
+    if (existing && slotsMatch(existing.slot, slot) && existing.resource === resource) {
       return this
     }
 
-    this.#writeItem(binding, name, resource)
+    this.#writeItem(slot, resource)
     return this
   }
 
@@ -87,7 +205,7 @@ export class ViewBindGroup {
    * @returns {ViewBindGroupItem[]}
    */
   items() {
-    return [...this.#items.values()].sort((a, b) => a.binding - b.binding)
+    return [...this.#items.values()].sort((a, b) => a.slot.binding - b.slot.binding)
   }
 
   /**
@@ -98,7 +216,7 @@ export class ViewBindGroup {
    */
   update(device) {
     const items = this.items()
-    const layoutEntries = items.map((item) => createLayoutEntry(item))
+    const layoutEntries = items.map((item) => createLayoutEntry(device, item))
 
     if (this.layout === undefined || this.#dirty) {
       this.layout = device.createBindGroupLayout({
@@ -132,14 +250,12 @@ export class ViewBindGroup {
   }
 
   /**
-   * @param {number} binding
-   * @param {string} name
-   * @param {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
+   * @param {ViewBindGroupSlot} slot
+   * @param {Texture | Sampler | NewUniformBuffer} resource
    */
-  #writeItem(binding, name, resource) {
-    this.#items.set(binding, {
-      binding,
-      name,
+  #writeItem(slot, resource) {
+    this.#items.set(slot.binding, {
+      slot,
       resource
     })
 
@@ -150,66 +266,67 @@ export class ViewBindGroup {
 
 /**
  * @typedef ViewBindGroupItem
- * @property {number} binding
- * @property {string} name
- * @property {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
+ * @property {ViewBindGroupSlot} slot
+ * @property {Texture | Sampler | NewUniformBuffer} resource
  */
 
 /**
+ * @param {WebGLRenderDevice} device
  * @param {ViewBindGroupItem} item
  * @returns {import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry}
  */
-function createLayoutEntry(item) {
-  const { binding, name, resource } = item
+function createLayoutEntry(device, item) {
+  const { slot, resource } = item
+  const { binding, name } = slot
 
-  if (resource instanceof Texture) {
-    return {
-      binding,
-      name,
-      visibility: 0,
-      texture: {
-        viewDimension: textureViewDimensionFromType(resource.type),
-        sampleType: textureSampleTypeFromFormat(resource.format)
+  switch (slot.kind) {
+    case "texture": {
+      const textureResource = /** @type {Texture} */ (resource)
+
+      return {
+        binding,
+        name,
+        visibility: 0,
+        texture: {
+          viewDimension: slot.viewDimension ?? textureViewDimensionFromType(textureResource.type),
+          sampleType: textureSampleTypeFromFormat(textureResource.format)
+        }
       }
     }
-  }
 
-  if (resource instanceof Sampler) {
-    return {
-      binding,
-      name,
-      visibility: 0,
-      sampler: {
-        type: resource.compare !== undefined ? "comparison" : "filtering"
+    case "sampler": {
+      const samplerResource = /** @type {Sampler} */ (resource)
+
+      return {
+        binding,
+        name,
+        visibility: 0,
+        sampler: {
+          type: samplerResource.compare !== undefined ? "comparison" : "filtering"
+        }
       }
     }
-  }
 
-  if (resource instanceof ViewUniformBuffer) {
-    return {
-      binding,
-      name,
-      visibility: 0,
-      buffer: {
-        type: "uniform",
-        hasDynamicOffset: true
+    case "uniform": {
+      const uniformResource = /** @type {NewUniformBuffer} */ (resource)
+      void uniformResource
+      const minBindingSize = getAlignedUniformBindingSize(device, slot)
+
+      return {
+        binding,
+        name,
+        visibility: 0,
+        buffer: {
+          type: "uniform",
+          hasDynamicOffset: slot.hasDynamicOffset ?? false,
+          minBindingSize
+        }
       }
     }
-  }
 
-  if (resource instanceof NewUniformBuffer) {
-    return {
-      binding,
-      name,
-      visibility: 0,
-      buffer: {
-        type: "uniform",
-        minBindingSize: resource.size
-      }
-    }
+    default:
+      throw new Error(`View bind group binding ${binding} uses an unsupported resource kind`)
   }
-
-  throw new Error(`View bind group binding ${binding} uses an unsupported resource type`)
 }
 
 /**
@@ -219,48 +336,48 @@ function createLayoutEntry(item) {
  * @returns {import("../../core/webgl/descriptors.js").WebGLBindGroupEntry}
  */
 function createBindGroupEntry(device, caches, item) {
-  const { binding, resource } = item
+  const { slot, resource } = item
+  const { binding } = slot
 
-  if (resource instanceof Texture) {
-    return {
-      binding,
-      resource: {
-        texture: caches.getTexture(device, resource)
+  switch (slot.kind) {
+    case "texture": {
+      const textureResource = /** @type {Texture} */ (resource)
+
+      return {
+        binding,
+        resource: {
+          texture: caches.getTexture(device, textureResource)
+        }
       }
     }
-  }
 
-  if (resource instanceof Sampler) {
-    return {
-      binding,
-      resource: {
-        sampler: caches.getSampler(device, resource)
+    case "sampler": {
+      const samplerResource = /** @type {Sampler} */ (resource)
+
+      return {
+        binding,
+        resource: {
+          sampler: caches.getSampler(device, samplerResource)
+        }
       }
     }
-  }
 
-  if (resource instanceof ViewUniformBuffer) {
-    const size = snapUp(View.BlockSize, device.limits.minUniformBufferOffsetAlignment)
+    case "uniform": {
+      const uniformResource = /** @type {NewUniformBuffer} */ (resource)
+      const size = getAlignedUniformBindingSize(device, slot)
 
-    return {
-      binding,
-      resource: {
-        buffer: caches.getNewUniformBuffer(device, resource.buffer),
-        size
+      return {
+        binding,
+        resource: {
+          buffer: caches.getNewUniformBuffer(device, uniformResource),
+          size
+        }
       }
     }
-  }
 
-  if (resource instanceof NewUniformBuffer) {
-    return {
-      binding,
-      resource: {
-        buffer: caches.getNewUniformBuffer(device, resource)
-      }
-    }
+    default:
+      throw new Error(`View bind group binding ${binding} uses an unsupported resource kind`)
   }
-
-  throw new Error(`View bind group binding ${binding} uses an unsupported resource type`)
 }
 
 /**
@@ -325,5 +442,47 @@ function textureSampleTypeFromFormat(format) {
 
     default:
       return "float"
+  }
+}
+
+/**
+ * Aligns the view uniform buffer size when a slot uses dynamic offsets.
+ *
+ * @param {WebGLRenderDevice} device
+ * @param {ViewUniformSlot} slot
+ * @returns {number}
+ */
+function getAlignedUniformBindingSize(device, slot) {
+  if (!slot.hasDynamicOffset) {
+    return slot.minBindingSize
+  }
+
+  return snapUp(slot.minBindingSize, device.limits.minUniformBufferOffsetAlignment)
+}
+
+/**
+ * @param {ViewBindGroupSlot} a
+ * @param {ViewBindGroupSlot} b
+ * @returns {boolean}
+ */
+function slotsMatch(a, b) {
+  if (a.binding !== b.binding || a.name !== b.name || a.kind !== b.kind) {
+    return false
+  }
+
+  switch (a.kind) {
+    case "uniform":
+      return b.kind === "uniform" &&
+        a.minBindingSize === b.minBindingSize &&
+        (a.hasDynamicOffset ?? false) === (b.hasDynamicOffset ?? false)
+
+    case "texture":
+      return b.kind === "texture" && a.viewDimension === b.viewDimension
+
+    case "sampler":
+      return b.kind === "sampler"
+
+    default:
+      return false
   }
 }
