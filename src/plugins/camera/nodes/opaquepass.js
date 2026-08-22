@@ -1,15 +1,17 @@
 import { Camera } from "../../../objects/index.js"
-import { ViewBindGroups, Views } from "../../../renderer/index.js"
+import { View, ViewBindGroups, Views } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { CameraColorTargets } from "../resources/index.js"
+import { snapUp } from "../../../math/index.js"
 
 /**
  * @param {import("../../../renderer/index.js").View} view
+ * @param {number} viewIndex
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  * @param {CameraColorTargets} colorTargets
  */
-function renderItems(view, device, renderer, colorTargets) {
+function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const opaqueStage = view.opaque
   const alphaMaskStage = view.alphaMask
 
@@ -66,7 +68,10 @@ function renderItems(view, device, renderer, colorTargets) {
     depthRange: camera.depthRange
   })
 
-  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches))
+  const alignment = device.limits.minUniformBufferOffsetAlignment
+  const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
+
+  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
   opaqueStage.renderItems(pass, context, caches)
   alphaMaskStage.renderItems(pass, context, caches)
@@ -89,13 +94,16 @@ export class CameraOpaquePassNode {
     assert(views, "Views resource missing")
     assert(colorTargets, "Camera color targets resource missing")
 
-    for (const view of views.items()) {
+    const viewsItems = views.items()
+
+    for (let i = 0; i < viewsItems.length; i++) {
+      const view = /**@type {View}*/(viewsItems[i])
+
       if (view.tag !== Camera.name) {
         continue
       }
 
-      renderer.updateUBO(renderDevice.context, view.getData())
-      renderItems(view, renderDevice, renderer, colorTargets)
+      renderItems(view, i, renderDevice, renderer, colorTargets)
     }
   }
 }

@@ -1,17 +1,19 @@
 import { Camera } from "../../../objects/index.js"
-import { RenderItem, Views } from "../../../renderer/index.js"
+import { RenderItem, View, Views } from "../../../renderer/index.js"
 import { ViewBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { Affine3 } from "../../../math/index.js"
+import { snapUp } from "../../../math/index.js"
 import { ImageRenderTarget } from "../../../rendertarget/index.js"
 import { hasDepthComponent, hasStencilComponent } from "../../../constants/index.js"
 
 /**
  * @param {import("../../../renderer/index.js").View} view
+ * @param {number} viewIndex
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  */
-function renderItems(view, device, renderer) {
+function renderItems(view, viewIndex, device, renderer) {
   const { renderTarget, opaque: opaqueStage } = view
 
   const context = device.context
@@ -65,7 +67,10 @@ function renderItems(view, device, renderer) {
   const object = view.object
 
   assert(object, "View object missing")
-  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches))
+  const alignment = device.limits.minUniformBufferOffsetAlignment
+  const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
+
+  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
   for (let i = 0; i < opaqueStage.items.length; i++) {
     // SAFETY: List is dense
@@ -106,13 +111,16 @@ export class ShadowOpaquePassNode {
 
     assert(views, "Views resource missing")
 
-    for (const view of views.items()) {
+    const viewsItems = views.items()
+
+    for (let i = 0; i < viewsItems.length; i++) {
+      const view = /**@type {View}*/(viewsItems[i])
+
       if (view.tag === Camera.name) {
         continue
       }
 
-      renderer.updateUBO(renderDevice.context, view.getData())
-      renderItems(view, renderDevice, renderer)
+      renderItems(view, i, renderDevice, renderer)
     }
   }
 }

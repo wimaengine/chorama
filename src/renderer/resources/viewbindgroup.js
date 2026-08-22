@@ -3,8 +3,11 @@
 /** @import { WebGLRenderDevice } from "../../core/index.js" */
 import { NewUniformBuffer } from "../../core/resources/index.js"
 import { TextureFormat, TextureType } from "../../constants/index.js"
+import { snapUp } from "../../math/index.js"
 import { Sampler, Texture } from "../../texture/index.js"
 import { assert, assertTrue } from "../../utils/index.js"
+import { View } from "../core/index.js"
+import { ViewUniformBuffer } from "./viewuniformbuffer.js"
 
 /**
  * Per-view bind group state shared by the renderer and plugins.
@@ -35,7 +38,7 @@ export class ViewBindGroup {
    *
    * @param {number} binding
    * @param {string} name
-   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @param {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
    * @returns {this}
    */
   set(binding, name, resource) {
@@ -53,7 +56,7 @@ export class ViewBindGroup {
    *
    * @param {number} binding
    * @param {string} name
-   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @param {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
    * @returns {this}
    */
   setOrReplace(binding, name, resource) {
@@ -131,7 +134,7 @@ export class ViewBindGroup {
   /**
    * @param {number} binding
    * @param {string} name
-   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @param {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
    */
   #writeItem(binding, name, resource) {
     this.#items.set(binding, {
@@ -149,7 +152,7 @@ export class ViewBindGroup {
  * @typedef ViewBindGroupItem
  * @property {number} binding
  * @property {string} name
- * @property {Texture | Sampler | NewUniformBuffer} resource
+ * @property {Texture | Sampler | NewUniformBuffer | ViewUniformBuffer} resource
  */
 
 /**
@@ -178,6 +181,18 @@ function createLayoutEntry(item) {
       visibility: 0,
       sampler: {
         type: resource.compare !== undefined ? "comparison" : "filtering"
+      }
+    }
+  }
+
+  if (resource instanceof ViewUniformBuffer) {
+    return {
+      binding,
+      name,
+      visibility: 0,
+      buffer: {
+        type: "uniform",
+        hasDynamicOffset: true
       }
     }
   }
@@ -220,6 +235,18 @@ function createBindGroupEntry(device, caches, item) {
       binding,
       resource: {
         sampler: caches.getSampler(device, resource)
+      }
+    }
+  }
+
+  if (resource instanceof ViewUniformBuffer) {
+    const size = snapUp(View.BlockSize, device.limits.minUniformBufferOffsetAlignment)
+
+    return {
+      binding,
+      resource: {
+        buffer: caches.getNewUniformBuffer(device, resource.buffer),
+        size
       }
     }
   }

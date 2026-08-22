@@ -1,6 +1,9 @@
 /** @import { RenderGraphContext } from "./rendergraph.js" */
 import { assert } from "../../utils/index.js"
+import { View } from "../core/index.js"
 import { Views } from "../views.js"
+import { ViewUniformBuffer } from "../resources/index.js"
+import { snapUp } from "../../math/index.js"
 
 export class SortViewsNode {
   subgraph() {
@@ -11,10 +14,14 @@ export class SortViewsNode {
    * @param {RenderGraphContext} context
    */
   execute(context) {
-    const views = context.renderer.getResource(Views)
+    const { renderDevice, renderer } = context
+    const views = renderer.getResource(Views)
+    const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
 
     assert(views, "Views resource missing")
+    assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
 
+    const alignment = renderDevice.limits.minUniformBufferOffsetAlignment
     const sorted = views.items()
       .map((view, index) => ({ view, index }))
       .sort((a, b) => {
@@ -30,5 +37,18 @@ export class SortViewsNode {
 
     views.clear()
     views.push(...sorted)
+
+    const orderedViews = views.items()
+    const stride = snapUp(View.BlockSize, alignment)
+    const data = new ArrayBuffer(orderedViews.length * stride)
+
+    for (let i = 0; i < orderedViews.length; i++) {
+      const view = /**@type {View}*/(orderedViews[i])
+      const payload = view.getData()
+
+      new Uint8Array(data, i * stride, stride).set(new Uint8Array(payload))
+    }
+
+    viewUniformBuffer.buffer.data = data
   }
 }

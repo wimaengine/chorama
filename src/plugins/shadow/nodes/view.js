@@ -2,6 +2,7 @@ import { Affine3, Matrix4, Vector3 } from "hisabati"
 import { DirectionalLight, SpotLight, PointLight, PCFShadowFilter, PCSSShadowFilter } from "../../../objects"
 import { Object3D, PerspectiveProjection } from "../../../objects"
 import { Views, View, ViewBindGroups, ViewBindings } from "../../../renderer"
+import { ViewUniformBuffer } from "../../../renderer/resources/index.js"
 import { ShadowMap } from "../resources/ShadowMap"
 import { assert } from "../../../utils"
 import { BoneTextureResource } from "../../meshmaterial/resources/index.js"
@@ -22,12 +23,14 @@ export class ShadowViewNode {
     const shadowMap = renderer.getResource(ShadowMap)
     const views = renderer.getResource(Views)
     const viewBindGroups = renderer.getResource(ViewBindGroups)
+    const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
     /** @type {ShadowItem[]}*/
     const blocks = []
     
     assert(shadowMap, "Shadow map not set up.")
     assert(views, "Views resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
+    assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
 
     shadowMap.reset()
     for (let i = 0; i < objects.length; i++) {
@@ -84,7 +87,11 @@ export class ShadowViewNode {
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  */
 function populateShadowViewBindGroup(viewBindGroup, renderer) {
+  const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
   const boneTexture = renderer.getResource(BoneTextureResource)
+
+  assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
+  viewBindGroup.setOrReplace(ViewBindings.camera, "CameraBlock", viewUniformBuffer)
 
   if (!boneTexture) {
     return

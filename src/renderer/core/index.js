@@ -100,17 +100,21 @@ export class View {
   }
 
   getData() {
-    return {
-      name: "CameraBlock",
-      data: new Float32Array([
-        ...this.viewMatrix,
-        ...this.projectionMatrix,
-        ...this.viewPosition,
-        this.near,
-        this.far
-      ]).buffer
-    }
+    return new Float32Array([
+      ...this.viewMatrix,
+      ...this.projectionMatrix,
+      ...this.viewPosition,
+      this.near,
+      this.far
+    ]).buffer
   }
+  /**
+   * Raw packed payload size before std140 padding is applied.
+   * @readonly
+   * @type {number}
+   */
+  static BlockSize = 37 * Float32Array.BYTES_PER_ELEMENT
+
 }
 
 export class RenderStage {

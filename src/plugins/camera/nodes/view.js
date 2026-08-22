@@ -5,7 +5,7 @@ import { assert } from "../../../utils/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
 import { TextureFormat } from "../../../constants/index.js"
 import { CameraColorTargets } from "../resources/index.js"
-import { ViewBindGroups, ViewBindings } from "../../../renderer/resources/index.js"
+import { ViewBindGroups, ViewBindings, ViewUniformBuffer } from "../../../renderer/resources/index.js"
 import { EnvironmentMap, BoneTextureResource } from "../../meshmaterial/resources/index.js"
 import { ShadowMap } from "../../shadow/resources/index.js"
 
@@ -23,11 +23,13 @@ export class CameraViewNode {
     const targetPool = renderer.getResource(Texture2DPool)
     const colorTargets = renderer.getResource(CameraColorTargets)
     const viewBindGroups = renderer.getResource(ViewBindGroups)
+    const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
 
     assert(views, "Views resource missing")
     assert(targetPool, "Render target pool resource missing")
     assert(colorTargets, "Camera color targets resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
+    assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
 
     for (let i = 0; i < objects.length; i++) {
       const camera = /**@type {Object3D} */(objects[i])
@@ -88,10 +90,14 @@ export class CameraViewNode {
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  */
 function populateCameraViewBindGroup(viewBindGroup, renderer) {
+  const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
   const environmentMap = renderer.getResource(EnvironmentMap)
   const shadowMap = renderer.getResource(ShadowMap)
   const boneTexture = renderer.getResource(BoneTextureResource)
   const { defaults } = renderer
+
+  assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
+  viewBindGroup.setOrReplace(ViewBindings.camera, "CameraBlock", viewUniformBuffer)
 
   if (environmentMap) {
     viewBindGroup.setOrReplace(ViewBindings.environmentMap.texture, "environment_map", environmentMap.texture ?? defaults.textureCube)

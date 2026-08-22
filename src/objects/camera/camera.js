@@ -148,20 +148,6 @@ export class Camera extends Object3D {
 		)
 		this.view.copy(inverseTransform)
 	}
-	
-	getData() {
-		const { near, far } = this
-		return {
-			name: "CameraBlock",
-			data: new Float32Array([
-				...this.view,
-				...this.projection.asProjectionMatrix(near, far),
-				...this.transform.position,
-				this.near,
-				this.far
-			]).buffer
-		}
-	}
 }
 
 /**
