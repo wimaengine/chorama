@@ -35,6 +35,7 @@ struct StandardMaterial {
   float transmission;
   float thickness;
   float ior;
+  float alpha_cutoff;
 };
 
 in vec3 v_position;
@@ -52,11 +53,6 @@ in vec3 cam_direction;
 uniform MaterialBlock {
   StandardMaterial material;
 };
-#ifdef ALPHA_MASK_MODE
-uniform AlphaMaskBlock {
-  float cutoff;
-};
-#endif
 uniform AmbientLightBlock {
   AmbientLight ambient_light;
 };
@@ -242,7 +238,7 @@ PBRProperties calculate_pbr_properties(){
 void main(){
   PBRProperties pbr_properties = calculate_pbr_properties();
 #ifdef ALPHA_MASK_MODE
-  if (pbr_properties.opacity < cutoff) {
+  if (pbr_properties.opacity < material.alpha_cutoff) {
     discard;
   }
 #endif

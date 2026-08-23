@@ -4,6 +4,7 @@
 
 struct LambertMaterial {
   vec4 color;
+  float alpha_cutoff;
 };
 
 in vec3 v_position;
@@ -17,11 +18,6 @@ in vec3 v_position;
 uniform MaterialBlock {
   LambertMaterial material;
 };
-#ifdef ALPHA_MASK_MODE
-uniform AlphaMaskBlock {
-  float cutoff;
-};
-#endif
 // Lights
 uniform AmbientLightBlock {
   AmbientLight ambient_light;
@@ -60,7 +56,7 @@ void main(){
     #error "Mesh vertex normals are required for lighting."
   #endif
 #ifdef ALPHA_MASK_MODE
-  if (opacity < cutoff) {
+  if (opacity < material.alpha_cutoff) {
     discard;
   }
 #endif

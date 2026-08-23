@@ -1,5 +1,5 @@
 import { Material } from "./material.js"
-import { OpaqueMode } from "./alphablend.js"
+import { AlphaMaskMode, OpaqueMode } from "./alphablend.js"
 import { Color } from "../math/index.js"
 import { basicVertex, phongFragment } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
@@ -73,11 +73,13 @@ export class PhongMaterial extends Material {
       specularShininess,
       specularStrength
     } = this
+    const alphaCutoff = this.alphaBlend instanceof AlphaMaskMode ? this.alphaBlend.cutoff : 0.5
     
     return new Float32Array([
       ...color,
       specularShininess,
       specularStrength,
+      alphaCutoff
     ]).buffer
   }
 

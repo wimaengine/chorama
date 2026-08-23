@@ -6,6 +6,7 @@ struct PhongMaterial {
   vec4 color;
   float specularShininess;
   float specularStrength;
+  float alpha_cutoff;
 };
 
 in vec3 v_position;
@@ -18,11 +19,6 @@ in vec3 cam_direction;
 uniform MaterialBlock {
   PhongMaterial material;
 };
-#ifdef ALPHA_MASK_MODE
-uniform AlphaMaskBlock {
-  float cutoff;
-};
-#endif
 uniform AmbientLightBlock {
   AmbientLight ambient_light;
 };
@@ -60,7 +56,7 @@ void main(){
   #endif
   vec3 view_direction = normalize(cam_direction);
 #ifdef ALPHA_MASK_MODE
-  if (opacity < cutoff) {
+  if (opacity < material.alpha_cutoff) {
     discard;
   }
 #endif

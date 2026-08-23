@@ -1,5 +1,5 @@
 import { Color } from "../math/index.js";
-import { OpaqueMode } from "./alphablend.js";
+import { AlphaMaskMode, OpaqueMode } from "./alphablend.js";
 import { basicVertex, standardFragment } from "../shader/index.js";
 import { Sampler, Texture } from "../texture/index.js";
 import { Material } from "./material.js";
@@ -241,6 +241,7 @@ export class StandardMaterial extends Material {
       thickness,
       ior
     } = this
+    const alphaCutoff = this.alphaBlend instanceof AlphaMaskMode ? this.alphaBlend.cutoff : 0.5
 
     return new Float32Array([
       ...color,
@@ -255,7 +256,8 @@ export class StandardMaterial extends Material {
       reflectionStrength,
       transmission,
       thickness,
-      ior
+      ior,
+      alphaCutoff
     ]).buffer
   }
 

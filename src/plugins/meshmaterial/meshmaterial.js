@@ -3,7 +3,6 @@
 import { assert } from '../../utils/index.js'
 import { MeshVertexLayout, Shader, WebGLRenderDevice } from "../../core/index.js";
 import { Mesh, Attribute } from "../../mesh/index.js";
-import { AlphaMaskMode } from "../../material/index.js";
 import { MeshMaterial3D, Object3D } from "../../objects/index.js";
 import { Plugin, RenderItem, ViewBindGroups, SortViewsNode, WebGLRenderer } from "../../renderer/index.js";
 import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../../constants/index.js';
@@ -147,7 +146,6 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
    */
   const bindings = []
   const materialBlockLayout = pipeline.uniformBlocks.get("MaterialBlock")
-  const alphaBlendMode = material.alphaBlendMode()
   const skinBlockLayout = object.skin ? pipeline.uniformBlocks.get("SkinBlock") : undefined
   let binding = 0
 
@@ -171,29 +169,12 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
   if (materialBlockLayout) {
     const materialBuffer = materialUniforms.setData(
       material,
-      "materialBlock",
       material.getData(),
       materialBlockLayout.size
     )
     const gpuBuffer = caches.getUniformBuffer(device, materialBuffer)
 
     bindings.push(createBufferBinding(binding++, "MaterialBlock", gpuBuffer, materialBlockLayout.size))
-  }
-
-  if (alphaBlendMode instanceof AlphaMaskMode) {
-    const alphaMaskBlockLayout = pipeline.uniformBlocks.get("AlphaMaskBlock")
-
-    if (alphaMaskBlockLayout) {
-      const alphaMaskBuffer = materialUniforms.setData(
-        material,
-        "alphaMaskBlock",
-        createAlphaMaskUniformData(alphaMaskBlockLayout, alphaBlendMode.cutoff),
-        alphaMaskBlockLayout.size
-      )
-      const gpuBuffer = caches.getUniformBuffer(device, alphaMaskBuffer)
-
-      bindings.push(createBufferBinding(binding++, "AlphaMaskBlock", gpuBuffer, alphaMaskBlockLayout.size))
-    }
   }
 
   if (object.skin && skinBlockLayout && skinTextureState) {
@@ -290,20 +271,6 @@ function createSkinUniformData(layout, skinIndex, boneCount) {
 
   assert(skinIndexWritten, "SkinBlock skin_index field missing")
   assert(boneCountWritten, "SkinBlock bone_count field missing")
-
-  return data
-}
-
-/**
- * @param {import("../../core/layouts/index.js").UniformBufferLayout} layout
- * @param {number} cutoff
- * @returns {ArrayBuffer}
- */
-function createAlphaMaskUniformData(layout, cutoff) {
-  const data = new ArrayBuffer(layout.size)
-  const view = new DataView(data)
-
-  view.setFloat32(0, cutoff, true)
 
   return data
 }

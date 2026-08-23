@@ -1,5 +1,5 @@
 import { Material } from "./material.js"
-import { OpaqueMode } from "./alphablend.js"
+import { AlphaMaskMode, OpaqueMode } from "./alphablend.js"
 import { Color } from "../math/index.js"
 import { basicVertex, lambertFragment } from "../shader/index.js"
 import { Texture, Sampler } from "../texture/index.js"
@@ -66,8 +66,9 @@ export class LambertMaterial extends Material {
    */
   getData() {
     const { color } = this
+    const alphaCutoff = this.alphaBlend instanceof AlphaMaskMode ? this.alphaBlend.cutoff : 0.5
     
-    return new Float32Array([...color]).buffer
+    return new Float32Array([...color, alphaCutoff]).buffer
   }
 
   /**

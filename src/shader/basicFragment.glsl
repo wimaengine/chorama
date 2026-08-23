@@ -2,6 +2,7 @@
 
 struct BasicMaterial {
   vec4 color;
+  float alpha_cutoff;
 };
 
 #ifdef VERTEX_UVS
@@ -13,11 +14,6 @@ out vec4 fragment_color;
 uniform MaterialBlock {
   BasicMaterial material;
 };
-#ifdef ALPHA_MASK_MODE
-uniform AlphaMaskBlock {
-  float cutoff;
-};
-#endif
 uniform sampler2D mainTexture;
 
 void main(){
@@ -30,7 +26,7 @@ void main(){
     opacity *= sample_color.a;
   #endif
 #ifdef ALPHA_MASK_MODE
-  if (opacity < cutoff) {
+  if (opacity < material.alpha_cutoff) {
     discard;
   }
 #endif
