@@ -12,7 +12,7 @@ export class CameraPlugin extends Plugin {
   init(renderer, renderDevice) {
     renderer.setResource(new Texture2DPool())
     renderer.setResource(new CameraColorTargets())
-    renderer.setResource(new CanvasBlitPipeline())
+    renderer.setResource(new CanvasBlitPipeline(renderDevice))
     renderer.setResource(new TonemappingUniform(renderDevice))
     renderer.setResource(new TonemappingPipeline(renderDevice))
     renderer.renderGraph.addNode(CameraViewNode.name, new CameraViewNode())

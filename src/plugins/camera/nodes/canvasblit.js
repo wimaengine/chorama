@@ -44,23 +44,22 @@ export class CanvasBlitNode {
       }
 
       const canvasSource = cameraColorTarget.target
+      if (!canvasSource) {
+        continue
+      }
+
       const sourceTexture = renderer.caches.getTexture(renderDevice, canvasSource)
+      const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
+      const bindGroup = createCanvasBlitBindGroup(renderDevice, pipelineState, sourceTexture, gpuSampler)
+
       const cameraTarget = camera.target
 
-      if (cameraTarget instanceof CanvasTarget && canvasSource) {
+      if (cameraTarget instanceof CanvasTarget) {
         const canvasTarget = /**@type {CanvasTarget} */ (camera.target)
 
         canvasTarget.changed()
 
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, canvasSource.format)
-        const mainTextureInfo = pipeline.uniforms.get("mainTexture")
-        const textureUnit = mainTextureInfo?.texture_unit
-        const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
-
-        assert(mainTextureInfo, "Canvas blit pipeline is missing the mainTexture uniform")
-        if (textureUnit === undefined) {
-          throw "Canvas blit pipeline is missing a mainTexture texture unit"
-        }
 
         const pass = renderDevice.beginRenderPass({
           width: canvasTarget.width,
@@ -76,9 +75,7 @@ export class CanvasBlitNode {
         })
 
         pass.setPipeline(pipeline)
-        renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
-        renderDevice.context.bindTexture(sourceTexture.type, sourceTexture.inner)
-        renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)
+        pass.setBindGroup(0, bindGroup)
         pass.draw(3)
         pass.end()
 
@@ -88,19 +85,11 @@ export class CanvasBlitNode {
           depth: 1,
           format: TextureFormat.RGBA16Float
         }))
-      } else if (cameraTarget instanceof ImageRenderTarget && canvasSource) {
+      } else if (cameraTarget instanceof ImageRenderTarget) {
         const imageTarget = /**@type {ImageRenderTarget} */ (cameraTarget)
         const imageTexture = renderer.caches.getTexture(renderDevice, imageTarget.image)
 
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, imageTarget.image.format)
-        const mainTextureInfo = pipeline.uniforms.get("mainTexture")
-        const textureUnit = mainTextureInfo?.texture_unit
-        const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
-
-        assert(mainTextureInfo, "Canvas blit pipeline is missing the mainTexture uniform")
-        if (textureUnit === undefined) {
-          throw "Canvas blit pipeline is missing a mainTexture texture unit"
-        }
 
         const pass = renderDevice.beginRenderPass({
           width: imageTarget.width,
@@ -118,9 +107,7 @@ export class CanvasBlitNode {
         })
 
         pass.setPipeline(pipeline)
-        renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
-        renderDevice.context.bindTexture(sourceTexture.type, sourceTexture.inner)
-        renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)
+        pass.setBindGroup(0, bindGroup)
         pass.draw(3)
         pass.end()
       }
@@ -130,6 +117,33 @@ export class CanvasBlitNode {
       }
     }
   }
+}
+
+/**
+ * @param {WebGLRenderDevice} device
+ * @param {CanvasBlitPipeline} pipelineState
+ * @param {import("../../../core/resources/index.js").GPUTexture} sourceTexture
+ * @param {import("../../../core/resources/index.js").GPUSampler} gpuSampler
+ */
+function createCanvasBlitBindGroup(device, pipelineState, sourceTexture, gpuSampler) {
+  return device.createBindGroup({
+    label: "CanvasBlitBindGroup",
+    layout: pipelineState.bindGroupLayout,
+    entries: [
+      {
+        binding: 1,
+        resource: {
+          texture: sourceTexture
+        }
+      },
+      {
+        binding: 2,
+        resource: {
+          sampler: gpuSampler
+        }
+      }
+    ]
+  })
 }
 
 /**
@@ -186,6 +200,7 @@ function getCanvasBlitPipeline(device, renderer, pipelineState, format) {
 
 
   const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
+  pipeline.layout.setBindGroupLayout(0, pipelineState.bindGroupLayout)
   pipelineState.pipelineIds.set(format, newId)
   return pipeline
 }
