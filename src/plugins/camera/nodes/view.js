@@ -11,7 +11,7 @@ import {
   ViewUniformBuffer
 } from "../../../renderer/index.js"
 import { EnvironmentMap, BoneTextureResource } from "../../meshmaterial/resources/index.js"
-import { ShadowMap } from "../../shadow/resources/index.js"
+import { ShadowCasterUniformBuffer, ShadowMap, ShadowViewBindings } from "../../shadow/resources/index.js"
 import {
   AmbientLightUniformBuffer,
   DirectionalLightUniformBuffer,
@@ -105,6 +105,7 @@ function populateCameraViewBindGroup(viewBindGroup, renderer) {
   const ambientLightUniformBuffer = renderer.getResource(AmbientLightUniformBuffer)
   const directionalLightUniformBuffer = renderer.getResource(DirectionalLightUniformBuffer)
   const pointLightUniformBuffer = renderer.getResource(PointLightUniformBuffer)
+  const shadowCasterUniformBuffer = renderer.getResource(ShadowCasterUniformBuffer)
   const spotLightUniformBuffer = renderer.getResource(SpotLightUniformBuffer)
   const environmentMap = renderer.getResource(EnvironmentMap)
   const shadowMap = renderer.getResource(ShadowMap)
@@ -126,6 +127,10 @@ function populateCameraViewBindGroup(viewBindGroup, renderer) {
     viewBindGroup.setOrReplace(LightViewBindings.pointLights, pointLightUniformBuffer.buffer)
   }
 
+  if (shadowCasterUniformBuffer) {
+    viewBindGroup.setOrReplace(ShadowViewBindings.shadowCasterBlock, shadowCasterUniformBuffer.buffer)
+  }
+
   if (spotLightUniformBuffer) {
     viewBindGroup.setOrReplace(LightViewBindings.spotLights, spotLightUniformBuffer.buffer)
   }
@@ -136,8 +141,8 @@ function populateCameraViewBindGroup(viewBindGroup, renderer) {
   }
 
   if (shadowMap) {
-    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.texture, shadowMap.shadowAtlas)
-    viewBindGroup.setOrReplace(ViewBindings.shadowAtlas.sampler, shadowMap.sampler)
+    viewBindGroup.setOrReplace(ShadowViewBindings.shadowAtlas.texture, shadowMap.shadowAtlas)
+    viewBindGroup.setOrReplace(ShadowViewBindings.shadowAtlas.sampler, shadowMap.sampler)
   }
 
   if (boneTexture) {

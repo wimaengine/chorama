@@ -1,5 +1,10 @@
 import { Plugin, SortViewsNode, WebGLRenderer } from "../../renderer/index.js";
-import { ShadowMap, ShadowPipelines } from "./resources/index.js";
+import {
+  MAX_SHADOW_CASTERS,
+  ShadowCasterUniformBuffer,
+  ShadowMap,
+  ShadowPipelines
+} from "./resources/index.js";
 import { ShadowOccluderNode, ShadowOpaquePassNode, ShadowViewNode } from "./nodes/index.js";
 import { CameraOpaquePassNode } from "../camera/index.js";
 
@@ -9,10 +14,10 @@ export class ShadowPlugin extends Plugin {
    * @param {WebGLRenderer} renderer
    */
   init(renderer) {
-    const maxShadows = 10
-    renderer.setResource(new ShadowMap(maxShadows))
+    renderer.setResource(new ShadowCasterUniformBuffer())
+    renderer.setResource(new ShadowMap(MAX_SHADOW_CASTERS))
     renderer.setResource(new ShadowPipelines())
-    renderer.defines.set('MAX_SHADOW_CASTERS', maxShadows.toString())
+    renderer.defines.set('MAX_SHADOW_CASTERS', MAX_SHADOW_CASTERS.toString())
 
     renderer.renderGraph.addNode(ShadowViewNode.name, new ShadowViewNode())
     renderer.renderGraph.addNode(ShadowOccluderNode.name, new ShadowOccluderNode())

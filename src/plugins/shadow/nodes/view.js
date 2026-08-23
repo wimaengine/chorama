@@ -3,11 +3,14 @@ import { DirectionalLight, SpotLight, PointLight, PCFShadowFilter, PCSSShadowFil
 import { Object3D, PerspectiveProjection } from "../../../objects"
 import { Views, View, ViewBindGroups, ViewBindings } from "../../../renderer"
 import { ViewUniformBuffer } from "../../../renderer/resources/index.js"
-import { ShadowMap } from "../resources/ShadowMap"
+import {
+  SHADOW_CASTER_BYTE_SIZE,
+  ShadowCasterUniformBuffer,
+  ShadowViewBindings,
+  ShadowMap
+} from "../resources/index.js"
 import { assert } from "../../../utils"
 import { BoneTextureResource } from "../../meshmaterial/resources/index.js"
-
-const SHADOW_ITEM_BYTE_SIZE = 96
 
 export class ShadowViewNode {
     subgraph() {
@@ -19,8 +22,8 @@ export class ShadowViewNode {
      */
     execute(graphcontext){
     const {renderDevice: device, renderer, objects } = graphcontext
-    const { context } = device
     const shadowMap = renderer.getResource(ShadowMap)
+    const shadowCasterUniform = renderer.getResource(ShadowCasterUniformBuffer)
     const views = renderer.getResource(Views)
     const viewBindGroups = renderer.getResource(ViewBindGroups)
     const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
@@ -28,6 +31,7 @@ export class ShadowViewNode {
     const blocks = []
     
     assert(shadowMap, "Shadow map not set up.")
+    assert(shadowCasterUniform, "ShadowCasterUniformBuffer resource missing")
     assert(views, "Views resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
     assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
@@ -67,18 +71,15 @@ export class ShadowViewNode {
       })
     }
 
-    const data = new ArrayBuffer(blocks.length * SHADOW_ITEM_BYTE_SIZE)
+    const data = new ArrayBuffer(blocks.length * SHADOW_CASTER_BYTE_SIZE)
     const view = new DataView(data)
 
     for (let i = 0; i < blocks.length; i++) {
       // SAFETY: The array is dense
-      /**@type {ShadowItem}*/(blocks[i]).write(view, i * SHADOW_ITEM_BYTE_SIZE)
+      /**@type {ShadowItem}*/(blocks[i]).write(view, i * SHADOW_CASTER_BYTE_SIZE)
     }
 
-    renderer.updateUBO(context, {
-      name: "ShadowCasterBlock",
-      data
-    })
+    shadowCasterUniform.setData(data)
     }
 }
 
@@ -88,9 +89,13 @@ export class ShadowViewNode {
  */
 function populateShadowViewBindGroup(viewBindGroup, renderer) {
   const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
+  const shadowCasterUniform = renderer.getResource(ShadowCasterUniformBuffer)
   const boneTexture = renderer.getResource(BoneTextureResource)
 
   assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
+  if (shadowCasterUniform) {
+    viewBindGroup.setOrReplace(ShadowViewBindings.shadowCasterBlock, shadowCasterUniform.buffer)
+  }
   viewBindGroup.setOrReplace(ViewBindings.camera, viewUniformBuffer.buffer)
 
   if (!boneTexture) {
