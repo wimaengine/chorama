@@ -6,13 +6,8 @@ import { Camera, Object3D, SkyBox } from "../../../objects/index.js"
 import { RenderItem, ViewBindGroups, Views } from "../../../renderer/index.js"
 import { skyboxFragment, skyboxVertex } from "../../../shader/index.js"
 import { assert } from "../../../utils/index.js"
-import { SkyboxPipeline, SkyBoxMesh } from "../resources/index.js"
+import { SkyboxPipeline, SkyBoxMesh, SkyBoxUniforms } from "../resources/index.js"
 /** @import { Texture } from "../../../texture/index.js" */
-
-/** @type {WeakMap<SkyBox, import("../../../caches/uniformbuffers.js").UniformBuffer>} */
-const skyboxUniformBuffers = new WeakMap()
-
-let skyboxUniformBufferId = 0
 
 export class SkyBoxNode {
   subgraph() {
@@ -251,12 +246,18 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
   const dayTexture = renderer.caches.getTexture(device, day)
   const nightTexture = renderer.caches.getTexture(device, night)
   const gpuSampler = renderer.caches.getSampler(device, renderer.defaults.textureSampler)
-  const uniformBuffer = getSkyboxUniformBuffer(device, renderer, layout, object)
+  const skyboxUniforms = renderer.getResource(SkyBoxUniforms)
   const bindGroupLayout = skyboxPipeline.bindGroupLayout
 
+  assert(skyboxUniforms, "SkyBoxUniforms resource missing")
   assert(bindGroupLayout, "SkyBox bind group layout missing")
 
-  uniformBuffer.update(device.context, createSkyboxUniformData(layout, object))
+  const uniformBuffer = skyboxUniforms.setData(
+    object,
+    createSkyboxUniformData(layout, object),
+    layout.size
+  )
+  const gpuBuffer = renderer.caches.getNewUniformBuffer(device, uniformBuffer)
 
   return device.createBindGroup({
     label: "SkyBoxBindGroup",
@@ -265,7 +266,7 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
       {
         binding: 0,
         resource: {
-          buffer: uniformBuffer.buffer
+          buffer: gpuBuffer
         }
       },
       {
@@ -294,30 +295,6 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
       }
     ]
   })
-}
-
-/**
- * @param {import("../../../core/index.js").WebGLRenderDevice} device
- * @param {import("../../../renderer/index.js").WebGLRenderer} renderer
- * @param {import("../../../core/layouts/uniformbuffer.js").UniformBufferLayout} layout
- * @param {SkyBox} object
- */
-function getSkyboxUniformBuffer(device, renderer, layout, object) {
-  const existing = skyboxUniformBuffers.get(object)
-
-  if (existing) {
-    return existing
-  }
-
-  const template = renderer.caches.uniformBuffers.get("SkyBoxBlock")
-
-  assert(template, "SkyBoxBlock uniform buffer missing")
-
-  const name = `SkyBoxBlock:${skyboxUniformBufferId++}`
-  const buffer = renderer.caches.uniformBuffers.getorSet(device, name, layout)
-
-  skyboxUniformBuffers.set(object, buffer)
-  return buffer
 }
 
 /**
