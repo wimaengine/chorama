@@ -5,9 +5,20 @@ import { assert } from "../../../utils/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
 import { TextureFormat } from "../../../constants/index.js"
 import { CameraColorTargets } from "../resources/index.js"
-import { ViewBindGroups, ViewBindings, ViewUniformBuffer } from "../../../renderer/resources/index.js"
+import {
+  ViewBindGroups,
+  ViewBindings,
+  ViewUniformBuffer
+} from "../../../renderer/index.js"
 import { EnvironmentMap, BoneTextureResource } from "../../meshmaterial/resources/index.js"
 import { ShadowMap } from "../../shadow/resources/index.js"
+import {
+  AmbientLightUniformBuffer,
+  DirectionalLightUniformBuffer,
+  LightViewBindings,
+  PointLightUniformBuffer,
+  SpotLightUniformBuffer
+} from "../../light/index.js"
 
 export class CameraViewNode {
   subgraph() {
@@ -91,6 +102,10 @@ export class CameraViewNode {
  */
 function populateCameraViewBindGroup(viewBindGroup, renderer) {
   const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
+  const ambientLightUniformBuffer = renderer.getResource(AmbientLightUniformBuffer)
+  const directionalLightUniformBuffer = renderer.getResource(DirectionalLightUniformBuffer)
+  const pointLightUniformBuffer = renderer.getResource(PointLightUniformBuffer)
+  const spotLightUniformBuffer = renderer.getResource(SpotLightUniformBuffer)
   const environmentMap = renderer.getResource(EnvironmentMap)
   const shadowMap = renderer.getResource(ShadowMap)
   const boneTexture = renderer.getResource(BoneTextureResource)
@@ -98,6 +113,22 @@ function populateCameraViewBindGroup(viewBindGroup, renderer) {
 
   assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
   viewBindGroup.setOrReplace(ViewBindings.camera, viewUniformBuffer.buffer)
+
+  if (ambientLightUniformBuffer) {
+    viewBindGroup.setOrReplace(LightViewBindings.ambientLight, ambientLightUniformBuffer.buffer)
+  }
+
+  if (directionalLightUniformBuffer) {
+    viewBindGroup.setOrReplace(LightViewBindings.directionalLights, directionalLightUniformBuffer.buffer)
+  }
+
+  if (pointLightUniformBuffer) {
+    viewBindGroup.setOrReplace(LightViewBindings.pointLights, pointLightUniformBuffer.buffer)
+  }
+
+  if (spotLightUniformBuffer) {
+    viewBindGroup.setOrReplace(LightViewBindings.spotLights, spotLightUniformBuffer.buffer)
+  }
 
   if (environmentMap) {
     viewBindGroup.setOrReplace(ViewBindings.environmentMap.texture, environmentMap.texture ?? defaults.textureCube)

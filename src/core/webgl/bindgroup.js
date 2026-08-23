@@ -215,7 +215,10 @@ function bindUniformBlock(context, pipeline, name, bindingPoint) {
   const invalidIndex = context.INVALID_INDEX ?? 0xFFFFFFFF
   const index = context.getUniformBlockIndex(pipeline.program, name)
 
-  assertTrue(index !== invalidIndex, `Uniform block ${name} is not active in the shader program`)
+  if (index === invalidIndex) {
+    return
+  }
+
   context.uniformBlockBinding(pipeline.program, index, bindingPoint)
 }
 
