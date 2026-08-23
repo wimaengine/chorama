@@ -84,7 +84,7 @@ function renderItems(view, viewIndex, device, renderer) {
     const modelInfo = pipeline.uniforms.get("model")
     const transformMatrix = Affine3.toMatrix4(transform)
 
-    pass.setPipeline(pipeline, caches.uniformBuffers)
+    pass.setPipeline(pipeline)
 
     if (modelInfo) {
       context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))

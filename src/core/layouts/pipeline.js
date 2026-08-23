@@ -74,28 +74,6 @@ export class WebGLPipelineLayout {
   }
 
   /**
-   * Allocates binding points for the provided uniform blocks once during pipeline initialization.
-   * @param {Map<string, import("./uniformbuffer.js").UniformBufferLayout>} uniformBlocks
-   */
-  allocateUniformBlocks(uniformBlocks) {
-    for (const name of uniformBlocks.keys()) {
-      if (this.bindingPointsByName.has(name)) {
-        continue
-      }
-
-      this.bindingPointsByName.set(name, this.reserveBindingPoint(name))
-    }
-  }
-
-  /**
-   * @param {string} name
-   * @returns {number | undefined}
-   */
-  getUniformBlockPoint(name) {
-    return this.bindingPointsByName.get(name)
-  }
-
-  /**
    * @param {number} bindGroupIndex
    * @param {number} binding
    * @returns {number | undefined}

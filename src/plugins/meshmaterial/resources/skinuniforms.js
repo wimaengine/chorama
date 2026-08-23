@@ -1,4 +1,4 @@
-import { NewUniformBuffer } from "../../../core/resources/newuniformbuffer.js"
+import { UniformBuffer } from "../../../core/resources/index.js"
 /** @import { Skin } from "../../../objects/index.js" */
 
 /**
@@ -6,14 +6,14 @@ import { NewUniformBuffer } from "../../../core/resources/newuniformbuffer.js"
  */
 export class SkinUniforms {
   /**
-   * @type {Map<Skin, NewUniformBuffer>}
+   * @type {Map<Skin, UniformBuffer>}
    */
   buffers = new Map()
 
   /**
    * Returns the existing buffer for a skin, if any.
    * @param {Skin} skin
-   * @returns {NewUniformBuffer | undefined}
+   * @returns {UniformBuffer | undefined}
    */
   get(skin) {
     return this.buffers.get(skin)
@@ -24,7 +24,7 @@ export class SkinUniforms {
    * The backing `ArrayBuffer` is grown to at least `minSize`.
    * @param {Skin} skin
    * @param {number} [minSize=0]
-   * @returns {NewUniformBuffer}
+   * @returns {UniformBuffer}
    */
   getOrSet(skin, minSize = 0) {
     const existing = this.get(skin)
@@ -33,7 +33,7 @@ export class SkinUniforms {
       return existing
     }
 
-    const next = new NewUniformBuffer(new ArrayBuffer(minSize))
+    const next = new UniformBuffer(new ArrayBuffer(minSize))
 
     if (existing) {
       new Uint8Array(next.data).set(
@@ -50,7 +50,7 @@ export class SkinUniforms {
    * @param {Skin} skin
    * @param {ArrayBuffer} data
    * @param {number} [minSize=data.byteLength]
-   * @returns {NewUniformBuffer}
+   * @returns {UniformBuffer}
    */
   setData(skin, data, minSize = data.byteLength) {
     const size = Math.max(minSize, data.byteLength)

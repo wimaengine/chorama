@@ -1,4 +1,4 @@
-import { NewUniformBuffer } from "../../../core/resources/index.js"
+import { UniformBuffer } from "../../../core/resources/index.js"
 /** @import { SkyBox } from "../../../objects/index.js" */
 
 /**
@@ -6,14 +6,14 @@ import { NewUniformBuffer } from "../../../core/resources/index.js"
  */
 export class SkyBoxUniforms {
   /**
-   * @type {WeakMap<SkyBox, NewUniformBuffer>}
+   * @type {WeakMap<SkyBox, UniformBuffer>}
    */
   buffers = new WeakMap()
 
   /**
    * Returns the existing buffer for a skybox, if any.
    * @param {SkyBox} skybox
-   * @returns {NewUniformBuffer | undefined}
+   * @returns {UniformBuffer | undefined}
    */
   get(skybox) {
     return this.buffers.get(skybox)
@@ -24,7 +24,7 @@ export class SkyBoxUniforms {
    * The backing `ArrayBuffer` is grown to at least `minSize`.
    * @param {SkyBox} skybox
    * @param {number} [minSize=0]
-   * @returns {NewUniformBuffer}
+   * @returns {UniformBuffer}
    */
   getOrSet(skybox, minSize = 0) {
     const existing = this.get(skybox)
@@ -33,7 +33,7 @@ export class SkyBoxUniforms {
       return existing
     }
 
-    const next = new NewUniformBuffer(new ArrayBuffer(minSize))
+    const next = new UniformBuffer(new ArrayBuffer(minSize))
 
     if (existing) {
       new Uint8Array(next.data).set(
@@ -50,7 +50,7 @@ export class SkyBoxUniforms {
    * @param {SkyBox} skybox
    * @param {ArrayBuffer} data
    * @param {number} [minSize=data.byteLength]
-   * @returns {NewUniformBuffer}
+   * @returns {UniformBuffer}
    */
   setData(skybox, data, minSize = data.byteLength) {
     const size = Math.max(minSize, data.byteLength)

@@ -175,7 +175,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
       material.getData(),
       materialBlockLayout.size
     )
-    const gpuBuffer = caches.getNewUniformBuffer(device, materialBuffer)
+    const gpuBuffer = caches.getUniformBuffer(device, materialBuffer)
 
     bindings.push(createBufferBinding(binding++, "MaterialBlock", gpuBuffer, materialBlockLayout.size))
   }
@@ -190,7 +190,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
         createAlphaMaskUniformData(alphaMaskBlockLayout, alphaBlendMode.cutoff),
         alphaMaskBlockLayout.size
       )
-      const gpuBuffer = caches.getNewUniformBuffer(device, alphaMaskBuffer)
+      const gpuBuffer = caches.getUniformBuffer(device, alphaMaskBuffer)
 
       bindings.push(createBufferBinding(binding++, "AlphaMaskBlock", gpuBuffer, alphaMaskBlockLayout.size))
     }
@@ -202,7 +202,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
       createSkinUniformData(skinBlockLayout, skinTextureState.slot.index, object.skin.bones.length),
       skinBlockLayout.size
     )
-    const gpuBuffer = caches.getNewUniformBuffer(device, skinBuffer)
+    const gpuBuffer = caches.getUniformBuffer(device, skinBuffer)
 
     bindings.push(createBufferBinding(binding++, "SkinBlock", gpuBuffer, skinBlockLayout.size))
   }

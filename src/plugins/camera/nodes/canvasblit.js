@@ -74,7 +74,7 @@ export class CanvasBlitNode {
           depthRange: camera.depthRange
         })
 
-        pass.setPipeline(pipeline, renderer.caches.uniformBuffers)
+        pass.setPipeline(pipeline)
         renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
         renderDevice.context.bindTexture(canvasTexture.type, canvasTexture.inner)
         renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)

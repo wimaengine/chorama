@@ -101,7 +101,7 @@ export class SkeletonHelperPlugin extends Plugin {
       scissor: renderTarget.scissor || renderTarget.viewport
     })
 
-    pass.setPipeline(pipeline, caches.uniformBuffers)
+    pass.setPipeline(pipeline)
     const transformsTexture = caches.getTexture(device, boneTextureResource.texture)
     const gpuSampler = caches.getSampler(device, renderer.defaults.textureNearestSampler)
 

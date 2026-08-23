@@ -1,10 +1,10 @@
-import { NewUniformBuffer } from "../../../core/resources/newuniformbuffer.js"
+import { UniformBuffer } from "../../../core/resources/index.js"
 /** @import { RawMaterial } from "../../../material/index.js" */
 
 /**
  * @typedef MaterialUniformBufferState
- * @property {NewUniformBuffer} materialBlock
- * @property {NewUniformBuffer | undefined} alphaMaskBlock
+ * @property {UniformBuffer} materialBlock
+ * @property {UniformBuffer | undefined} alphaMaskBlock
  */
 
 export class MaterialUniforms {
@@ -22,7 +22,7 @@ export class MaterialUniforms {
 
     if (!state) {
       state = {
-        materialBlock: new NewUniformBuffer(),
+        materialBlock: new UniformBuffer(),
         alphaMaskBlock: undefined
       }
       this.buffers.set(material, state)
@@ -35,7 +35,7 @@ export class MaterialUniforms {
    * Returns the existing buffer for a material block, if any.
    * @param {RawMaterial} material
    * @param {"materialBlock" | "alphaMaskBlock"} key
-   * @returns {NewUniformBuffer | undefined}
+   * @returns {UniformBuffer | undefined}
    */
   get(material, key) {
     return this.#getState(material)[key]
@@ -47,7 +47,7 @@ export class MaterialUniforms {
    * @param {RawMaterial} material
    * @param {"materialBlock" | "alphaMaskBlock"} key
    * @param {number} [minSize=0]
-   * @returns {NewUniformBuffer}
+   * @returns {UniformBuffer}
    */
   getOrSet(material, key, minSize = 0) {
     const state = this.#getState(material)
@@ -57,7 +57,7 @@ export class MaterialUniforms {
       return existing
     }
 
-    const next = new NewUniformBuffer(new ArrayBuffer(minSize))
+    const next = new UniformBuffer(new ArrayBuffer(minSize))
 
     if (existing) {
       new Uint8Array(next.data).set(
@@ -75,7 +75,7 @@ export class MaterialUniforms {
    * @param {"materialBlock" | "alphaMaskBlock"} key
    * @param {ArrayBuffer} data
    * @param {number} [minSize=data.byteLength]
-   * @returns {NewUniformBuffer}
+   * @returns {UniformBuffer}
    */
   setData(material, key, data, minSize = data.byteLength) {
     const size = Math.max(minSize, data.byteLength)

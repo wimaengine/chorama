@@ -112,19 +112,6 @@ export class WebGLRenderer {
   }
 
   /**
-   * @param {{name: any;data: any;}} dataForm
-   * @param {WebGL2RenderingContext} context
-   */
-  updateUBO(context, dataForm) {
-    const { data, name } = dataForm
-    const ubo = this.caches.uniformBuffers.get(name)
-
-    if (!ubo) return
-
-    ubo.update(context, data)
-  }
-
-  /**
    * @param {Object3D[]} objects
    * @param {WebGLRenderDevice} renderDevice
    */

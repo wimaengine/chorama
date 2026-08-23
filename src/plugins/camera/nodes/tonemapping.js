@@ -84,7 +84,7 @@ export class TonemappingNode {
         }]
       })
 
-      pass.setPipeline(pipeline, renderer.caches.uniformBuffers)
+      pass.setPipeline(pipeline)
       renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
       renderDevice.context.bindTexture(source.type, source.inner)
       renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)

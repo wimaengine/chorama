@@ -1,4 +1,4 @@
-import { NewUniformBuffer } from "../../../core/resources/index.js"
+import { UniformBuffer } from "../../../core/resources/index.js"
 
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT
 
@@ -12,9 +12,9 @@ export class AmbientLightUniformBuffer {
   /**
    * Backing CPU-side buffer used by the renderer's GPU cache.
    * @readonly
-   * @type {NewUniformBuffer}
+   * @type {UniformBuffer}
    */
-  buffer = new NewUniformBuffer(new ArrayBuffer(AmbientLightUniformBuffer.BlockSize))
+  buffer = new UniformBuffer(new ArrayBuffer(AmbientLightUniformBuffer.BlockSize))
 
   /**
    * Replaces the backing payload with a fixed-size copy of the provided data.
@@ -34,9 +34,9 @@ export class DirectionalLightUniformBuffer {
   /**
    * Backing CPU-side buffer used by the renderer's GPU cache.
    * @readonly
-   * @type {NewUniformBuffer}
+   * @type {UniformBuffer}
    */
-  buffer = new NewUniformBuffer(new ArrayBuffer(DirectionalLightUniformBuffer.BlockSize))
+  buffer = new UniformBuffer(new ArrayBuffer(DirectionalLightUniformBuffer.BlockSize))
 
   /**
    * Replaces the backing payload with a fixed-size copy of the provided data.
@@ -56,9 +56,9 @@ export class PointLightUniformBuffer {
   /**
    * Backing CPU-side buffer used by the renderer's GPU cache.
    * @readonly
-   * @type {NewUniformBuffer}
+   * @type {UniformBuffer}
    */
-  buffer = new NewUniformBuffer(new ArrayBuffer(PointLightUniformBuffer.BlockSize))
+  buffer = new UniformBuffer(new ArrayBuffer(PointLightUniformBuffer.BlockSize))
 
   /**
    * Replaces the backing payload with a fixed-size copy of the provided data.
@@ -78,9 +78,9 @@ export class SpotLightUniformBuffer {
   /**
    * Backing CPU-side buffer used by the renderer's GPU cache.
    * @readonly
-   * @type {NewUniformBuffer}
+   * @type {UniformBuffer}
    */
-  buffer = new NewUniformBuffer(new ArrayBuffer(SpotLightUniformBuffer.BlockSize))
+  buffer = new UniformBuffer(new ArrayBuffer(SpotLightUniformBuffer.BlockSize))
 
   /**
    * Replaces the backing payload with a fixed-size copy of the provided data.

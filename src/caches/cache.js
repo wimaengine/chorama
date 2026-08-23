@@ -1,20 +1,18 @@
 /**@import { WebGLRenderPipelineDescriptor } from '../core/index.js' */
 /**@import { WebGLAtttributeParams } from '../function.js' */
-/** @import { NewUniformBuffer } from "../core/resources/index.js" */
+/** @import { UniformBuffer } from "../core/resources/index.js" */
 /** @import { Sampler } from "../texture/index.js" */
 /** @import { WebGLSamplerDescriptor } from "../core/webgl/descriptors.js" */
 
 import { Texture } from "../texture/index.js"
 import { Attribute, Mesh } from "../mesh/index.js"
 import { GPUMesh, GPUTexture, GPUBuffer, MeshVertexLayout, WebGLRenderDevice, WebGLRenderPipeline } from "../core/index.js"
-import { UniformBuffers } from "./uniformbuffers.js"
 import { BufferType, BufferUsage } from "../constants/others.js"
 import { mapToIndicesType, mapVertexFormatToWebGL } from "../function.js"
 import { assert } from "../utils/index.js"
 import { getVertexFormatComponentNumber, getVertexFormatComponentSize } from "../constants/mesh.js"
 
 export class Caches {
-  uniformBuffers = new UniformBuffers()
   /**
    * @type {Map<Mesh, GPUMesh>}
    */
@@ -30,9 +28,9 @@ export class Caches {
   samplers = new Map()
 
   /**
-   * @type {Map<NewUniformBuffer, GPUBuffer>}
+   * @type {Map<UniformBuffer, GPUBuffer>}
    */
-  newUniformBuffers = new Map()
+  uniformBuffers = new Map()
 
   /**
    * @type {WebGLRenderPipeline[]}
@@ -183,11 +181,11 @@ export class Caches {
 
   /**
    * @param {WebGLRenderDevice} device
-   * @param {NewUniformBuffer} uniformBuffer
+   * @param {UniformBuffer} uniformBuffer
    * @returns {GPUBuffer}
    */
-  getNewUniformBuffer(device, uniformBuffer) {
-    const gpuBuffer = this.newUniformBuffers.get(uniformBuffer)
+  getUniformBuffer(device, uniformBuffer) {
+    const gpuBuffer = this.uniformBuffers.get(uniformBuffer)
     const data = uniformBuffer.data
 
     if (gpuBuffer) {
@@ -212,7 +210,7 @@ export class Caches {
 
     uniformBuffer.changed
     device.queue.writeBuffer(newBuffer, data)
-    this.newUniformBuffers.set(uniformBuffer, newBuffer)
+    this.uniformBuffers.set(uniformBuffer, newBuffer)
     return newBuffer
   }
 
@@ -224,10 +222,6 @@ export class Caches {
   createRenderPipeline(device, descriptor) {
     const id = this.renderpipelines.length
     const pipeline = device.createRenderPipeline(descriptor)
-
-    for (const [name, uboLayout] of pipeline.uniformBlocks) {
-      this.uniformBuffers.getorSet(device, name, uboLayout)
-    }
     this.renderpipelines[id] = pipeline
     return [pipeline, id]
   }

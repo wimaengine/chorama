@@ -90,14 +90,12 @@ export class WebGLRenderPassEncoder {
   /**
    * WebGPU-like API: selects the active render pipeline.
    * @param {import("./renderpipeline.js").WebGLRenderPipeline} pipeline
-   * @param {import("../../caches/uniformbuffers.js").UniformBuffers | undefined} [uniformBuffers]
    */
-  setPipeline(pipeline, uniformBuffers) {
+  setPipeline(pipeline) {
     this.assertActive()
     this.pipeline = pipeline
     retainCompatibleBindGroups(pipeline, this.bindGroups)
     this.context.useProgram(pipeline.program)
-    pipeline.bindUniformBlocks(this.context, uniformBuffers)
 
     // culling
     if (pipeline.cullMode) {

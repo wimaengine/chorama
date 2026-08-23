@@ -257,7 +257,7 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
     createSkyboxUniformData(layout, object),
     layout.size
   )
-  const gpuBuffer = renderer.caches.getNewUniformBuffer(device, uniformBuffer)
+  const gpuBuffer = renderer.caches.getUniformBuffer(device, uniformBuffer)
 
   return device.createBindGroup({
     label: "SkyBoxBindGroup",

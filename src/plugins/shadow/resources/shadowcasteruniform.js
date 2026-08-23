@@ -1,4 +1,4 @@
-import { NewUniformBuffer } from "../../../core/resources/index.js"
+import { UniformBuffer } from "../../../core/resources/index.js"
 
 export const MAX_SHADOW_CASTERS = 10
 export const SHADOW_CASTER_BYTE_SIZE = 96
@@ -9,9 +9,9 @@ export class ShadowCasterUniformBuffer {
   /**
    * Backing CPU-side buffer used by the renderer's GPU cache.
    * @readonly
-   * @type {NewUniformBuffer}
+   * @type {UniformBuffer}
    */
-  buffer = new NewUniformBuffer(new ArrayBuffer(ShadowCasterUniformBuffer.BlockSize))
+  buffer = new UniformBuffer(new ArrayBuffer(ShadowCasterUniformBuffer.BlockSize))
 
   /**
    * Replaces the backing payload with a fixed-size copy of the provided data.

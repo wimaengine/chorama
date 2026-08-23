@@ -1,4 +1,4 @@
-import { NewUniformBuffer } from "../../core/resources/index.js"
+import { UniformBuffer } from "../../core/resources/index.js"
 
 /**
  * Shared camera data for all views in the current frame.
@@ -11,7 +11,7 @@ export class ViewUniformBuffer {
   /**
    * Backing CPU-side buffer used by the renderer's GPU cache.
    * @readonly
-   * @type {NewUniformBuffer}
+   * @type {UniformBuffer}
    */
-  buffer = new NewUniformBuffer()
+  buffer = new UniformBuffer()
 }

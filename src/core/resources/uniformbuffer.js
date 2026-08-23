@@ -4,7 +4,7 @@
  * The cache owns the matching GPU allocation and can keep reusing it until
  * the payload grows beyond the current capacity.
  */
-export class NewUniformBuffer {
+export class UniformBuffer {
   /**
    * Tracks whether the payload changed since the last cache lookup.
    * @type {boolean}

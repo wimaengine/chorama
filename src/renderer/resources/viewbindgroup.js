@@ -1,7 +1,7 @@
 /** @import { Caches } from "../../caches/index.js" */
 /** @import { WebGLBindGroup, WebGLBindGroupLayout } from "../../core/index.js" */
 /** @import { WebGLRenderDevice } from "../../core/index.js" */
-import { NewUniformBuffer } from "../../core/resources/index.js"
+import { UniformBuffer } from "../../core/resources/index.js"
 import { TextureFormat, TextureType } from "../../constants/index.js"
 import { snapUp } from "../../math/index.js"
 import { Sampler, Texture } from "../../texture/index.js"
@@ -122,7 +122,7 @@ export class ViewBindGroup {
    *
    * @overload
    * @param {ViewUniformSlot} slot
-   * @param {NewUniformBuffer} resource
+   * @param {UniformBuffer} resource
    * @returns {this}
    */
   /**
@@ -139,7 +139,7 @@ export class ViewBindGroup {
    */
   /**
    * @param {ViewBindGroupSlot} slot
-   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @param {Texture | Sampler | UniformBuffer} resource
    * @returns {this}
    */
   set(slot, resource) {
@@ -157,7 +157,7 @@ export class ViewBindGroup {
    *
    * @overload
    * @param {ViewUniformSlot} slot
-   * @param {NewUniformBuffer} resource
+   * @param {UniformBuffer} resource
    * @returns {this}
    */
   /**
@@ -174,7 +174,7 @@ export class ViewBindGroup {
    */
   /**
    * @param {ViewBindGroupSlot} slot
-   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @param {Texture | Sampler | UniformBuffer} resource
    * @returns {this}
    */
   setOrReplace(slot, resource) {
@@ -251,7 +251,7 @@ export class ViewBindGroup {
 
   /**
    * @param {ViewBindGroupSlot} slot
-   * @param {Texture | Sampler | NewUniformBuffer} resource
+   * @param {Texture | Sampler | UniformBuffer} resource
    */
   #writeItem(slot, resource) {
     this.#items.set(slot.binding, {
@@ -267,7 +267,7 @@ export class ViewBindGroup {
 /**
  * @typedef ViewBindGroupItem
  * @property {ViewBindGroupSlot} slot
- * @property {Texture | Sampler | NewUniformBuffer} resource
+ * @property {Texture | Sampler | UniformBuffer} resource
  */
 
 /**
@@ -308,7 +308,7 @@ function createLayoutEntry(device, item) {
     }
 
     case "uniform": {
-      const uniformResource = /** @type {NewUniformBuffer} */ (resource)
+      const uniformResource = /** @type {UniformBuffer} */ (resource)
       void uniformResource
       const minBindingSize = getAlignedUniformBindingSize(device, slot)
 
@@ -363,13 +363,13 @@ function createBindGroupEntry(device, caches, item) {
     }
 
     case "uniform": {
-      const uniformResource = /** @type {NewUniformBuffer} */ (resource)
+      const uniformResource = /** @type {UniformBuffer} */ (resource)
       const size = getAlignedUniformBindingSize(device, slot)
 
       return {
         binding,
         resource: {
-          buffer: caches.getNewUniformBuffer(device, uniformResource),
+          buffer: caches.getUniformBuffer(device, uniformResource),
           size
         }
       }
