@@ -1,22 +1,12 @@
-import { TextureFormat } from "../constants/index.js";
 import { Texture } from "../texture/index.js"
 import { RenderTarget } from "./rendertarget.js";
 
 export class ImageRenderTarget extends RenderTarget {
   /**
-   * @type {Texture[]}
+   * The single texture owned by this render target.
+   * @type {Texture}
    */
-  color
-
-  /**
-   * @type {Texture | undefined}
-   */
-  depthTexture
-
-  /**
-   * @type {TextureFormat | undefined}
-   */
-  internalDepthStencil
+  image
 
   /**
    * @type {number}
@@ -27,33 +17,28 @@ export class ImageRenderTarget extends RenderTarget {
    * @param {ImageRenderTargetOptions} options
    */
   constructor({
-    color = [],
-    depthTexture,
+    image,
     width,
     height,
     depth = 1,
-    layer = 0,
-    internalDepthStencil
+    layer = 0
   }) {
     super(width, height, depth)
     this.layer = layer
-    this.color = color
-    this.depthTexture = depthTexture
-    this.internalDepthStencil = internalDepthStencil
+    this.image = image
+    this.image.data = []
+    this.image.width = width
+    this.image.height = height
+    this.image.depth = depth
+  }
 
-    for (const color of this.color) {
-      color.data = []
-      color.width = width
-      color.height = height
-      color.depth = depth
-    }
-
-    if (this.depthTexture) {
-      this.depthTexture.data = []
-      this.depthTexture.width = width
-      this.depthTexture.height = height
-      this.depthTexture.depth = depth
-    }
+  /**
+   * Backwards-compatible color attachment list for call sites that still
+   * expect a render target with one color texture.
+   * @returns {Texture[]}
+   */
+  get color() {
+    return [this.image]
   }
 
   /**
@@ -69,12 +54,7 @@ export class ImageRenderTarget extends RenderTarget {
    */
   set width(value) {
     super.width = value
-    this.color.forEach((attachment) => {
-      attachment.width = value
-    })
-    if (this.depthTexture) {
-      this.depthTexture.width = value
-    }
+    this.image.width = value
   }
 
   /**
@@ -90,12 +70,7 @@ export class ImageRenderTarget extends RenderTarget {
    */
   set height(value) {
     super.height = value
-    this.color.forEach((attachment) => {
-      attachment.height = value
-    })
-    if (this.depthTexture) {
-      this.depthTexture.height = value
-    }
+    this.image.height = value
   }
 
   /**
@@ -111,20 +86,13 @@ export class ImageRenderTarget extends RenderTarget {
    */
   set depth(value) {
     super.depth = value
-    this.color.forEach((attachment) => {
-      attachment.depth = value
-    })
-    if (this.depthTexture) {
-      this.depthTexture.depth = value
-    }
+    this.image.depth = value
   }
 }
 
 /**
  * @typedef ImageRenderTargetOptions
- * @property {Texture[]} [color]
- * @property {Texture} [depthTexture]
- * @property {TextureFormat} [internalDepthStencil]
+ * @property {Texture} image
  * @property {number} width
  * @property {number} height
  * @property {number} [depth]

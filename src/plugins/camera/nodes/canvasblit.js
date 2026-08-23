@@ -1,7 +1,7 @@
 /**@import { WebGLRenderDevice } from "../../../core/index.js" */
 import { Camera } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
-import { CanvasTarget } from "../../../rendertarget/index.js"
+import { CanvasTarget, ImageRenderTarget } from "../../../rendertarget/index.js"
 import { CompareFunction, MeshVertexLayout, Shader } from "../../../core/index.js"
 import { CullFace, PrimitiveTopology, TextureFormat } from "../../../constants/index.js"
 import { assert } from "../../../utils/index.js"
@@ -44,10 +44,11 @@ export class CanvasBlitNode {
       }
 
       const canvasSource = cameraColorTarget.target
+      const sourceTexture = renderer.caches.getTexture(renderDevice, canvasSource)
+      const cameraTarget = camera.target
 
-      if (camera.target instanceof CanvasTarget && canvasSource) {
+      if (cameraTarget instanceof CanvasTarget && canvasSource) {
         const canvasTarget = /**@type {CanvasTarget} */ (camera.target)
-        const canvasTexture = renderer.caches.getTexture(renderDevice, canvasSource)
 
         canvasTarget.changed()
 
@@ -69,14 +70,14 @@ export class CanvasBlitNode {
             loadOp: "load",
             storeOp: "store"
           }],
-          viewport: camera.viewport,
-          scissor: camera.scissor || camera.viewport,
-          depthRange: camera.depthRange
+          viewport: view.viewport,
+          scissor: view.scissor || view.viewport,
+          depthRange: view.depthRange
         })
 
         pass.setPipeline(pipeline)
         renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
-        renderDevice.context.bindTexture(canvasTexture.type, canvasTexture.inner)
+        renderDevice.context.bindTexture(sourceTexture.type, sourceTexture.inner)
         renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)
         pass.draw(3)
         pass.end()
@@ -87,6 +88,41 @@ export class CanvasBlitNode {
           depth: 1,
           format: TextureFormat.RGBA16Float
         }))
+      } else if (cameraTarget instanceof ImageRenderTarget && canvasSource) {
+        const imageTarget = /**@type {ImageRenderTarget} */ (cameraTarget)
+        const imageTexture = renderer.caches.getTexture(renderDevice, imageTarget.image)
+
+        const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, imageTarget.image.format)
+        const mainTextureInfo = pipeline.uniforms.get("mainTexture")
+        const textureUnit = mainTextureInfo?.texture_unit
+        const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
+
+        assert(mainTextureInfo, "Canvas blit pipeline is missing the mainTexture uniform")
+        if (textureUnit === undefined) {
+          throw "Canvas blit pipeline is missing a mainTexture texture unit"
+        }
+
+        const pass = renderDevice.beginRenderPass({
+          width: imageTarget.width,
+          height: imageTarget.height,
+          colorAttachments: [{
+            texture: imageTexture,
+            mipLevel: view.colorMipmapLevel,
+            layer: view.colorLayer,
+            loadOp: "load",
+            storeOp: "store"
+          }],
+          viewport: view.viewport,
+          scissor: view.scissor || view.viewport,
+          depthRange: view.depthRange
+        })
+
+        pass.setPipeline(pipeline)
+        renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
+        renderDevice.context.bindTexture(sourceTexture.type, sourceTexture.inner)
+        renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)
+        pass.draw(3)
+        pass.end()
       }
 
       if (view.depthTexture) {

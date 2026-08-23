@@ -6,6 +6,7 @@ import {
   BasicMaterial,
   Quaternion,
   WebGLRenderer,
+  Views,
   PerspectiveProjection,
   Camera,
   WebGLRenderDevice,
@@ -18,7 +19,8 @@ import {
   PlaneMeshBuilder,
   DepthMaterial,
   CanvasTarget,
-  CameraPlugin
+  CameraPlugin,
+  RenderTarget2DPool
 } from "chorama"
 
 const canvas = document.createElement('canvas')
@@ -41,7 +43,10 @@ const depthTexture = new Texture({
 const renderTarget = new ImageRenderTarget({
   width: 1024,
   height: 1024,
-  depthTexture: depthTexture
+  image: new Texture({
+    type: TextureType.Texture2D,
+    format: TextureFormat.RGBA16Float
+  })
 })
 
 const camera1 = new Camera(renderTarget)
@@ -82,7 +87,21 @@ requestAnimationFrame(update)
 
 function update() {
   stats.begin()
-  renderer.render([object1, object2, camera1, camera2], renderDevice)
+  renderer.render([object1, camera1], renderDevice)
+
+  const views = renderer.getResource(Views)
+  const targetPool = renderer.getResource(RenderTarget2DPool)
+  const camera1View = views?.items().find((view) => view.object === camera1)
+
+  if (camera1View?.depthTexture) {
+    depthMaterial.depth = camera1View.depthTexture
+  }
+
+  renderer.render([object2, camera2], renderDevice)
+
+  if (camera1View?.depthTexture && targetPool) {
+    targetPool.recycle(camera1View.depthTexture)
+  }
 
   object1.transform.orientation.multiply(
     Quaternion.fromEuler(Math.PI / 1000, Math.PI / 1000, 0)

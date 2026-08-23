@@ -50,18 +50,22 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
     height,
     colorAttachments: [{
       texture: caches.getTexture(device, colorTarget),
+      mipLevel: view.colorMipmapLevel,
+      layer: view.colorLayer,
       loadOp: "load",
       storeOp: "store"
     }],
     depthStencilAttachment: depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
       texture: depthTexture,
+      mipLevel: view.depthMipmapLevel,
+      layer: view.depthLayer,
       depthLoadOp: "load",
       depthStoreOp: "store",
       depthReadOnly: true
     }) : undefined,
-    viewport: camera.viewport,
-    scissor: camera.scissor || camera.viewport,
-    depthRange: camera.depthRange
+    viewport: view.viewport,
+    scissor: view.scissor || view.viewport,
+    depthRange: view.depthRange
   })
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)

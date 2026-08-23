@@ -3,6 +3,7 @@ import { GPUMesh } from "../../core/index.js"
 import { Affine3, Matrix4, Vector3 } from "../../math/index.js"
 import { Object3D, RenderMask } from "../../objects/index.js"
 import { RenderTarget } from "../../rendertarget/index.js"
+import { Range, ViewRectangle } from "../../utils/index.js"
 
 export class View {
   /**
@@ -25,6 +26,41 @@ export class View {
    * @type {RenderTarget | undefined}
    */
   renderTarget
+
+  /**
+   * @type {ViewRectangle}
+   */
+  viewport = new ViewRectangle()
+
+  /**
+   * @type {ViewRectangle | undefined}
+   */
+  scissor
+
+  /**
+   * @type {Range}
+   */
+  depthRange = new Range()
+
+  /**
+   * @type {number}
+   */
+  colorLayer = 0
+
+  /**
+   * @type {number}
+   */
+  depthLayer = 0
+
+  /**
+   * @type {number}
+   */
+  colorMipmapLevel = 0
+
+  /**
+   * @type {number}
+   */
+  depthMipmapLevel = 0
 
   /**
    * Dedicated depth texture for the view.
@@ -78,6 +114,13 @@ export class View {
   constructor({
     renderTarget,
     depthTexture,
+    viewport = new ViewRectangle(),
+    scissor,
+    depthRange = new Range(),
+    colorLayer = 0,
+    depthLayer = 0,
+    colorMipmapLevel = 0,
+    depthMipmapLevel = 0,
     position,
     projection,
     view,
@@ -88,6 +131,20 @@ export class View {
     renderMask = new RenderMask()
   }) {
     this.renderTarget = renderTarget
+    this.viewport = new ViewRectangle()
+    this.viewport.copy(viewport)
+    if (scissor) {
+      this.scissor = new ViewRectangle()
+      this.scissor.copy(scissor)
+    } else {
+      this.scissor = undefined
+    }
+    this.depthRange = new Range()
+    this.depthRange.copy(depthRange)
+    this.colorLayer = colorLayer
+    this.depthLayer = depthLayer
+    this.colorMipmapLevel = colorMipmapLevel
+    this.depthMipmapLevel = depthMipmapLevel
     this.near = near
     this.far = far
     this.tag = tag
@@ -277,6 +334,13 @@ export class RenderItem {
  * @typedef ViewOptions
  * @property {RenderTarget} [renderTarget]
  * @property {Texture} [depthTexture]
+ * @property {ViewRectangle} [viewport]
+ * @property {ViewRectangle} [scissor]
+ * @property {Range} [depthRange]
+ * @property {number} [colorLayer]
+ * @property {number} [depthLayer]
+ * @property {number} [colorMipmapLevel]
+ * @property {number} [depthMipmapLevel]
  * @property {Vector3} position
  * @property {Matrix4} projection
  * @property {Matrix4} view

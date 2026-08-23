@@ -2,6 +2,7 @@ import { Camera, Object3D } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
 import { Vector3 } from "../../../math/index.js"
 import { assert } from "../../../utils/index.js"
+import { ImageRenderTarget } from "../../../rendertarget/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
 import { TextureFormat } from "../../../constants/index.js"
 import { CameraColorTargets } from "../resources/index.js"
@@ -75,6 +76,13 @@ export class CameraViewNode {
           height: renderTarget.height,
           format: TextureFormat.Depth24Plus
         }),
+        viewport: camera.viewport,
+        scissor: camera.scissor,
+        depthRange: camera.depthRange,
+        colorLayer: camera.target instanceof ImageRenderTarget ? camera.target.layer : 0,
+        depthLayer: 0,
+        colorMipmapLevel: 0,
+        depthMipmapLevel: 0,
         near: camera.near,
         far: camera.far,
         projection: camera.projection.asProjectionMatrix(camera.near, camera.far),

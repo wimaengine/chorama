@@ -116,12 +116,15 @@ function buildDirectionalShadowPass(light, shadowMap) {
 
   if (!shadow) return
 
-  const [renderTarget, layer] = shadowMap.getTarget()
+  const layer = shadowMap.getTarget()
   const shadowItem = new ShadowItem()
   const projectionMatrix = shadow.projection.asProjectionMatrix(shadow.near, shadow.far)
   const viewMatrix = Affine3.toMatrix4(light.transform.world).invert()
   const view = new View({
-    renderTarget,
+    colorLayer: layer,
+    depthLayer: layer,
+    colorMipmapLevel: 0,
+    depthMipmapLevel: 0,
     position: light.transform.position,
     projection: projectionMatrix,
     view: viewMatrix,
@@ -153,7 +156,7 @@ function buildSpotShadowPass(light, shadowMap) {
   if (!shadow) {
     return
   }
-  const [renderTarget, layer] = shadowMap.getTarget()
+  const layer = shadowMap.getTarget()
   const shadowItem = new ShadowItem()
   const viewMatrix = Affine3.toMatrix4(light.transform.world).invert()
   const projectionMatrix = new PerspectiveProjection(light.outerAngle, 1).asProjectionMatrix(
@@ -161,7 +164,10 @@ function buildSpotShadowPass(light, shadowMap) {
     light.range
   )
   const view = new View({
-    renderTarget,
+    colorLayer: layer,
+    depthLayer: layer,
+    colorMipmapLevel: 0,
+    depthMipmapLevel: 0,
     position: light.transform.position,
     projection: projectionMatrix,
     view: viewMatrix,
@@ -211,7 +217,7 @@ function buildPointShadowPass(light, shadowMap) {
 
   for (let i = 0; i < sides.length; i++) {
     const side = /**@type {[Vector3, Vector3]} */ (sides[i])
-    const [renderTarget, layer] = shadowMap.getTarget()
+    const layer = shadowMap.getTarget()
 
     const worldMatrix = light.transform.world
     const viewMatrix = Affine3.toMatrix4(new Affine3()
@@ -225,7 +231,10 @@ function buildPointShadowPass(light, shadowMap) {
 
     layerId = layer
     views.push(new View({
-      renderTarget,
+      colorLayer: layer,
+      depthLayer: layer,
+      colorMipmapLevel: 0,
+      depthMipmapLevel: 0,
       view: viewMatrix,
       projection: projectionMatrix,
       position: light.transform.position,

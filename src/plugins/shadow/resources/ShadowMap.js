@@ -1,6 +1,5 @@
 import { Object3D } from "../../../objects";
 import { TextureType, TextureFormat, TextureWrap, TextureFilter } from "../../../constants";
-import { ImageRenderTarget } from "../../../rendertarget";
 import { Texture, Sampler } from "../../../texture";
 
 
@@ -10,10 +9,6 @@ export class ShadowMap {
    * @private
    */
   counter = 0;
-  /**
-   * @type {ImageRenderTarget[]}
-   */
-  targets = [];
 
   shadowAtlas = new Texture({
     type: TextureType.Texture2DArray,
@@ -36,6 +31,9 @@ export class ShadowMap {
    */
   constructor(maxShadows) {
     this.maxDepth = maxShadows;
+    this.shadowAtlas.width = 2048
+    this.shadowAtlas.height = 2048
+    this.shadowAtlas.depth = maxShadows
   }
 
   /**
@@ -50,31 +48,17 @@ export class ShadowMap {
     });
   }
   /**
-   * @return {[ImageRenderTarget, number]}
+   * @return {number}
    */
   getTarget() {
     const layer = this.counter;
-    const target = this.targets[layer];
 
-    if (this.counter > this.maxDepth) {
+    if (this.counter >= this.maxDepth) {
       console.error('Maximum shadows reached, some shadows will be ignored');
     }
 
     this.counter++;
-    if (target) {
-      return [target, layer];
-    }
-
-    const newTarget = new ImageRenderTarget({
-      depthTexture: this.shadowAtlas,
-      width: 2048,
-      height: 2048,
-      depth: this.maxDepth,
-      layer: layer
-    });
-    this.targets[layer] = newTarget;
-
-    return [newTarget, layer];
+    return layer;
   }
   /**
    * @param {Object3D} object

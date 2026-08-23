@@ -4,8 +4,7 @@ import { ViewBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { Affine3 } from "../../../math/index.js"
 import { snapUp } from "../../../math/index.js"
-import { ImageRenderTarget } from "../../../rendertarget/index.js"
-import { hasDepthComponent, hasStencilComponent } from "../../../constants/index.js"
+import { ShadowMap } from "../resources/index.js"
 
 /**
  * @param {import("../../../renderer/index.js").View} view
@@ -14,53 +13,32 @@ import { hasDepthComponent, hasStencilComponent } from "../../../constants/index
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  */
 function renderItems(view, viewIndex, device, renderer) {
-  const { renderTarget, opaque: opaqueStage } = view
+  const { opaque: opaqueStage } = view
 
   const context = device.context
   const caches = renderer.caches
   const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const shadowMap = renderer.getResource(ShadowMap)
 
-  if (!(renderTarget instanceof ImageRenderTarget)) {
-    throw "Shadow opaque pass expects an image render target"
-  }
+  assert(shadowMap, "Shadow map resource missing")
 
-  const imageTarget = renderTarget
-
-  imageTarget.changed()
-
-  const clearColor = imageTarget.clearColor
-  const clearValue = clearColor ? /** @type {const} */ ([clearColor.r, clearColor.g, clearColor.b, clearColor.a]) : undefined
-  const depthTexture = imageTarget.depthTexture ? caches.getTexture(device, imageTarget.depthTexture) : undefined
+  const depthTexture = caches.getTexture(device, shadowMap.shadowAtlas)
   const depthStencilAttachment = depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
     texture: depthTexture,
-    layer: imageTarget.layer
+    mipLevel: view.depthMipmapLevel,
+    layer: view.depthLayer,
+    depthLoadOp: "clear",
+    depthStoreOp: "store",
+    depthClearValue: 1
   }) : undefined
 
-  if (depthTexture && depthStencilAttachment && hasDepthComponent(depthTexture.actualFormat)) {
-    depthStencilAttachment.depthLoadOp = imageTarget.clearDepth !== undefined ? "clear" : "load"
-    depthStencilAttachment.depthStoreOp = "store"
-    depthStencilAttachment.depthClearValue = imageTarget.clearDepth
-  }
-
-  if (depthTexture && depthStencilAttachment && hasStencilComponent(depthTexture.actualFormat)) {
-    depthStencilAttachment.stencilLoadOp = imageTarget.clearStencil !== undefined ? "clear" : "load"
-    depthStencilAttachment.stencilStoreOp = "store"
-    depthStencilAttachment.stencilClearValue = imageTarget.clearStencil
-  }
-
   const pass = device.beginRenderPass({
-    width: imageTarget.width,
-    height: imageTarget.height,
-    colorAttachments: imageTarget.color.map((texture) => texture ? {
-      texture: caches.getTexture(device, texture),
-      layer: imageTarget.layer,
-      loadOp: clearValue ? "clear" : "load",
-      storeOp: "store",
-      clearValue
-    } : null),
+    width: shadowMap.shadowAtlas.width,
+    height: shadowMap.shadowAtlas.height,
+    colorAttachments: [],
     depthStencilAttachment,
-    viewport: imageTarget.viewport,
-    scissor: imageTarget.scissor || imageTarget.viewport
+    viewport: view.viewport,
+    scissor: view.scissor || view.viewport
   })
 
   assert(sceneBindGroups, "SceneBindGroups resource missing")

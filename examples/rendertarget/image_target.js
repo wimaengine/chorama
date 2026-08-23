@@ -38,13 +38,10 @@ const renderer = new WebGLRenderer({
 const renderTarget = new ImageRenderTarget({
   width:1024,
   height:1024,
-  color:[
-    new Texture({
-      type:TextureType.Texture2D,
-      format:TextureFormat.RGBA8Unorm
-    })
-  ],
-  internalDepthStencil:TextureFormat.Depth24PlusStencil8
+  image: new Texture({
+    type:TextureType.Texture2D,
+    format:TextureFormat.RGBA8Unorm
+  })
 })
 
 const camera1 = new Camera(renderTarget)
@@ -73,7 +70,7 @@ const object1 = new MeshMaterial3D(mesh, new BasicMaterial({
   mainTexture: texture
 }))
 const object2 = new MeshMaterial3D(mesh, new BasicMaterial({
-  mainTexture: renderTarget.color[0]
+  mainTexture: renderTarget.image
 }))
 const skyBox = new SkyBox({
   day,

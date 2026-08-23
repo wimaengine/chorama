@@ -97,8 +97,8 @@ export class SkeletonHelperPlugin extends Plugin {
         storeOp: /** @type {import("../../core/index.js").WebGLStoreOp} */ ("store")
       } : null),
       depthStencilAttachment,
-      viewport: renderTarget.viewport,
-      scissor: renderTarget.scissor || renderTarget.viewport
+      viewport: view.viewport,
+      scissor: view.scissor || view.viewport
     })
 
     pass.setPipeline(pipeline)
