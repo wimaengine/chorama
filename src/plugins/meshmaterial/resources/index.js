@@ -1,5 +1,6 @@
 export * from "./meshmaterialpipelines.js"
 export * from "./meshmaterialbindgroups.js"
 export * from "./bonetexture.js"
-export * from "./materialuniformbuffers.js"
+export * from "./materialuniforms.js"
+export * from "./skinuniforms.js"
 export * from "./environmentmap.js"

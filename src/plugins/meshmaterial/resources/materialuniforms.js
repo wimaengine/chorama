@@ -7,7 +7,7 @@ import { NewUniformBuffer } from "../../../core/resources/newuniformbuffer.js"
  * @property {NewUniformBuffer | undefined} alphaMaskBlock
  */
 
-export class MaterialUniformBuffers {
+export class MaterialUniforms {
   /**
    * @type {Map<RawMaterial, MaterialUniformBufferState>}
    */
