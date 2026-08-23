@@ -6,7 +6,9 @@ in vec2 v_uv;
 out vec4 fragment_color;
 
 uniform sampler2D mainTexture;
-uniform float exposure;
+layout(std140) uniform TonemappingBlock {
+  float exposure;
+};
 
 void main() {
   vec4 source_color = texture(mainTexture, v_uv);

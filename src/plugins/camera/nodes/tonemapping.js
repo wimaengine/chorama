@@ -7,7 +7,7 @@ import { CullFace, PrimitiveTopology, TextureFormat } from "../../../constants/i
 import { assert } from "../../../utils/index.js"
 import { fullscreenVertex, tonemappingFragment } from "../../../shader/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
-import { CameraColorTargets, TonemappingPipeline } from "../resources/index.js"
+import { CameraColorTargets, TonemappingPipeline, TonemappingUniform } from "../resources/index.js"
 
 export class TonemappingNode {
   subgraph() {
@@ -28,8 +28,12 @@ export class TonemappingNode {
     assert(targetPool, "Render target pool resource missing")
     assert(pipelineState, "TonemappingPipeline resource missing")
     assert(colorTargets, "Camera color targets resource missing")
+    const tonemappingUniform = renderer.getResource(TonemappingUniform)
+
+    assert(tonemappingUniform, "TonemappingUniform resource missing")
 
     const actualViews = views.items()
+    let cameraIndex = 0
 
     for (let i = 0; i < actualViews.length; i++) {
       const view = /**@type {View} */(actualViews[i])
@@ -55,14 +59,6 @@ export class TonemappingNode {
       }
 
       const pipeline = getTonemappingPipeline(renderDevice, renderer, pipelineState, toneMapping)
-      const mainTextureInfo = pipeline.uniforms.get("mainTexture")
-      const textureUnit = mainTextureInfo?.texture_unit
-      const exposureInfo = pipeline.uniforms.get("exposure")
-
-      assert(mainTextureInfo, "Tonemapping pipeline is missing the mainTexture uniform")
-      if (textureUnit === undefined) {
-        throw "Tonemapping pipeline is missing a mainTexture texture unit"
-      }
 
       const outputColor = targetPool.get({
         width: view.object.target.canvas.width,
@@ -72,6 +68,9 @@ export class TonemappingNode {
 
       const source = renderer.caches.getTexture(renderDevice, colorSource)
       const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
+      const dynamicOffset = tonemappingUniform.setExposure(cameraIndex, getToneMappingExposure(toneMapping))
+      const exposureBuffer = renderer.caches.getUniformBuffer(renderDevice, tonemappingUniform.buffer)
+      const bindGroup = createTonemappingBindGroup(renderDevice,pipelineState,exposureBuffer,tonemappingUniform,source, gpuSampler)
 
       const pass = renderDevice.beginRenderPass({
         width: outputColor.width,
@@ -85,18 +84,13 @@ export class TonemappingNode {
       })
 
       pass.setPipeline(pipeline)
-      renderDevice.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + textureUnit)
-      renderDevice.context.bindTexture(source.type, source.inner)
-      renderDevice.context.bindSampler(textureUnit, gpuSampler.inner)
-
-      if (exposureInfo) {
-        renderDevice.context.uniform1f(exposureInfo.location, getToneMappingExposure(toneMapping))
-      }
+      pass.setBindGroup(0, bindGroup, [dynamicOffset])
 
       pass.draw(3)
       pass.end()
 
       cameraColorTarget.setColor(targetPool, outputColor)
+      cameraIndex++
     }
   }
 }
@@ -167,11 +161,47 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
   }
 
 
-    const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
-    pipelineState.pipelineIds.set(key, newId)
-    return pipeline
+  const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
+  pipeline.layout.setBindGroupLayout(0, pipelineState.bindGroupLayout)
+  pipelineState.pipelineIds.set(key, newId)
+  return pipeline
 }
 
+/**
+ * @param {WebGLRenderDevice} renderDevice
+ * @param {TonemappingPipeline} pipelineState
+ * @param {import("../../../index.js").GPUBuffer} exposureBuffer
+ * @param {TonemappingUniform} tonemappingUniform
+ * @param {import("../../../index.js").GPUTexture} source
+ * @param {import("../../../index.js").GPUSampler} gpuSampler
+ */
+function createTonemappingBindGroup(renderDevice, pipelineState, exposureBuffer, tonemappingUniform, source, gpuSampler) {
+  return renderDevice.createBindGroup({
+    label: "TonemappingBindGroup",
+    layout: pipelineState.bindGroupLayout,
+    entries: [
+      {
+        binding: 0,
+        resource: {
+          buffer: exposureBuffer,
+          size: tonemappingUniform.bindingSize
+        }
+      },
+      {
+        binding: 1,
+        resource: {
+          texture: source
+        }
+      },
+      {
+        binding: 2,
+        resource: {
+          sampler: gpuSampler
+        }
+      }
+    ]
+  })
+}
 /**
  * @param {Camera["toneMapping"]} toneMapping
  */

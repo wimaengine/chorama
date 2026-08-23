@@ -1,18 +1,20 @@
 import { Plugin, SortViewsNode, WebGLRenderer } from "../../renderer/index.js";
 import { CameraOpaquePassNode, CameraTransparentPassNode, CameraViewNode, CanvasBlitNode, TonemappingNode } from "./nodes/index.js";
 import { Texture2DPool } from "./RenderTarget2DPool.js";
-import { CameraColorTargets, CanvasBlitPipeline, TonemappingPipeline } from "./resources/index.js";
+import { CameraColorTargets, CanvasBlitPipeline, TonemappingPipeline, TonemappingUniform } from "./resources/index.js";
 
 export class CameraPlugin extends Plugin {
   /**
    * @override
    * @param {WebGLRenderer} renderer
+   * @param {import("../../core/index.js").WebGLRenderDevice} renderDevice
    */
-  init(renderer) {
+  init(renderer, renderDevice) {
     renderer.setResource(new Texture2DPool())
     renderer.setResource(new CameraColorTargets())
     renderer.setResource(new CanvasBlitPipeline())
-    renderer.setResource(new TonemappingPipeline())
+    renderer.setResource(new TonemappingUniform(renderDevice))
+    renderer.setResource(new TonemappingPipeline(renderDevice))
     renderer.renderGraph.addNode(CameraViewNode.name, new CameraViewNode())
     renderer.renderGraph.addNode(CanvasBlitNode.name, new CanvasBlitNode())
     renderer.renderGraph.addNode(CameraOpaquePassNode.name, new CameraOpaquePassNode())
