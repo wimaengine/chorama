@@ -1,8 +1,10 @@
 import { Camera } from "../../../objects/index.js"
-import { View, ViewBindGroups, Views } from "../../../renderer/index.js"
+import { View, ViewBindGroups, Views, MeshInstanceBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 import { snapUp } from "../../../math/index.js"
+
+const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
 /**
  * @param {import("../../../renderer/index.js").View} view
@@ -18,6 +20,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const context = device.context
   const caches = renderer.caches
   const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
 
   if (!(view.object instanceof Camera)) {
     throw "Camera opaque pass expects a camera view"
@@ -30,6 +33,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   assert(cameraColorTarget, "Camera color target missing")
   assert(renderTarget, "Camera render target missing")
   assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
   const object = view.object
 
   assert(object, "View object missing")
@@ -77,8 +81,10 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
 
   pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
-  opaqueStage.renderItems(pass, context, caches)
-  alphaMaskStage.renderItems(pass, context, caches)
+  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
+  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view)
+
+  alphaMaskStage.renderItems(pass, context, caches, meshInstanceEntry.alphaMask, MESH_INSTANCE_BIND_GROUP_INDEX, view)
   pass.end()
 }
 

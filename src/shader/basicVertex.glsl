@@ -4,23 +4,21 @@ uniform CameraBlock {
   Camera camera;
 };
 
-uniform mat4 model;
-#ifdef SKINNED
-  uniform SkinBlock {
-    uint skin_index;
-    uint bone_count;
-  };
-  uniform sampler2DArray bone_transforms;
+uniform MeshInstanceBlock {
+  mat4 model;
+  uint skin_index;
+  uint bone_count;
+};
+uniform sampler2DArray bone_transforms;
 
-  mat4 get_skin_bone(uint joint_index) {
-    if (bone_count == 0u) {
-      return mat4(1.0);
-    }
-
-    uint resolved_joint = min(joint_index, bone_count - 1u);
-    return get_value_from_texture(skin_index + resolved_joint, bone_transforms);
+mat4 get_skin_bone(uint joint_index) {
+  if (bone_count == 0u) {
+    return mat4(1.0);
   }
-#endif
+
+  uint resolved_joint = min(joint_index, bone_count - 1u);
+  return get_value_from_texture(skin_index + resolved_joint, bone_transforms);
+}
 
 in vec3 position;
 in vec2 uv;

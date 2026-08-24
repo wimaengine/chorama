@@ -4,11 +4,11 @@ import { assert } from '../../utils/index.js'
 import { MeshVertexLayout, Shader, WebGLRenderDevice } from "../../core/index.js";
 import { Mesh, Attribute } from "../../mesh/index.js";
 import { MeshMaterial3D, Object3D } from "../../objects/index.js";
-import { Plugin, RenderItem, ViewBindGroups, SortViewsNode, WebGLRenderer } from "../../renderer/index.js";
-import { PrimitiveTopology, TextureFormat, TextureType, UniformType } from '../../constants/index.js';
+import { Plugin, RenderItem, ViewBindGroups, SortViewsNode, WebGLRenderer, MeshInstanceBindGroups, MeshInstanceUniform } from "../../renderer/index.js";
+import { PrimitiveTopology, TextureFormat, TextureType } from '../../constants/index.js';
 import { CameraViewNode } from '../camera/index.js';
 import { MeshMaterialNode } from './nodes/index.js';
-import { BoneTextureResource, EnvironmentMap, MaterialUniforms, MeshMaterialPipelines, SkinUniforms } from './resources/index.js';
+import { BoneTextureResource, EnvironmentMap, MaterialUniforms, MeshMaterialPipelines } from './resources/index.js';
 
 export class MeshMaterialPlugin extends Plugin {
   /**
@@ -19,7 +19,6 @@ export class MeshMaterialPlugin extends Plugin {
   init(renderer, renderDevice) {
     renderer.setResource(new MeshMaterialPipelines())
     renderer.setResource(new MaterialUniforms())
-    renderer.setResource(new SkinUniforms())
     renderer.setResource(new EnvironmentMap())
     if (!renderer.getResource(BoneTextureResource)) {
       renderer.setResource(new BoneTextureResource(renderDevice.limits))
@@ -44,7 +43,13 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
   }
 
   const { caches, attributes } = renderer
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
   const { material, mesh, transform } = object
+  const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
+  const viewObject = view.object
+
+  assert(viewObject, "View object missing")
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
 
   const gpuMesh = caches.getMesh(device, mesh, attributes)
   const meshBits = createPipelineBitsFromMesh(mesh, object)
@@ -104,17 +109,33 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
       }
 
       const [, newId] = caches.createRenderPipeline(device, pipelineDescriptor)
+      const pipeline = caches.getRenderPipeline(newId)
+
+      assert(pipeline, "Mesh material pipeline missing")
+      if (!pipeline.layout.getBindGroupLayout(2)) {
+        pipeline.layout.setBindGroupLayout(2, meshInstanceBindGroups.getBindGroupLayout(device))
+      }
 
 
       return newId
   })
 
   const pipeline = caches.getRenderPipeline(pipelineId)
-  const bindGroup = pipeline ? createMaterialBindGroup(device, renderer, pipeline, material, object, view) : undefined
+  if (pipeline && !pipeline.layout.getBindGroupLayout(2)) {
+    pipeline.layout.setBindGroupLayout(2, meshInstanceBindGroups.getBindGroupLayout(device))
+  }
+  const materialBindGroup = pipeline ? createMaterialBindGroup(device, renderer, pipeline, material, view) : undefined
+  const meshInstance = new MeshInstanceUniform({
+    transform: transform.world,
+    skinIndex: skinTextureState ? skinTextureState.slot.index : 0,
+    boneCount: object.skin?.bones.length ?? 0
+  })
+
   const item = new RenderItem({
-    bindGroup,
+    bindGroup: materialBindGroup,
     mesh: gpuMesh,
     pipelineId,
+    meshInstance,
     tag: MeshMaterial3D.name,
     transform: transform.world
   })
@@ -127,16 +148,13 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
  * @param {WebGLRenderer} renderer
  * @param {WebGLRenderPipeline} pipeline
  * @param {import("../../material/index.js").RawMaterial} material
- * @param {MeshMaterial3D} object
  * @param {import("../../renderer/index.js").View} view
  * @returns {import("../../core/index.js").WebGLBindGroup | undefined}
  */
-function createMaterialBindGroup(device, renderer, pipeline, material, object, view) {
+function createMaterialBindGroup(device, renderer, pipeline, material, view) {
   const { caches, defaults } = renderer
   const materialUniforms = renderer.getResource(MaterialUniforms)
-  const skinUniforms = renderer.getResource(SkinUniforms)
   const viewBindGroups = renderer.getResource(ViewBindGroups)
-  const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
   /**
    * @type {Array<{
    *   binding: number,
@@ -146,11 +164,9 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
    */
   const bindings = []
   const materialBlockLayout = pipeline.uniformBlocks.get("MaterialBlock")
-  const skinBlockLayout = object.skin ? pipeline.uniformBlocks.get("SkinBlock") : undefined
   let binding = 0
 
   assert(materialUniforms, "MaterialUniforms resource missing")
-  assert(skinUniforms, "SkinUniforms resource missing")
   assert(viewBindGroups, "ViewBindGroups resource missing")
 
   const viewObject = view.object
@@ -160,9 +176,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
 
   assert(viewBindGroup.layout, "View bind group layout missing")
 
-  const viewBindGroupLayout = pipeline.layout.getBindGroupLayout(0)
-
-  if (!viewBindGroupLayout) {
+  if (!pipeline.layout.getBindGroupLayout(0)) {
     pipeline.layout.setBindGroupLayout(0, viewBindGroup.layout)
   }
 
@@ -175,17 +189,6 @@ function createMaterialBindGroup(device, renderer, pipeline, material, object, v
     const gpuBuffer = caches.getUniformBuffer(device, materialBuffer)
 
     bindings.push(createBufferBinding(binding++, "MaterialBlock", gpuBuffer, materialBlockLayout.size))
-  }
-
-  if (object.skin && skinBlockLayout && skinTextureState) {
-    const skinBuffer = skinUniforms.setData(
-      object.skin,
-      createSkinUniformData(skinBlockLayout, skinTextureState.slot.index, object.skin.bones.length),
-      skinBlockLayout.size
-    )
-    const gpuBuffer = caches.getUniformBuffer(device, skinBuffer)
-
-    bindings.push(createBufferBinding(binding++, "SkinBlock", gpuBuffer, skinBlockLayout.size))
   }
 
   for (const [name, _unusedBinding, texture, sampler] of material.getTextures()) {
@@ -243,36 +246,6 @@ function getSkinTextureState(renderer, skin) {
     resource,
     slot: resource.getOrAllocate(skin)
   }
-}
-
-/**
- * @param {import("../../core/layouts/index.js").UniformBufferLayout} layout
- * @param {number} skinIndex
- * @param {number} boneCount
- * @returns {ArrayBuffer}
- */
-function createSkinUniformData(layout, skinIndex, boneCount) {
-  const data = new ArrayBuffer(layout.size)
-  const view = new DataView(data)
-  let skinIndexWritten = false
-  let boneCountWritten = false
-
-  for (const [name, field] of layout.fields.entries()) {
-    if (field.type === UniformType.Uint) {
-      if (name === "skin_index") {
-        view.setUint32(field.offset, skinIndex >>> 0, true)
-        skinIndexWritten = true
-      } else if (name === "bone_count") {
-        view.setUint32(field.offset, boneCount >>> 0, true)
-        boneCountWritten = true
-      }
-    }
-  }
-
-  assert(skinIndexWritten, "SkinBlock skin_index field missing")
-  assert(boneCountWritten, "SkinBlock bone_count field missing")
-
-  return data
 }
 
 /**

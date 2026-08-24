@@ -7,9 +7,9 @@ import { assert } from '../utils/index.js'
 import { Caches } from "../caches/index.js"
 import { Attribute } from "../mesh/index.js"
 import { Plugin } from "./plugin.js"
-import { RenderGraph, SortViewsNode } from "./graph/index.js"
+import { RenderGraph, SortViewsNode, PrepareMeshInstanceBindGroupsNode } from "./graph/index.js"
 import { Views } from "./views.js"
-import { ViewBindGroups, ViewUniformBuffer } from "./resources/index.js"
+import { MeshInstanceBindGroups, ViewBindGroups, ViewUniformBuffer } from "./resources/index.js"
 
 export class WebGLRenderer {
 
@@ -76,9 +76,12 @@ export class WebGLRenderer {
     this.setResource(new Views())
     this.setResource(new ViewBindGroups())
     this.setResource(new ViewUniformBuffer())
+    this.setResource(new MeshInstanceBindGroups(renderDevice))
 
     this.renderGraph = new RenderGraph()
     this.renderGraph.addNode(SortViewsNode.name, new SortViewsNode())
+    this.renderGraph.addNode(PrepareMeshInstanceBindGroupsNode.name, new PrepareMeshInstanceBindGroupsNode())
+    this.renderGraph.addDependency(SortViewsNode.name, PrepareMeshInstanceBindGroupsNode.name)
 
     for (let i = 0; i < plugins.length; i++) {
       const plugin = /**@type {Plugin} */ (plugins[i]);

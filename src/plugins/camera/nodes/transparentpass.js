@@ -1,8 +1,10 @@
 import { Camera } from "../../../objects/index.js"
-import { View, ViewBindGroups, Views } from "../../../renderer/index.js"
+import { View, ViewBindGroups, Views, MeshInstanceBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 import { snapUp } from "../../../math/index.js"
+
+const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
 /**
  * @param {import("../../../renderer/index.js").View} view
@@ -14,6 +16,7 @@ import { snapUp } from "../../../math/index.js"
 function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const transparentStage = view.transparent
   const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
 
   if (!(view.object instanceof Camera)) {
     throw "Camera transparent pass expects a camera view"
@@ -30,6 +33,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   assert(cameraColorTarget, "Camera color target missing")
   assert(renderTarget, "Camera render target missing")
   assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
   const object = view.object
 
   assert(object, "View object missing")
@@ -72,7 +76,8 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
 
   pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
-  transparentStage.renderItems(pass, device.context, caches, view)
+  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
+  transparentStage.renderItems(pass, device.context, caches, meshInstanceEntry.transparent, MESH_INSTANCE_BIND_GROUP_INDEX, view)
   pass.end()
 }
 

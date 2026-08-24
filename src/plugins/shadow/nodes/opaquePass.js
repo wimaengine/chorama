@@ -1,10 +1,10 @@
 import { Camera } from "../../../objects/index.js"
-import { RenderItem, View, Views } from "../../../renderer/index.js"
-import { ViewBindGroups } from "../../../renderer/index.js"
+import { View, Views, ViewBindGroups, MeshInstanceBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
-import { Affine3 } from "../../../math/index.js"
 import { snapUp } from "../../../math/index.js"
 import { ShadowMap } from "../resources/index.js"
+
+const MESH_INSTANCE_BIND_GROUP_INDEX = 1
 
 /**
  * @param {import("../../../renderer/index.js").View} view
@@ -18,6 +18,7 @@ function renderItems(view, viewIndex, device, renderer) {
   const context = device.context
   const caches = renderer.caches
   const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
   const shadowMap = renderer.getResource(ShadowMap)
 
   assert(shadowMap, "Shadow map resource missing")
@@ -42,6 +43,7 @@ function renderItems(view, viewIndex, device, renderer) {
   })
 
   assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
   const object = view.object
 
   assert(object, "View object missing")
@@ -50,28 +52,8 @@ function renderItems(view, viewIndex, device, renderer) {
 
   pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
-  for (let i = 0; i < opaqueStage.items.length; i++) {
-    // SAFETY: List is dense
-    const { pipelineId, mesh, bindGroup, transform } = /**@type {RenderItem}*/(opaqueStage.items[i])
-    const pipeline = caches.getRenderPipeline(pipelineId)
-
-    if (!pipeline) {
-      continue
-    }
-
-    const modelInfo = pipeline.uniforms.get("model")
-    const transformMatrix = Affine3.toMatrix4(transform)
-
-    pass.setPipeline(pipeline)
-
-    if (modelInfo) {
-      context.uniformMatrix4fv(modelInfo.location, false, new Float32Array(transformMatrix))
-    }
-    if (bindGroup) {
-      pass.setBindGroup(1, bindGroup)
-    }
-    pass.draw(mesh)
-  }
+  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
+  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view)
   pass.end()
 }
 

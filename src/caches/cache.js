@@ -194,9 +194,8 @@ export class Caches {
           // non-structural change, no need to create new gpu buffer
           device.queue.writeBuffer(gpuBuffer, data)
           return gpuBuffer
-        } else {
-          gpuBuffer.destroy()
         }
+        gpuBuffer.destroy()
       } else {
         return gpuBuffer
       }
