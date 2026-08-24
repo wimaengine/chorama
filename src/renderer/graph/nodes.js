@@ -82,9 +82,9 @@ export class PrepareMeshInstanceBindGroupsNode {
 
       const entry = meshInstanceBindGroups.getOrSet(object)
 
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque, view.opaque)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask, view.alphaMask)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent, view.transparent)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque, view.opaque, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask, view.alphaMask, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent, view.transparent, view)
     }
   }
 }
@@ -98,11 +98,12 @@ export class PrepareMeshInstanceBindGroupsNode {
  * @param {MeshInstanceBindGroups} meshInstanceBindGroups
  * @param {MeshInstancePhaseBindGroup} phaseState
  * @param {import("../core/index.js").RenderStage} stage
+ * @param {View} view
  * @returns {boolean}
  */
-export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInstanceBindGroups, phaseState, stage) {
-  phaseState.reset()
-  const instanceCount = countMeshInstanceItems(stage)
+export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInstanceBindGroups, phaseState, stage, view) {
+  const meshItems = stage.getMeshItems(view)
+  const instanceCount = meshItems.length
 
   if (instanceCount === 0) {
     return false
@@ -111,26 +112,13 @@ export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInsta
   phaseState.reserve(instanceCount)
   const bindGroupLayout = meshInstanceBindGroups.getBindGroupLayout(device)
 
-  phaseState.getBindGroup(device, caches, bindGroupLayout)
-  return true
-}
+  for (let i = 0; i < meshItems.length; i++) {
+    const item = /** @type {import("../core/index.js").RenderItem} */ (meshItems[i])
+    const meshInstance = /** @type {import("../resources/meshinstanceuniform.js").MeshInstanceUniform} */ (item.meshInstance)
 
-/**
- * Counts render-stage items that carry mesh-instance state.
- *
- * @param {import("../core/index.js").RenderStage} stage
- * @returns {number}
- */
-export function countMeshInstanceItems(stage) {
-  let count = 0
-
-  for (let i = 0; i < stage.items.length; i++) {
-    const item = stage.items[i]
-
-    if (item && item.meshInstance) {
-      count += 1
-    }
+    phaseState.setData(i, meshInstance.getData())
   }
 
-  return count
+  phaseState.getBindGroup(device, caches, bindGroupLayout)
+  return true
 }

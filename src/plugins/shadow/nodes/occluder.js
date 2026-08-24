@@ -108,7 +108,6 @@ function getRenderPipelineId(device, renderer, mesh, pipelines, view) {
     const sceneBindGroups = renderer.getResource(ViewBindGroups)
     const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
     const pipelineid = pipelines.get(mesh.layoutHash)
-    const meshInstanceBindGroupIndex = 1
 
     assert(sceneBindGroups, "SceneBindGroups resource missing")
     assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
@@ -117,8 +116,8 @@ function getRenderPipelineId(device, renderer, mesh, pipelines, view) {
         const pipeline = caches.getRenderPipeline(pipelineid)
 
         assert(pipeline, "Shadow pipeline missing")
-        if (!pipeline.layout.getBindGroupLayout(meshInstanceBindGroupIndex)) {
-            pipeline.layout.setBindGroupLayout(meshInstanceBindGroupIndex, meshInstanceBindGroups.getBindGroupLayout(device))
+        if (!pipeline.layout.getBindGroupLayout(1)) {
+            pipeline.layout.setBindGroupLayout(1, meshInstanceBindGroups.getBindGroupLayout(device))
         }
 
         return pipelineid
@@ -156,7 +155,7 @@ function getRenderPipelineId(device, renderer, mesh, pipelines, view) {
 
     assert(pipeline, "Shadow pipeline missing")
     pipeline.layout.setBindGroupLayout(0, sceneBindGroup.layout)
-    pipeline.layout.setBindGroupLayout(meshInstanceBindGroupIndex, meshInstanceBindGroups.getBindGroupLayout(device))
+    pipeline.layout.setBindGroupLayout(1, meshInstanceBindGroups.getBindGroupLayout(device))
 
     pipelines.set(mesh.layoutHash, newId)
     return newId

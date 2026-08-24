@@ -134,16 +134,6 @@ export class MeshInstancePhaseBindGroup {
   #stride
 
   /**
-   * @type {number}
-   */
-  #nextOffset = 0
-
-  /**
-   * @type {WeakMap<MeshInstanceUniform, MeshInstanceSlot>}
-   */
-  #slots = new WeakMap()
-
-  /**
    * @type {import("../../core/index.js").GPUBuffer | undefined}
    */
   #gpuBuffer
@@ -161,14 +151,6 @@ export class MeshInstancePhaseBindGroup {
   }
 
   /**
-   * Clears all slot allocations so the next frame starts from offset 0.
-   */
-  reset() {
-    this.#slots = new WeakMap()
-    this.#nextOffset = 0
-  }
-
-  /**
    * Ensures the phase buffer can hold the requested number of slots.
    *
    * @param {number} instanceCount
@@ -176,7 +158,7 @@ export class MeshInstancePhaseBindGroup {
   reserve(instanceCount) {
     assertTrue(Number.isInteger(instanceCount) && instanceCount >= 0, `Invalid mesh instance count ${instanceCount}`)
 
-    const requiredSize = Math.max(this.#nextOffset, instanceCount * this.#stride)
+    const requiredSize = instanceCount * this.#stride
 
     if (requiredSize <= this.buffer.data.byteLength) {
       return
@@ -188,51 +170,39 @@ export class MeshInstancePhaseBindGroup {
   }
 
   /**
-   * Returns the stable slot for the supplied mesh instance, allocating it if needed.
+   * Returns the byte offset for the supplied slot index.
    *
-   * @param {MeshInstanceUniform} meshInstance
-   * @returns {MeshInstanceSlot}
+   * @param {number} index
+   * @returns {number}
    */
-  getOrAllocate(meshInstance) {
-    const existing = this.#slots.get(meshInstance)
-
-    if (existing) {
-      return existing
-    }
-
-    const slot = {
-      offset: this.#nextOffset
-    }
-
-    this.#nextOffset += this.#stride
-    this.#slots.set(meshInstance, slot)
-    return slot
+  getOffset(index) {
+    return index * this.#stride
   }
 
   /**
-   * Writes a payload into the stable slot for the supplied mesh instance.
+   * Writes a payload into the slot at the supplied index.
    *
-   * @param {MeshInstanceUniform} meshInstance
+   * @param {number} index
    * @param {ArrayBuffer} data
-   * @returns {MeshInstanceSlot}
+   * @returns {number}
    */
-  setData(meshInstance, data) {
-    const slot = this.getOrAllocate(meshInstance)
+  setData(index, data) {
+    const offset = this.getOffset(index)
 
     assertTrue(data.byteLength <= this.#stride, `Mesh instance payload exceeds the aligned slot size`)
 
     const bufferData = this.buffer.data
     assertTrue(
-      slot.offset + this.#stride <= bufferData.byteLength,
-      "MeshInstanceBindGroups capacity exceeded; call reserve() before creating bind groups"
+      offset + this.#stride <= bufferData.byteLength,
+      "MeshInstanceBindGroups capacity exceeded; call reserve() before writing mesh instances"
     )
 
-    const slotBytes = new Uint8Array(bufferData, slot.offset, this.#stride)
+    const slotBytes = new Uint8Array(bufferData, offset, this.#stride)
 
     slotBytes.fill(0)
     slotBytes.set(new Uint8Array(data))
     this.buffer.data = bufferData
-    return slot
+    return offset
   }
 
   /**
@@ -269,15 +239,3 @@ export class MeshInstancePhaseBindGroup {
     return this.bindGroup
   }
 }
-
-/**
- * @typedef {object} MeshInstanceSlot
- * @property {number} offset
- */
-
-/**
- * @typedef {object} RenderItemBindGroupState
- * @property {number} index
- * @property {import("../../core/index.js").WebGLBindGroup} bindGroup
- * @property {ReadonlyArray<number>} dynamicOffsets
- */

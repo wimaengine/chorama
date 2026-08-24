@@ -109,13 +109,13 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
       }
 
       const [, newId] = caches.createRenderPipeline(device, pipelineDescriptor)
+
       const pipeline = caches.getRenderPipeline(newId)
 
       assert(pipeline, "Mesh material pipeline missing")
       if (!pipeline.layout.getBindGroupLayout(2)) {
         pipeline.layout.setBindGroupLayout(2, meshInstanceBindGroups.getBindGroupLayout(device))
       }
-
 
       return newId
   })

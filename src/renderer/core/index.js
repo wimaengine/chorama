@@ -184,52 +184,96 @@ export class RenderStage {
   items = []
 
   /**
+   * @type {RenderItem[]}
+   */
+  meshItems = []
+
+  /**
+   * @type {RenderItem[]}
+   */
+  nonMeshItems = []
+
+  /**
    * @param {RenderItem} item
    */
   add(item) {
+    if (item.meshInstance) {
+      this.meshItems.push(item)
+      this.items.splice(this.meshItems.length - 1, 0, item)
+      return
+    }
+
+    this.nonMeshItems.push(item)
     this.items.push(item)
   }
   clear() {
     this.items.length = 0
+    this.meshItems.length = 0
+    this.nonMeshItems.length = 0
   }
+
+  /**
+   * Returns mesh items in the order they should be prepared and drawn.
+   *
+   * @param {View} _view
+   * @returns {RenderItem[]}
+   */
+  getMeshItems(_view) {
+    return this.meshItems
+  }
+
+  /**
+   * Returns non-mesh items in the order they should be drawn.
+   *
+   * @param {View} _view
+   * @returns {RenderItem[]}
+   */
+  getNonMeshItems(_view) {
+    return this.nonMeshItems
+  }
+
   /**
    * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
    * @param {WebGL2RenderingContext} context
-   * @param {import("../../caches/cache.js").Caches} caches
-   * @param {MeshInstancePhaseBindGroup} phaseState
-   * @param {number} bindGroupIndex
-   * @param {View} _view
-   */
-  renderItems(pass, context, caches, phaseState, bindGroupIndex, _view) {
-    for (let i = 0; i < this.items.length; i++) {
-      drawRenderItem(pass, context, caches, /**@type {RenderItem}*/(this.items[i]), phaseState, bindGroupIndex)
+ * @param {import("../../caches/cache.js").Caches} caches
+ * @param {MeshInstancePhaseBindGroup} phaseState
+ * @param {number} bindGroupIndex
+ * @param {View} view
+ */
+  renderItems(pass, context, caches, phaseState, bindGroupIndex, view) {
+    const meshItems = this.getMeshItems(view)
+    const nonMeshItems = this.getNonMeshItems(view)
+
+    for (let i = 0; i < meshItems.length; i++) {
+      const meshItem = /** @type {RenderItem} */ (meshItems[i])
+
+      drawRenderItem(pass, context, caches, meshItem, phaseState, bindGroupIndex, i)
+    }
+
+    for (let i = 0; i < nonMeshItems.length; i++) {
+      const nonMeshItem = /** @type {RenderItem} */ (nonMeshItems[i])
+
+      drawRenderItem(pass, context, caches, nonMeshItem)
     }
   }
 }
 
 export class SortedRenderStage extends RenderStage {
   /**
-   * Renders items back-to-front using the supplied view as the sorting reference.
+   * Returns mesh items back-to-front using the supplied view as the sorting reference.
    * @override
-   * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
-   * @param {WebGL2RenderingContext} context
-   * @param {import("../../caches/cache.js").Caches} caches
-   * @param {MeshInstancePhaseBindGroup} phaseState
-   * @param {number} bindGroupIndex
    * @param {View} view
+   * @returns {RenderItem[]}
    */
-  renderItems(pass, context, caches, phaseState, bindGroupIndex, view) {
-    const sortedItems = this.items
+  getMeshItems(view) {
+    return this.meshItems
       .map((item, index) => ({
         item,
         index,
         depth: getViewSpaceDepth(view, item)
       }))
       .sort((a, b) => a.depth - b.depth || a.index - b.index)
-
-    for (const { item } of sortedItems) {
-      drawRenderItem(pass, context, caches, item, phaseState, bindGroupIndex)
-    }
+      .map((entry) => entry.item)
   }
 }
 
@@ -256,10 +300,11 @@ function getViewSpaceDepth(view, item) {
  * @param {WebGL2RenderingContext} _context
  * @param {import("../../caches/cache.js").Caches} caches
  * @param {RenderItem} item
- * @param {MeshInstancePhaseBindGroup} phaseState
+ * @param {MeshInstancePhaseBindGroup} [phaseState]
  * @param {number} [bindGroupIndex=0]
+ * @param {number} [meshIndex=0]
  */
-export function drawRenderItem(pass, _context, caches, item, phaseState, bindGroupIndex = 0) {
+export function drawRenderItem(pass, _context, caches, item, phaseState, bindGroupIndex = 0, meshIndex = 0) {
   const { pipelineId, mesh } = item
   const pipeline = caches.getRenderPipeline(pipelineId)
 
@@ -270,31 +315,13 @@ export function drawRenderItem(pass, _context, caches, item, phaseState, bindGro
   pass.setPipeline(pipeline)
 
   if (item.meshInstance) {
+    assert(phaseState, "Mesh instance phase state missing")
     assert(phaseState.bindGroup, "Mesh instance phase bind group missing")
-    const slot = phaseState.setData(item.meshInstance, item.meshInstance.getData())
-    pass.setBindGroup(bindGroupIndex, phaseState.bindGroup, [slot.offset])
+    pass.setBindGroup(bindGroupIndex, phaseState.bindGroup, [phaseState.getOffset(meshIndex)])
   }
 
-  const bindGroups = item.bindGroups.length > 0
-    ? item.bindGroups
-    : item.bindGroup
-      ? [{
-          index: 1,
-          bindGroup: item.bindGroup,
-          dynamicOffsets: []
-        }]
-      : []
-
-  for (let i = 0; i < bindGroups.length; i++) {
-    const bindGroupState = bindGroups[i]
-
-    if (!bindGroupState) {
-      continue
-    }
-
-    const { index, bindGroup, dynamicOffsets = [] } = bindGroupState
-
-    pass.setBindGroup(index, bindGroup, dynamicOffsets)
+  if (item.bindGroup) {
+    pass.setBindGroup(1, item.bindGroup)
   }
 
   pass.draw(mesh)
@@ -310,11 +337,6 @@ export class RenderItem {
    * @type {GPUMesh}
    */
   mesh
-
-  /**
-   * @type {ReadonlyArray<RenderItemBindGroup>}
-   */
-  bindGroups
 
   /**
    * @type {MeshInstanceUniform | undefined}
@@ -343,7 +365,6 @@ export class RenderItem {
     pipelineId,
     mesh,
     tag,
-    bindGroups = [],
     bindGroup,
     meshInstance,
     transform
@@ -354,15 +375,6 @@ export class RenderItem {
     this.tag = tag
     this.bindGroup = bindGroup
     this.meshInstance = meshInstance
-    this.bindGroups = bindGroups.length > 0
-      ? [...bindGroups].sort((a, b) => a.index - b.index)
-      : bindGroup
-        ? [{
-            index: 1,
-            bindGroup,
-            dynamicOffsets: []
-          }]
-        : []
   }
 }
 
@@ -393,14 +405,6 @@ export class RenderItem {
  * @property {GPUMesh} mesh
  * @property {number} pipelineId
  * @property {import("../../core/index.js").WebGLBindGroup} [bindGroup]
- * @property {RenderItemBindGroup[]} [bindGroups]
  * @property {MeshInstanceUniform} [meshInstance]
  * @property {string} tag
- */
-
-/**
- * @typedef RenderItemBindGroup
- * @property {number} index
- * @property {import("../../core/index.js").WebGLBindGroup} bindGroup
- * @property {ReadonlyArray<number>} [dynamicOffsets]
  */
