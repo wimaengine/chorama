@@ -227,8 +227,9 @@ export class StandardMaterial extends Material {
 
   /**
    * @override
+   * @param {DataView} data
    */
-  getData() {
+  getData(data) {
     const {
       color,
       metallic,
@@ -242,23 +243,25 @@ export class StandardMaterial extends Material {
       ior
     } = this
     const alphaCutoff = this.alphaBlend instanceof AlphaMaskMode ? this.alphaBlend.cutoff : 0.5
+    const floats = new Float32Array(data.buffer, data.byteOffset, 17)
 
-    return new Float32Array([
-      ...color,
-      metallic,
-      roughness,
-      occlusionStrength,
-      0,
-      emissiveColor.r,
-      emissiveColor.g,
-      emissiveColor.b,
-      emissiveIntensity,
-      reflectionStrength,
-      transmission,
-      thickness,
-      ior,
-      alphaCutoff
-    ]).buffer
+    floats[0] = color.r
+    floats[1] = color.g
+    floats[2] = color.b
+    floats[3] = color.a
+    floats[4] = metallic
+    floats[5] = roughness
+    floats[6] = occlusionStrength
+    floats[7] = 0
+    floats[8] = emissiveColor.r
+    floats[9] = emissiveColor.g
+    floats[10] = emissiveColor.b
+    floats[11] = emissiveIntensity
+    floats[12] = reflectionStrength
+    floats[13] = transmission
+    floats[14] = thickness
+    floats[15] = ior
+    floats[16] = alphaCutoff
   }
 
   /**

@@ -34,6 +34,8 @@ function updateLights(objects, renderer) {
   const directionalLightUniformBuffer = renderer.getResource(DirectionalLightUniformBuffer)
   const pointLightUniformBuffer = renderer.getResource(PointLightUniformBuffer)
   const spotLightUniformBuffer = renderer.getResource(SpotLightUniformBuffer)
+  const ambientData = new ArrayBuffer(AmbientLightUniformBuffer.BlockSize)
+  const ambientView = new DataView(ambientData)
   const directionalLights = new LightQueue()
   const pointLights = new LightQueue()
   const spotLights = new LightQueue()
@@ -42,8 +44,6 @@ function updateLights(objects, renderer) {
   assert(directionalLightUniformBuffer, "DirectionalLightUniformBuffer resource missing")
   assert(pointLightUniformBuffer, "PointLightUniformBuffer resource missing")
   assert(spotLightUniformBuffer, "SpotLightUniformBuffer resource missing")
-
-  ambientLightUniformBuffer.setData(new ArrayBuffer(AmbientLightUniformBuffer.BlockSize))
 
   for (let i = 0; i < objects.length; i++) {
     const object = /**@type {Object3D}*/(objects[i])
@@ -56,21 +56,28 @@ function updateLights(objects, renderer) {
       } else if (object instanceof SpotLight) {
         spotLights.add(object)
       } else if (object instanceof AmbientLight) {
-        ambientLightUniformBuffer.setData(object.getData().data)
+        object.getData(ambientView)
       }
       return true
     })
   }
 
+  ambientLightUniformBuffer.setData(ambientData)
+
   const directionalCount = directionalLights.count(MAX_DIRECTIONAL_LIGHTS)
   const spotCount = spotLights.count(MAX_SPOT_LIGHTS)
   const pointCount = pointLights.count(MAX_POINT_LIGHTS)
-  const directionalLightData = directionalLights.getData(directionalCount)
-  const spotLightData = spotLights.getData(spotCount)
-  const pointLightData = pointLights.getData(pointCount)
-  const directionalItems = new Int32Array(directionalLightData.buffer)
-  const spotItems = new Int32Array(spotLightData.buffer)
-  const pointItems = new Int32Array(pointLightData.buffer)
+  const directionalLightData = new ArrayBuffer(DirectionalLightUniformBuffer.BlockSize)
+  const spotLightData = new ArrayBuffer(SpotLightUniformBuffer.BlockSize)
+  const pointLightData = new ArrayBuffer(PointLightUniformBuffer.BlockSize)
+
+  directionalLights.getData(new DataView(directionalLightData), directionalCount)
+  spotLights.getData(new DataView(spotLightData), spotCount)
+  pointLights.getData(new DataView(pointLightData), pointCount)
+
+  const directionalItems = new Int32Array(directionalLightData)
+  const spotItems = new Int32Array(spotLightData)
+  const pointItems = new Int32Array(pointLightData)
 
   for (let i = 0; i < directionalCount; i++) {
     const offset = (i * 12) + 8 + 4
@@ -103,13 +110,13 @@ function updateLights(objects, renderer) {
     }
   }
 
-  directionalLightUniformBuffer.setData(directionalLightData.buffer)
-  pointLightUniformBuffer.setData(pointLightData.buffer)
-  spotLightUniformBuffer.setData(spotLightData.buffer)
+  directionalLightUniformBuffer.setData(directionalLightData)
+  pointLightUniformBuffer.setData(pointLightData)
+  spotLightUniformBuffer.setData(spotLightData)
 }
 
 /**
- * @template {{pack:()=>number[]}} T
+ * @template {object} T
  */
 class LightQueue {
   /**
@@ -125,20 +132,32 @@ class LightQueue {
   }
 
   /**
+   * Packs the queued lights into the supplied data view.
+   *
+   * @param {DataView} data
    * @param {number} [maxLights=this.lights.length]
-   * @returns {Float32Array}
    */
-  getData(maxLights = this.lights.length) {
+  getData(data, maxLights = this.lights.length) {
     const lights = this.lights.slice(0, maxLights)
-    const buffer = new Float32Array([
-      0, 0, 0, 0,
-      ...lights.flatMap(light => light.pack())
-    ])
-    const dataView = new Uint32Array(buffer.buffer)
+    data.setInt32(0, lights.length, true)
 
-    dataView[0] = lights.length
+    if (lights.length === 0) {
+      return
+    }
 
-    return buffer
+    const firstLight = lights[0]
+
+    if (!firstLight) {
+      return
+    }
+
+    const stride = /** @type {{BlockSize:number}} */ (/** @type {any} */ (firstLight.constructor)).BlockSize
+    const headerBytes = 4 * Int32Array.BYTES_PER_ELEMENT
+
+    for (let i = 0; i < lights.length; i++) {
+      const light = /** @type {{pack:(data:DataView)=>void}} */ (lights[i])
+      light.pack(new DataView(data.buffer, data.byteOffset + headerBytes + (i * stride), stride))
+    }
   }
 
   /**

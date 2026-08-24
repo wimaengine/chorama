@@ -32,35 +32,24 @@ export class MaterialUniforms {
 
     const next = new UniformBuffer(new ArrayBuffer(minSize))
 
-    if (existing) {
-      new Uint8Array(next.data).set(
-        new Uint8Array(existing.data, 0, Math.min(existing.data.byteLength, next.data.byteLength))
-      )
-    }
-
     this.buffers.set(material, next)
     return next
   }
 
   /**
-   * Updates a material payload and returns its buffer record.
+   * Packs a material payload into its cached primary buffer and returns it.
+   *
    * @param {RawMaterial} material
-   * @param {ArrayBuffer} data
-   * @param {number} [minSize=data.byteLength]
+   * @param {number} [minSize=0]
    * @returns {UniformBuffer}
    */
-  setData(material, data, minSize = data.byteLength) {
-    const size = Math.max(minSize, data.byteLength)
-    const buffer = this.getOrSet(material, size)
+  setData(material, minSize = 0) {
+    const buffer = this.getOrSet(material, minSize)
+    const data = buffer.data
 
-    if (buffer.data.byteLength === data.byteLength) {
-      buffer.data = data
-      return buffer
-    }
-
-    const nextData = new ArrayBuffer(buffer.data.byteLength)
-    new Uint8Array(nextData).set(new Uint8Array(data))
-    buffer.data = nextData
+    new Uint8Array(data).fill(0)
+    material.getData(new DataView(data))
+    buffer.data = data
     return buffer
   }
 }

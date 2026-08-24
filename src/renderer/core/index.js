@@ -159,14 +159,54 @@ export class View {
     this.renderMask.copy(renderMask)
   }
 
-  getData() {
-    return new Float32Array([
-      ...this.viewMatrix,
-      ...this.projectionMatrix,
-      ...this.viewPosition,
-      this.near,
-      this.far
-    ]).buffer
+  /**
+   * Packs the view block into the supplied buffer slice.
+   *
+   * @param {DataView} data
+   */
+  getData(data) {
+    const floats = new Float32Array(data.buffer, data.byteOffset, View.BlockSize / Float32Array.BYTES_PER_ELEMENT)
+    const viewMatrix = this.viewMatrix
+    const projectionMatrix = this.projectionMatrix
+    const viewPosition = this.viewPosition
+
+    floats[0] = viewMatrix.a
+    floats[1] = viewMatrix.b
+    floats[2] = viewMatrix.c
+    floats[3] = viewMatrix.d
+    floats[4] = viewMatrix.e
+    floats[5] = viewMatrix.f
+    floats[6] = viewMatrix.g
+    floats[7] = viewMatrix.h
+    floats[8] = viewMatrix.i
+    floats[9] = viewMatrix.j
+    floats[10] = viewMatrix.k
+    floats[11] = viewMatrix.l
+    floats[12] = viewMatrix.m
+    floats[13] = viewMatrix.n
+    floats[14] = viewMatrix.o
+    floats[15] = viewMatrix.p
+    floats[16] = projectionMatrix.a
+    floats[17] = projectionMatrix.b
+    floats[18] = projectionMatrix.c
+    floats[19] = projectionMatrix.d
+    floats[20] = projectionMatrix.e
+    floats[21] = projectionMatrix.f
+    floats[22] = projectionMatrix.g
+    floats[23] = projectionMatrix.h
+    floats[24] = projectionMatrix.i
+    floats[25] = projectionMatrix.j
+    floats[26] = projectionMatrix.k
+    floats[27] = projectionMatrix.l
+    floats[28] = projectionMatrix.m
+    floats[29] = projectionMatrix.n
+    floats[30] = projectionMatrix.o
+    floats[31] = projectionMatrix.p
+    floats[32] = viewPosition.x
+    floats[33] = viewPosition.y
+    floats[34] = viewPosition.z
+    floats[35] = this.near
+    floats[36] = this.far
   }
   /**
    * Raw packed payload size before std140 padding is applied.

@@ -17,14 +17,12 @@ export class AmbientLightUniformBuffer {
   buffer = new UniformBuffer(new ArrayBuffer(AmbientLightUniformBuffer.BlockSize))
 
   /**
-   * Replaces the backing payload with a fixed-size copy of the provided data.
+   * Replaces the backing payload with the provided fixed-size data.
    *
-   * @param {ArrayBufferLike} data
+   * @param {ArrayBuffer} data
    */
   setData(data) {
-    const next = new ArrayBuffer(this.buffer.size)
-    new Uint8Array(next).set(new Uint8Array(data, 0, Math.min(data.byteLength, next.byteLength)))
-    this.buffer.data = next
+    this.buffer.data = data
   }
 }
 
@@ -39,14 +37,12 @@ export class DirectionalLightUniformBuffer {
   buffer = new UniformBuffer(new ArrayBuffer(DirectionalLightUniformBuffer.BlockSize))
 
   /**
-   * Replaces the backing payload with a fixed-size copy of the provided data.
+   * Replaces the backing payload with the provided fixed-size data.
    *
-   * @param {ArrayBufferLike} data
+   * @param {ArrayBuffer} data
    */
   setData(data) {
-    const next = new ArrayBuffer(this.buffer.size)
-    new Uint8Array(next).set(new Uint8Array(data, 0, Math.min(data.byteLength, next.byteLength)))
-    this.buffer.data = next
+    this.buffer.data = data
   }
 }
 
@@ -61,14 +57,12 @@ export class PointLightUniformBuffer {
   buffer = new UniformBuffer(new ArrayBuffer(PointLightUniformBuffer.BlockSize))
 
   /**
-   * Replaces the backing payload with a fixed-size copy of the provided data.
+   * Replaces the backing payload with the provided fixed-size data.
    *
-   * @param {ArrayBufferLike} data
+   * @param {ArrayBuffer} data
    */
   setData(data) {
-    const next = new ArrayBuffer(this.buffer.size)
-    new Uint8Array(next).set(new Uint8Array(data, 0, Math.min(data.byteLength, next.byteLength)))
-    this.buffer.data = next
+    this.buffer.data = data
   }
 }
 
@@ -83,13 +77,11 @@ export class SpotLightUniformBuffer {
   buffer = new UniformBuffer(new ArrayBuffer(SpotLightUniformBuffer.BlockSize))
 
   /**
-   * Replaces the backing payload with a fixed-size copy of the provided data.
+   * Replaces the backing payload with the provided fixed-size data.
    *
-   * @param {ArrayBufferLike} data
+   * @param {ArrayBuffer} data
    */
   setData(data) {
-    const next = new ArrayBuffer(this.buffer.size)
-    new Uint8Array(next).set(new Uint8Array(data, 0, Math.min(data.byteLength, next.byteLength)))
-    this.buffer.data = next
+    this.buffer.data = data
   }
 }

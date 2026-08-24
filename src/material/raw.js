@@ -32,9 +32,9 @@ export class RawMaterial {
   }
 
   /**
-   * @returns {ArrayBuffer}
+   * @param {DataView} _data
    */
-  getData() {
+  getData(_data) {
     abstractMethod(this, RawMaterial, RawMaterial.prototype.getData.name)
   }
 

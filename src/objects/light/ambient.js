@@ -5,17 +5,19 @@ export class AmbientLight extends Object3D {
   intensity = 1
   color = new Color(1, 1, 1)
 
-  getData() {
-    return {
-      name: "AmbientLightBlock",
-      data: new Float32Array([
-        this.intensity,
-        0,
-        0,
-        0,
-        ...this.color
-      ]).buffer
-    }
+  /**
+   * Packs the ambient light block into the supplied data view.
+   *
+   * @param {DataView} data
+   */
+  getData(data) {
+    const floats = new Float32Array(data.buffer, data.byteOffset, 8)
+
+    floats[0] = this.intensity
+    floats[4] = this.color.r
+    floats[5] = this.color.g
+    floats[6] = this.color.b
+    floats[7] = this.color.a
   }
 
   /**

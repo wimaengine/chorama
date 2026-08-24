@@ -164,9 +164,7 @@ export class MeshInstancePhaseBindGroup {
       return
     }
 
-    const next = new ArrayBuffer(requiredSize)
-    new Uint8Array(next).set(new Uint8Array(this.buffer.data))
-    this.buffer.data = next
+    this.buffer.data = new ArrayBuffer(requiredSize)
   }
 
   /**
@@ -183,13 +181,11 @@ export class MeshInstancePhaseBindGroup {
    * Writes a payload into the slot at the supplied index.
    *
    * @param {number} index
-   * @param {ArrayBuffer} data
+   * @param {MeshInstanceUniform} meshInstance
    * @returns {number}
    */
-  setData(index, data) {
+  setData(index, meshInstance) {
     const offset = this.getOffset(index)
-
-    assertTrue(data.byteLength <= this.#stride, `Mesh instance payload exceeds the aligned slot size`)
 
     const bufferData = this.buffer.data
     assertTrue(
@@ -200,7 +196,7 @@ export class MeshInstancePhaseBindGroup {
     const slotBytes = new Uint8Array(bufferData, offset, this.#stride)
 
     slotBytes.fill(0)
-    slotBytes.set(new Uint8Array(data))
+    meshInstance.getData(new DataView(bufferData, offset, this.#stride))
     this.buffer.data = bufferData
     return offset
   }

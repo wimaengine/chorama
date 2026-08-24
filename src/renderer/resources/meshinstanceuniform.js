@@ -30,12 +30,6 @@ export class MeshInstanceUniform {
   boneCount = 0
 
   /**
-   * Backing buffer reused whenever the payload is packed.
-   * @type {ArrayBuffer}
-   */
-  #data = new ArrayBuffer(MeshInstanceUniform.BlockSize)
-
-  /**
    * @param {MeshInstanceUniformOptions} options
    */
   constructor({
@@ -49,19 +43,34 @@ export class MeshInstanceUniform {
   }
 
   /**
-   * Packs the current state into the block buffer.
+   * Packs the current state into the supplied block slice.
    *
-   * @returns {ArrayBuffer}
+   * @param {DataView} data
    */
-  getData() {
-    const data = this.#data
-    new Float32Array(data, 0, 16).set([...Affine3.toMatrix4(this.transform)])
+  getData(data) {
+    const matrix = Affine3.toMatrix4(this.transform)
+    const floats = new Float32Array(data.buffer, data.byteOffset, MeshInstanceUniform.BlockSize / Float32Array.BYTES_PER_ELEMENT)
+    const metadata = new Uint32Array(data.buffer, data.byteOffset, MeshInstanceUniform.BlockSize / Uint32Array.BYTES_PER_ELEMENT)
 
-    const metadata = new Uint32Array(data)
+    floats[0] = matrix.a
+    floats[1] = matrix.b
+    floats[2] = matrix.c
+    floats[3] = matrix.d
+    floats[4] = matrix.e
+    floats[5] = matrix.f
+    floats[6] = matrix.g
+    floats[7] = matrix.h
+    floats[8] = matrix.i
+    floats[9] = matrix.j
+    floats[10] = matrix.k
+    floats[11] = matrix.l
+    floats[12] = matrix.m
+    floats[13] = matrix.n
+    floats[14] = matrix.o
+    floats[15] = matrix.p
+
     metadata[16] = this.skinIndex >>> 0
     metadata[17] = this.boneCount >>> 0
-
-    return data
   }
 }
 

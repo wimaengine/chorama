@@ -44,9 +44,7 @@ export class SortViewsNode {
 
     for (let i = 0; i < orderedViews.length; i++) {
       const view = /**@type {View}*/(orderedViews[i])
-      const payload = view.getData()
-
-      new Uint8Array(data, i * stride, stride).set(new Uint8Array(payload))
+      view.getData(new DataView(data, i * stride, stride))
     }
 
     viewUniformBuffer.buffer.data = data
@@ -116,7 +114,7 @@ export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInsta
     const item = /** @type {import("../core/index.js").RenderItem} */ (meshItems[i])
     const meshInstance = /** @type {import("../resources/meshinstanceuniform.js").MeshInstanceUniform} */ (item.meshInstance)
 
-    phaseState.setData(i, meshInstance.getData())
+    phaseState.setData(i, meshInstance)
   }
 
   phaseState.getBindGroup(device, caches, bindGroupLayout)

@@ -181,11 +181,7 @@ function createMaterialBindGroup(device, renderer, pipeline, material, view) {
   }
 
   if (materialBlockLayout) {
-    const materialBuffer = materialUniforms.setData(
-      material,
-      material.getData(),
-      materialBlockLayout.size
-    )
+    const materialBuffer = materialUniforms.setData(material, materialBlockLayout.size)
     const gpuBuffer = caches.getUniformBuffer(device, materialBuffer)
 
     bindings.push(createBufferBinding(binding++, "MaterialBlock", gpuBuffer, materialBlockLayout.size))

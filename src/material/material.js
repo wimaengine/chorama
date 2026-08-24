@@ -56,9 +56,9 @@ export class Material extends RawMaterial {
 
   /**
    * @override
-   * @returns {ArrayBuffer}
+   * @param {DataView} _data
    */
-  getData() {
+  getData(_data) {
     if (this.constructor === RawMaterial) {
       throw `\`${RawMaterial.name}\` cannot be used directly as a material.`
     }

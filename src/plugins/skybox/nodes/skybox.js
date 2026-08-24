@@ -1,7 +1,6 @@
 /**@import { WebGLRenderPipelineDescriptor } from '../../../core/index.js' */
 import { CompareFunction, MeshVertexLayout, Shader } from "../../../core/index.js"
-import { CullFace, PrimitiveTopology, TextureFormat, UniformType } from "../../../constants/index.js"
-import { Affine3 } from "../../../math/index.js"
+import { CullFace, PrimitiveTopology, TextureFormat } from "../../../constants/index.js"
 import { Camera, Object3D, SkyBox } from "../../../objects/index.js"
 import { RenderItem, ViewBindGroups, Views } from "../../../renderer/index.js"
 import { skyboxFragment, skyboxVertex } from "../../../shader/index.js"
@@ -91,7 +90,6 @@ function createSkyboxRenderItem(object, device, renderer, view) {
     device,
     renderer,
     skyboxPipeline,
-    skyboxBlockLayout,
     day,
     night,
     object
@@ -237,12 +235,11 @@ function getSkyboxRenderPipeline(device, renderer, view) {
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/index.js").WebGLRenderer} renderer
  * @param {SkyboxPipeline} skyboxPipeline
- * @param {import("../../../core/layouts/uniformbuffer.js").UniformBufferLayout} layout
  * @param {Texture} day
  * @param {Texture} night
  * @param {SkyBox} object
  */
-function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, night, object) {
+function createSkyboxBindGroup(device, renderer, skyboxPipeline, day, night, object) {
   const dayTexture = renderer.caches.getTexture(device, day)
   const nightTexture = renderer.caches.getTexture(device, night)
   const gpuSampler = renderer.caches.getSampler(device, renderer.defaults.textureSampler)
@@ -252,11 +249,7 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
   assert(skyboxUniforms, "SkyBoxUniforms resource missing")
   assert(bindGroupLayout, "SkyBox bind group layout missing")
 
-  const uniformBuffer = skyboxUniforms.setData(
-    object,
-    createSkyboxUniformData(layout, object),
-    layout.size
-  )
+  const uniformBuffer = skyboxUniforms.setData(object)
   const gpuBuffer = renderer.caches.getUniformBuffer(device, uniformBuffer)
 
   return device.createBindGroup({
@@ -295,36 +288,4 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, layout, day, ni
       }
     ]
   })
-}
-
-/**
- * @param {import("../../../core/layouts/uniformbuffer.js").UniformBufferLayout} layout
- * @param {SkyBox} object
- */
-function createSkyboxUniformData(layout, object) {
-  const data = new ArrayBuffer(layout.size)
-  const floats = new Float32Array(data)
-  const transformMatrix = new Float32Array([...Affine3.toMatrix4(object.transform.world)])
-  let modelWritten = false
-  let lerpWritten = false
-
-  for (const field of layout.fields.values()) {
-    const offset = field.offset / Float32Array.BYTES_PER_ELEMENT
-
-    if (field.type === UniformType.Mat4) {
-      floats.set(transformMatrix, offset)
-      modelWritten = true
-      continue
-    }
-
-    if (field.type === UniformType.Float) {
-      floats[offset] = object.lerp
-      lerpWritten = true
-    }
-  }
-
-  assert(modelWritten, "SkyBoxBlock model field missing")
-  assert(lerpWritten, "SkyBoxBlock lerp field missing")
-
-  return data
 }

@@ -66,21 +66,24 @@ export class PhongMaterial extends Material {
 
   /**
    * @override
+   * @param {DataView} data
    */
-  getData() {
+  getData(data) {
     const {
       color,
       specularShininess,
       specularStrength
     } = this
     const alphaCutoff = this.alphaBlend instanceof AlphaMaskMode ? this.alphaBlend.cutoff : 0.5
-    
-    return new Float32Array([
-      ...color,
-      specularShininess,
-      specularStrength,
-      alphaCutoff
-    ]).buffer
+    const floats = new Float32Array(data.buffer, data.byteOffset, 7)
+
+    floats[0] = color.r
+    floats[1] = color.g
+    floats[2] = color.b
+    floats[3] = color.a
+    floats[4] = specularShininess
+    floats[5] = specularStrength
+    floats[6] = alphaCutoff
   }
 
   /**

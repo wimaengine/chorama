@@ -37,8 +37,8 @@ export class NormalMaterial extends Material {
 
   /**
    * @override
+   * @param {DataView} _data
    */
-  getData() {    
-    return new Float32Array([]).buffer
+  getData(_data) {
   }
 }

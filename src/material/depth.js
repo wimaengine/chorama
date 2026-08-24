@@ -64,12 +64,13 @@ export class DepthMaterial extends Material {
 
   /**
    * @override
+   * @param {DataView} data
    */
-  getData() {
-    return new Float32Array([
-      this.near,
-      this.far
-    ]).buffer
+  getData(data) {
+    const floats = new Float32Array(data.buffer, data.byteOffset, 2)
+
+    floats[0] = this.near
+    floats[1] = this.far
   }
 
   /**
