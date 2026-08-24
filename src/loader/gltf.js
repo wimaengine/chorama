@@ -43,8 +43,6 @@ export class GLTFLoader extends Loader {
 
     /**@type {Map<number, Object3D>} */
     const entityMap = new Map()
-    /** @type {Map<number, DirectionalLight | PointLight | SpotLight>} */
-    const lightCache = new Map()
     const baseUrl = new URL(path, location.href).href
     const gltf = await loadGLTF(buffer, baseUrl)
     const scene = gltf.scenes[gltf.scene]
@@ -246,7 +244,7 @@ export class GLTFLoader extends Loader {
     })
 
     gltf.nodes.forEach((node, index) => {
-      const object = parseObject(index, node, gltf, geometries, materials, lightCache)
+      const object = parseObject(index, node, gltf, geometries, materials)
 
       if (object) {
         entityMap.set(index, object)
@@ -2720,11 +2718,10 @@ function convertToInverseBindPose(poseData) {
  * @param {GLTF} gltf
  * @param {[Mesh,number | undefined][][]} geometries
  * @param {StandardMaterial[]} materials
- * @param {Map<number, DirectionalLight | PointLight | SpotLight>} lightCache
  */
-function parseObject(index, node, gltf, geometries, materials, lightCache) {
+function parseObject(index, node, gltf, geometries, materials) {
   const { mesh, transform, name } = node
-  const light = parseGLTFLight(node, gltf, lightCache)
+  const light = parseGLTFLight(node, gltf)
   const camera = parseGLTFCamera(node, gltf)
 
   let object
@@ -2835,10 +2832,9 @@ function createGLTFCamera(gltfCamera) {
 /**
  * @param {GLTFNode} node
  * @param {GLTF} gltf
- * @param {Map<number, DirectionalLight | PointLight | SpotLight>} lightCache
  * @returns {DirectionalLight | PointLight | SpotLight | undefined}
  */
-function parseGLTFLight(node, gltf, lightCache) {
+function parseGLTFLight(node, gltf) {
   const nodeLightExtension = node.extensions[GLTF_LIGHTS_PUNCTUAL_EXTENSION]
 
   if (!(nodeLightExtension instanceof Object)) {
@@ -2860,14 +2856,7 @@ function parseGLTFLight(node, gltf, lightCache) {
     throw "GLTF light index is invalid"
   }
 
-  const cachedLight = lightCache.get(lightIndex)
-  if (cachedLight) {
-    return cachedLight.clone()
-  }
-
-  const prototype = createGLTFLight(gltfLight)
-  lightCache.set(lightIndex, prototype)
-  return prototype.clone()
+  return createGLTFLight(gltfLight)
 }
 
 /**
