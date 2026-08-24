@@ -12,6 +12,21 @@ export class Projection {
   }
 
   /**
+   * @param {Projection} _projection
+   * @returns {this}
+   */
+  copy(_projection) {
+    return this
+  }
+
+  /**
+   * @returns {this}
+   */
+  clone() {
+    return new /** @type {any} */ (this.constructor)().copy(this)
+  }
+
+  /**
    * @returns {boolean}
    */
   isPerspective() {
@@ -59,6 +74,17 @@ export class PerspectiveProjection extends Projection {
    */
   isPerspective() {
     return true
+  }
+
+  /**
+   * @param {PerspectiveProjection} projection
+   * @returns {this}
+   * @override
+   */
+  copy(projection) {
+    this.fov = projection.fov
+    this.aspect = projection.aspect
+    return this
   }
 
   /**
@@ -136,6 +162,19 @@ export class OrthographicProjection extends Projection {
    */
   isOrthographic() {
     return true
+  }
+
+  /**
+   * @param {OrthographicProjection} projection
+   * @returns {this}
+   * @override
+   */
+  copy(projection) {
+    this.left = projection.left
+    this.right = projection.right
+    this.top = projection.top
+    this.bottom = projection.bottom
+    return this
   }
 
   /**

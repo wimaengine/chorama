@@ -10,6 +10,7 @@ export class ViewRectangle {
   copy(other) {
     this.offset.copy(other.offset)
     this.size.copy(other.size)
+    return this
   }
 
   clone() {
@@ -31,6 +32,7 @@ export class Range {
   copy(other) {
     this.start = other.start
     this.end = other.end
+    return this
   }
 
   clone() {

@@ -16,6 +16,22 @@ export class ReinhardToneMapping {
 	constructor({ exposure = 1 } = {}) {
 		this.exposure = exposure
 	}
+
+	/**
+	 * @param {ReinhardToneMapping} toneMapping
+	 * @returns {this}
+	 */
+	copy(toneMapping) {
+		this.exposure = toneMapping.exposure
+		return this
+	}
+
+	/**
+	 * @returns {ReinhardToneMapping}
+	 */
+	clone() {
+		return new ReinhardToneMapping().copy(this)
+	}
 }
 
 export class ACESFilmicTonemapping {
@@ -29,6 +45,22 @@ export class ACESFilmicTonemapping {
 	 */
 	constructor({ exposure = 1 } = {}) {
 		this.exposure = exposure
+	}
+
+	/**
+	 * @param {ACESFilmicTonemapping} toneMapping
+	 * @returns {this}
+	 */
+	copy(toneMapping) {
+		this.exposure = toneMapping.exposure
+		return this
+	}
+
+	/**
+	 * @returns {ACESFilmicTonemapping}
+	 */
+	clone() {
+		return new ACESFilmicTonemapping().copy(this)
 	}
 }
 
@@ -44,6 +76,22 @@ export class AgXTonemapping {
 	constructor({ exposure = 1 } = {}) {
 		this.exposure = exposure
 	}
+
+	/**
+	 * @param {AgXTonemapping} toneMapping
+	 * @returns {this}
+	 */
+	copy(toneMapping) {
+		this.exposure = toneMapping.exposure
+		return this
+	}
+
+	/**
+	 * @returns {AgXTonemapping}
+	 */
+	clone() {
+		return new AgXTonemapping().copy(this)
+	}
 }
 
 export class HableTonemapping {
@@ -57,6 +105,22 @@ export class HableTonemapping {
 	 */
 	constructor({ exposure = 1 } = {}) {
 		this.exposure = exposure
+	}
+
+	/**
+	 * @param {HableTonemapping} toneMapping
+	 * @returns {this}
+	 */
+	copy(toneMapping) {
+		this.exposure = toneMapping.exposure
+		return this
+	}
+
+	/**
+	 * @returns {HableTonemapping}
+	 */
+	clone() {
+		return new HableTonemapping().copy(this)
 	}
 }
 
@@ -74,11 +138,27 @@ export class KhronosPBRNeutralTonemapping {
 	constructor({ exposure = 1 } = {}) {
 		this.exposure = exposure
 	}
+
+	/**
+	 * @param {KhronosPBRNeutralTonemapping} toneMapping
+	 * @returns {this}
+	 */
+	copy(toneMapping) {
+		this.exposure = toneMapping.exposure
+		return this
+	}
+
+	/**
+	 * @returns {KhronosPBRNeutralTonemapping}
+	 */
+	clone() {
+		return new KhronosPBRNeutralTonemapping().copy(this)
+	}
 }
 
 export class Camera extends Object3D {
 	near = 0.1
-	
+
 	far = 2000
 
 	/**
@@ -112,7 +192,7 @@ export class Camera extends Object3D {
 	depthRange = new Range()
 
 	/**
-	 * @type {RenderTarget}
+	 * @type {RenderTarget | undefined}
 	 */
 	target
 	/**
@@ -130,13 +210,46 @@ export class Camera extends Object3D {
 	 * @type {Matrix4}
 	 */
 	view = new Matrix4()
-	
+
 	/**
-	 * @param {RenderTarget} target
+	 * @param {RenderTarget | undefined} [target]
 	 */
-	constructor(target){
+	constructor(target = undefined) {
 		super()
 		this.target = target
+	}
+
+	/**
+	 * @override
+	 * @param {Camera} object
+	 * @param {Map<Object3D, Object3D>} [entityMap]
+	 */
+	copy(object, entityMap) {
+		super.copy(/** @type {any} */(object), entityMap)
+		this.near = object.near
+		this.far = object.far
+		this.clearColor = object.clearColor
+			? (this.clearColor ? this.clearColor.copy(object.clearColor) : new Color().copy(object.clearColor))
+			: undefined
+		this.clearDepth = object.clearDepth
+		this.clearStencil = object.clearStencil
+		this.viewport.copy(object.viewport)
+		this.scissor = object.scissor ? object.scissor.clone() : undefined
+		this.depthRange.copy(object.depthRange)
+		this.target = object.target
+		this.projection = object.projection.clone()
+		this.toneMapping = object.toneMapping ? object.toneMapping.clone() : undefined
+		this.view.copy(object.view)
+		return this
+	}
+
+	/**
+	 * @override
+	 * @param {Map<Object3D, Object3D>} [entityMap]
+	 * @returns {this}
+	 */
+	clone(entityMap) {
+		return super.clone(entityMap)
 	}
 	/**
 	 * @override

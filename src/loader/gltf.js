@@ -1,7 +1,7 @@
 /**@import { LoadSettings } from './loader.js' */
 import { Attribute, Mesh } from '../mesh/index.js';
 import { StandardMaterial, AlphaMaskMode, OpaqueMode, TransparentMode } from '../material/index.js';
-import { DirectionalLight, MeshMaterial3D, Object3D, PointLight, Skin, SpotLight } from '../objects/index.js';
+import { Camera, DirectionalLight, MeshMaterial3D, Object3D, OrthographicProjection, PerspectiveProjection, PointLight, Skin, SpotLight } from '../objects/index.js';
 import { Loader } from './loader.js';
 import { arrayBufferToJSON } from './utils.js';
 import { Bone3D } from '../objects/bone.js';
@@ -595,6 +595,10 @@ class GLTF {
    */
   meshes = []
   /**
+   * @type {GLTFCamera[]}
+   */
+  cameras = []
+  /**
   * @type {GLTFMaterial[]}
   */
   materials = []
@@ -646,6 +650,7 @@ class GLTF {
       scenes,
       nodes,
       meshes,
+      cameras,
       images,
       textures,
       samplers,
@@ -685,6 +690,12 @@ class GLTF {
 
     if (materials instanceof Array) {
       gltf.materials = materials.map((/**@type {any}*/d) => GLTFMaterial.deserialize(d))
+    }
+
+    if (cameras instanceof Array) {
+      gltf.cameras = cameras.map((/**@type {any}*/d) => GLTFCamera.deserialize(d))
+    } else {
+      gltf.cameras = []
     }
 
     if (images instanceof Array) {
@@ -1068,6 +1079,184 @@ class GLTFMaterial {
     return result
   }
 }
+
+class GLTFCamera {
+  /**
+   * @type {string}
+   */
+  name = ''
+  /**
+   * @type {Record<string,any>}
+   */
+  extensions = {}
+  /**
+   * @type {Record<string,any>}
+   */
+  extras = {}
+  /**
+   * @type {GLTFCameraProjection | undefined}
+   */
+  projection
+
+  /**
+   * @param {any} data
+   */
+  static deserialize(data) {
+    const { type: cameraType, perspective, orthographic, name, extensions, extras } = data
+    const camera = new GLTFCamera()
+
+    if (typeof cameraType !== "string") {
+      throw "Invalid glTF camera"
+    }
+
+    if (cameraType === "perspective") {
+      if (!(perspective instanceof Object)) {
+        throw "Invalid glTF perspective camera"
+      }
+      camera.projection = GLTFPerspectiveProjection.deserialize(perspective)
+    } else if (cameraType === "orthographic") {
+      if (!(orthographic instanceof Object)) {
+        throw "Invalid glTF orthographic camera"
+      }
+      camera.projection = GLTFOrthographicProjection.deserialize(orthographic)
+    } else {
+      throw `Unsupported glTF camera type: ${cameraType}`
+    }
+
+    if (typeof name === "string") {
+      camera.name = name
+    }
+
+    if (extensions instanceof Object) {
+      camera.extensions = extensions
+    } else {
+      camera.extensions = {}
+    }
+
+    if (extras instanceof Object) {
+      camera.extras = extras
+    } else {
+      camera.extras = {}
+    }
+
+    return camera
+  }
+}
+
+class GLTFPerspectiveProjection {
+  /**
+   * @type {number | undefined}
+   */
+  aspectRatio
+  /**
+   * @type {number}
+   */
+  yfov = 0
+  /**
+   * @type {number | undefined}
+   */
+  zfar
+  /**
+   * @type {number}
+   */
+  znear = 0
+
+  /**
+   * @param {number} yfov
+   * @param {number} znear
+   */
+  constructor(yfov, znear) {
+    this.yfov = yfov
+    this.znear = znear
+  }
+
+  /**
+   * @param {any} data
+   */
+  static deserialize(data) {
+    const { aspectRatio, yfov, zfar, znear } = data
+
+    if (!(Number.isFinite(yfov) && yfov > 0)) {
+      throw "Invalid glTF perspective camera field of view"
+    }
+
+    if (!(Number.isFinite(znear) && znear > 0)) {
+      throw "Invalid glTF perspective camera near plane"
+    }
+
+    const camera = new GLTFPerspectiveProjection(yfov, znear)
+
+    if (aspectRatio !== undefined) {
+      if (!(Number.isFinite(aspectRatio) && aspectRatio > 0)) {
+        throw "Invalid glTF perspective camera aspect ratio"
+      }
+      camera.aspectRatio = aspectRatio
+    }
+
+    if (zfar !== undefined) {
+      if (!(Number.isFinite(zfar) && zfar > 0)) {
+        throw "Invalid glTF perspective camera far plane"
+      }
+      camera.zfar = zfar
+    }
+
+    return camera
+  }
+}
+
+class GLTFOrthographicProjection {
+  /**
+   * @type {number}
+   */
+  xmag = 0
+  /**
+   * @type {number}
+   */
+  ymag = 0
+  /**
+   * @type {number}
+   */
+  zfar = 0
+  /**
+   * @type {number}
+   */
+  znear = 0
+
+  /**
+   * @param {any} data
+   */
+  static deserialize(data) {
+    const { xmag, ymag, zfar, znear } = data
+
+    if (!(Number.isFinite(xmag) && xmag > 0)) {
+      throw "Invalid glTF orthographic camera xmag"
+    }
+
+    if (!(Number.isFinite(ymag) && ymag > 0)) {
+      throw "Invalid glTF orthographic camera ymag"
+    }
+
+    if (!(Number.isFinite(znear) && znear >= 0)) {
+      throw "Invalid glTF orthographic camera near plane"
+    }
+
+    if (!(Number.isFinite(zfar) && zfar > znear)) {
+      throw "Invalid glTF orthographic camera far plane"
+    }
+
+    const camera = new GLTFOrthographicProjection()
+    camera.xmag = xmag
+    camera.ymag = ymag
+    camera.znear = znear
+    camera.zfar = zfar
+
+    return camera
+  }
+}
+
+/**
+ * @typedef {GLTFPerspectiveProjection | GLTFOrthographicProjection} GLTFCameraProjection
+ */
 
 class GLTFImage {
   /**
@@ -2536,12 +2725,16 @@ function convertToInverseBindPose(poseData) {
 function parseObject(index, node, gltf, geometries, materials, lightCache) {
   const { mesh, transform, name } = node
   const light = parseGLTFLight(node, gltf, lightCache)
+  const camera = parseGLTFCamera(node, gltf)
 
   let object
   if (mesh !== undefined) {
     object = parseMeshObject(mesh, gltf.meshes, geometries, materials)
     if (light) {
       object.add(light)
+    }
+    if (camera) {
+      object.add(camera)
     }
   } else {
     const bone = parseBone(index, gltf)
@@ -2551,8 +2744,16 @@ function parseObject(index, node, gltf, geometries, materials, lightCache) {
       if (light) {
         object.add(light)
       }
+      if (camera) {
+        object.add(camera)
+      }
     } else if (light) {
       object = light
+      if (camera) {
+        object.add(camera)
+      }
+    } else if (camera) {
+      object = camera
     } else {
       object = new Object3D()
     }
@@ -2562,9 +2763,73 @@ function parseObject(index, node, gltf, geometries, materials, lightCache) {
     transferTransform(object, transform)
   }
 
-  object.name = name
+  if (name.length > 0) {
+    object.name = name
+  }
 
   return object
+}
+
+/**
+ * @param {GLTFNode} node
+ * @param {GLTF} gltf
+ * @returns {Camera | undefined}
+ */
+function parseGLTFCamera(node, gltf) {
+  const cameraIndex = node.camera
+
+  if (typeof cameraIndex !== "number") {
+    return undefined
+  }
+
+  const gltfCamera = gltf.cameras[cameraIndex]
+  if (!(gltfCamera instanceof Object)) {
+    throw "GLTF camera node is invalid"
+  }
+
+  return createGLTFCamera(gltfCamera)
+}
+
+/**
+ * @param {GLTFCamera} gltfCamera
+ * @returns {Camera}
+ */
+function createGLTFCamera(gltfCamera) {
+  const camera = new Camera()
+  camera.name = gltfCamera.name
+
+  const projection = gltfCamera.projection
+  assert(projection, "GLTF camera projection definition missing")
+
+  if (projection instanceof GLTFPerspectiveProjection) {
+    const perspective = projection
+    assert(perspective, "GLTF perspective camera definition missing")
+
+    camera.projection = new PerspectiveProjection(
+      perspective.yfov,
+      perspective.aspectRatio ?? 1
+    )
+    camera.near = perspective.znear
+    camera.far = perspective.zfar ?? camera.far
+    return camera
+  }
+
+  if (projection instanceof GLTFOrthographicProjection) {
+    const orthographic = projection
+    assert(orthographic, "GLTF orthographic camera definition missing")
+
+    camera.projection = new OrthographicProjection(
+      -orthographic.xmag,
+      orthographic.xmag,
+      orthographic.ymag,
+      -orthographic.ymag
+    )
+    camera.near = orthographic.znear
+    camera.far = orthographic.zfar
+    return camera
+  }
+
+  throw "Unsupported glTF camera projection"
 }
 
 /**

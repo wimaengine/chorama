@@ -44,62 +44,69 @@ export class CameraViewNode {
     assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
 
     for (let i = 0; i < objects.length; i++) {
-      const camera = /**@type {Object3D} */(objects[i])
+      const root = /**@type {Object3D} */(objects[i])
 
-      if (!(camera instanceof Camera)) {
-        continue
-      }
-
-      const renderTarget = camera.target
-      const position = new Vector3(
-        camera.transform.world.x,
-        camera.transform.world.y,
-        camera.transform.world.z
-      )
-
-      renderTarget.changed()
-      colorTargets.getOrSet(
-        camera,
-        targetPool,
-        {
-          width: renderTarget.width,
-          height: renderTarget.height,
-          depth: 1,
-          format: TextureFormat.RGBA16Float
+      root.traverseDFS((object) => {
+        if (!(object instanceof Camera)) {
+          return true
         }
-      )
-      /** @type {View} */
-      const cameraView = new View({
-        renderTarget,
-        depthTexture: targetPool.get({
-          width: renderTarget.width,
-          height: renderTarget.height,
-          format: TextureFormat.Depth24Plus
-        }),
-        viewport: camera.viewport,
-        scissor: camera.scissor,
-        depthRange: camera.depthRange,
-        colorLayer: camera.target instanceof ImageRenderTarget ? camera.target.layer : 0,
-        depthLayer: 0,
-        colorMipmapLevel: 0,
-        depthMipmapLevel: 0,
-        near: camera.near,
-        far: camera.far,
-        projection: camera.projection.asProjectionMatrix(camera.near, camera.far),
-        view: camera.view,
-        position,
-        tag: Camera.name,
-        object: camera,
-        renderMask: camera.renderMask
+
+        const renderTarget = object.target
+        if (!renderTarget) {
+          return true
+        }
+
+        const position = new Vector3(
+          object.transform.world.x,
+          object.transform.world.y,
+          object.transform.world.z
+        )
+
+        renderTarget.changed()
+        colorTargets.getOrSet(
+          object,
+          targetPool,
+          {
+            width: renderTarget.width,
+            height: renderTarget.height,
+            depth: 1,
+            format: TextureFormat.RGBA16Float
+          }
+        )
+        /** @type {View} */
+        const cameraView = new View({
+          renderTarget,
+          depthTexture: targetPool.get({
+            width: renderTarget.width,
+            height: renderTarget.height,
+            format: TextureFormat.Depth24Plus
+          }),
+          viewport: object.viewport,
+          scissor: object.scissor,
+          depthRange: object.depthRange,
+          colorLayer: object.target instanceof ImageRenderTarget ? object.target.layer : 0,
+          depthLayer: 0,
+          colorMipmapLevel: 0,
+          depthMipmapLevel: 0,
+          near: object.near,
+          far: object.far,
+          projection: object.projection.asProjectionMatrix(object.near, object.far),
+          view: object.view,
+          position,
+          tag: Camera.name,
+          object,
+          renderMask: object.renderMask
+        })
+
+        const viewObject = cameraView.object
+
+        assert(viewObject, "View object missing")
+        const viewBindGroup = viewBindGroups.getOrSet(renderDevice, viewObject)
+        populateCameraViewBindGroup(viewBindGroup, renderer)
+
+        views.push(cameraView)
+        return true
       })
-
-      const object = cameraView.object
-
-      assert(object, "View object missing")
-      const viewBindGroup = viewBindGroups.getOrSet(renderDevice, object)
-      populateCameraViewBindGroup(viewBindGroup, renderer)
-
-      views.push(cameraView)
     }
   }
 }
