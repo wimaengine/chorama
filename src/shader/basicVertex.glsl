@@ -23,6 +23,9 @@ mat4 get_skin_bone(uint joint_index) {
 in vec3 position;
 in vec2 uv;
 in vec3 normal;
+#ifdef VERTEX_COLORS
+  in vec4 color;
+#endif
 #ifdef VERTEX_TANGENTS
   in vec4 tangent;
 #endif
@@ -32,6 +35,9 @@ in vec3 normal;
 #endif
 
 out vec3 v_position;
+#ifdef VERTEX_COLORS
+  out vec4 v_color;
+#endif
 #ifdef VERTEX_UVS
   out vec2 v_uv;
 #endif
@@ -64,6 +70,9 @@ void main(){
   #endif
   
   v_position = world_space_position;
+  #ifdef VERTEX_COLORS
+    v_color = color;
+  #endif
   #ifdef VERTEX_UVS
     v_uv = uv;
   #endif

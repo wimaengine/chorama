@@ -477,6 +477,10 @@ function getShaderDefs(meshLayout, meshBits, globalDefines) {
     shaderdefs.push(["VERTEX_UVS", ""])
   }
 
+  if (meshLayout.hasAttribute(Attribute.Color)) {
+    shaderdefs.push(["VERTEX_COLORS", ""])
+  }
+
   if (meshLayout.hasAttribute(Attribute.Normal)) {
     shaderdefs.push(["VERTEX_NORMALS", ""])
   }

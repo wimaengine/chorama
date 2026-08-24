@@ -11,6 +11,7 @@ import { assert } from "../../utils/index.js"
  * @param {number[]} options.positions
  * @param {number[]} [options.normals]
  * @param {number[]} [options.uvs]
+ * @param {number[]} [options.colors]
  * @param {number[]} [options.indices]
  * @returns {Mesh}
  */
@@ -18,6 +19,7 @@ export function createMeshFromArrays({
   positions,
   normals = [],
   uvs = [],
+  colors = [],
   indices
 }) {
   const attributes = new SeparateAttributeData()
@@ -40,6 +42,13 @@ export function createMeshFromArrays({
     attributes.set(
       Attribute.UV.name,
       new DataView(new Float32Array(uvs).buffer)
+    )
+  }
+
+  if (colors.length > 0) {
+    attributes.set(
+      Attribute.Color.name,
+      new DataView(new Float32Array(colors).buffer)
     )
   }
 

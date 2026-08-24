@@ -42,6 +42,9 @@ in vec3 v_position;
 #ifdef VERTEX_UVS
   in vec2 v_uv;
 #endif
+#ifdef VERTEX_COLORS
+  in vec4 v_color;
+#endif
 #ifdef VERTEX_NORMALS
   in vec3 v_normal;
 #endif
@@ -175,6 +178,10 @@ PBRProperties calculate_pbr_properties(){
   properties.thickness = material.thickness;
   properties.ior = max(material.ior, 1.0);
 
+  #ifdef VERTEX_COLORS
+    properties.albedo *= v_color.rgb;
+    properties.opacity *= v_color.a;
+  #endif
   #ifdef VERTEX_UVS
     vec4 albedo_texture_color = texture(mainTexture,v_uv);
     properties.albedo *= quick_sRGB_to_linear(albedo_texture_color.rgb);

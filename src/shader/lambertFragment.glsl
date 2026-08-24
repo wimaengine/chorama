@@ -11,6 +11,9 @@ in vec3 v_position;
 #ifdef VERTEX_UVS
   in vec2 v_uv;
 #endif
+#ifdef VERTEX_COLORS
+  in vec4 v_color;
+#endif
 #ifdef VERTEX_NORMALS
   in vec3 v_normal;
 #endif
@@ -45,6 +48,10 @@ void main(){
   vec3 base_color =  material.color.rgb;
   float opacity = material.color.a;
   
+  #ifdef VERTEX_COLORS
+    base_color *= v_color.rgb;
+    opacity *= v_color.a;
+  #endif
   #ifdef VERTEX_UVS
     vec4 sample_color = texture(mainTexture,v_uv);
     base_color *= sample_color.rgb;
