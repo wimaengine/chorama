@@ -5,7 +5,7 @@ import { Affine3 } from "../math/index.js"
 
 export class Mesh {
   /**
-   * @type {Uint8Array | Uint16Array | Uint32Array | undefined}
+   * @type {Uint16Array | Uint32Array | undefined}
    */
   #indices
 
@@ -45,7 +45,7 @@ export class Mesh {
   }
 
   /**
-   * @type {Uint8Array | Uint16Array | Uint32Array | undefined}
+   * @type {Uint16Array | Uint32Array | undefined}
    */
   get indices() {
     return this.#indices

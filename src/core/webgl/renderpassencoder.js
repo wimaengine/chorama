@@ -1,4 +1,4 @@
-/** @import { GPUMesh, GPUBuffer } from "../resources/index.js" */
+/** @import { GPUBuffer } from "../resources/index.js" */
 /** @import { WebGLDeviceLimits } from "../limits.js" */
 /** @import { WebGLBindGroup } from "./bindgroup.js" */
 /** @import { WebGLColorValue, WebGLRenderPassDescriptor } from "./descriptors.js" */
@@ -43,9 +43,14 @@ export class WebGLRenderPassEncoder {
   vertexBuffers = []
   /**
    * @private
-   * @type {GLenum | undefined}
+   * @type {GPUBuffer | undefined}
    */
-  indexType
+  indexBuffer
+  /**
+   * @private
+   * @type {"uint16" | "uint32" | undefined}
+   */
+  indexFormat
   /**
    * @private
    * @type {number}
@@ -139,13 +144,6 @@ export class WebGLRenderPassEncoder {
       }
     }
 
-    for (let slot = 0; slot < this.vertexBuffers.length; slot++) {
-      const binding = this.vertexBuffers[slot]
-
-      if (binding) {
-        applyVertexBuffer(this.context, pipeline, slot, binding)
-      }
-    }
   }
 
   /**
@@ -190,10 +188,6 @@ export class WebGLRenderPassEncoder {
 
     const binding = { buffer, offset, size }
     this.vertexBuffers[slot] = binding
-
-    if (this.pipeline) {
-      applyVertexBuffer(this.context, this.pipeline, slot, binding)
-    }
   }
 
   /**
@@ -207,10 +201,9 @@ export class WebGLRenderPassEncoder {
     assertTrue(buffer.type === BufferType.ElementArray, "Index buffers must use BufferType.ElementArray")
     assertTrue(Number.isInteger(offset) && offset >= 0, `Invalid index buffer offset ${offset}`)
 
-    this.indexType = getIndexFormatType(this.context, indexFormat)
+    this.indexBuffer = buffer
+    this.indexFormat = indexFormat
     this.indexBufferOffset = offset
-    this.context.bindVertexArray(null)
-    this.context.bindBuffer(buffer.type, buffer.inner)
   }
 
   /**
@@ -260,37 +253,27 @@ export class WebGLRenderPassEncoder {
   }
 
   /**
-   * WebGPU draw for vertex counts, with a compatibility path for GPUMesh.
-   * @param {GPUMesh | number} meshOrVertexCount
+   * WebGPU-style draw for a vertex stream.
+   * @param {number} vertexCount
    * @param {number} [instanceCount=1]
    * @param {number} [firstVertex=0]
    * @param {number} [firstInstance=0]
    */
-  draw(meshOrVertexCount, instanceCount = 1, firstVertex = 0, firstInstance = 0) {
+  draw(vertexCount, instanceCount = 1, firstVertex = 0, firstInstance = 0) {
     const pipeline = this.getPipelineReadyToDraw()
 
-    if (typeof meshOrVertexCount === "number") {
-      assertTrue(firstInstance === 0, "WebGL2 does not support firstInstance")
-      this.context.bindVertexArray(null)
+    assertTrue(Number.isInteger(vertexCount) && vertexCount >= 0, `Invalid vertex count ${vertexCount}`)
+    assertTrue(Number.isInteger(firstVertex) && firstVertex >= 0, `Invalid first vertex ${firstVertex}`)
+    assertTrue(firstInstance === 0, "WebGL2 does not support firstInstance")
 
-      if (instanceCount > 1) {
-        this.context.drawArraysInstanced(pipeline.topology, firstVertex, meshOrVertexCount, instanceCount)
-      } else {
-        this.context.drawArrays(pipeline.topology, firstVertex, meshOrVertexCount)
-      }
+    applyVertexLayouts(this.context, pipeline, this.vertexBuffers)
+
+    if (instanceCount > 1) {
+      this.context.drawArraysInstanced(pipeline.topology, firstVertex, vertexCount, instanceCount)
       return
     }
 
-    assertTrue(instanceCount === 1, "Instanced GPUMesh drawing is not supported")
-    assertTrue(firstVertex === 0, "GPUMesh drawing does not support firstVertex")
-    assertTrue(firstInstance === 0, "GPUMesh drawing does not support firstInstance")
-
-    this.context.bindVertexArray(meshOrVertexCount.inner)
-    if (meshOrVertexCount.indexType !== undefined) {
-      this.context.drawElements(pipeline.topology, meshOrVertexCount.count, meshOrVertexCount.indexType, 0)
-      return
-    }
-    this.context.drawArrays(pipeline.topology, 0, meshOrVertexCount.count)
+    this.context.drawArrays(pipeline.topology, firstVertex, vertexCount)
   }
 
   /**
@@ -303,28 +286,24 @@ export class WebGLRenderPassEncoder {
   drawIndexed(indexCount, instanceCount = 1, firstIndex = 0, baseVertex = 0, firstInstance = 0) {
     const pipeline = this.getPipelineReadyToDraw()
 
-    assert(this.indexType, "No active index buffer set on render pass encoder")
+    assert(this.indexBuffer, "No active index buffer set on render pass encoder")
+    assert(this.indexFormat, "No active index buffer set on render pass encoder")
+    assertTrue(Number.isInteger(indexCount) && indexCount >= 0, `Invalid index count ${indexCount}`)
+    assertTrue(Number.isInteger(firstIndex) && firstIndex >= 0, `Invalid first index ${firstIndex}`)
     assertTrue(baseVertex === 0, "WebGL2 does not support baseVertex")
     assertTrue(firstInstance === 0, "WebGL2 does not support firstInstance")
 
-    const offset = this.indexBufferOffset + firstIndex * getIndexFormatSize(this.indexType)
+    applyVertexLayouts(this.context, pipeline, this.vertexBuffers)
+    applyIndexBuffer(this.context, this.indexBuffer)
+    const offset = this.indexBufferOffset + firstIndex * getIndexFormatSize(this.indexFormat)
+    const indexType = getIndexFormatType(this.context, this.indexFormat)
 
-    this.context.bindVertexArray(null)
     if (instanceCount > 1) {
-      this.context.drawElementsInstanced(pipeline.topology, indexCount, this.indexType, offset, instanceCount)
+      this.context.drawElementsInstanced(pipeline.topology, indexCount, indexType, offset, instanceCount)
       return
     }
 
-    this.context.drawElements(pipeline.topology, indexCount, this.indexType, offset)
-  }
-
-  /**
-   * Draws a non-indexed primitive stream without binding a mesh.
-   * @param {number} count
-   * @param {number} [first=0]
-   */
-  drawArrays(count, first = 0) {
-    this.draw(count, 1, first)
+    this.context.drawElements(pipeline.topology, indexCount, indexType, offset)
   }
 
   end() {
@@ -336,10 +315,10 @@ export class WebGLRenderPassEncoder {
     this.pipeline = undefined
     this.bindGroups.length = 0
     this.vertexBuffers.length = 0
-    this.indexType = undefined
+    this.indexBuffer = undefined
+    this.indexFormat = undefined
     this.indexBufferOffset = 0
     this.active = false
-    this.context.bindVertexArray(null)
   }
 
   assertActive() {
@@ -688,17 +667,41 @@ function collectDiscardAttachments(context, descriptor, drawBuffers, discardAtta
  * @param {number} slot
  * @param {WebGLVertexBufferBinding} binding
  */
-function applyVertexBuffer(context, pipeline, slot, binding) {
+function applyVertexLayout(context, pipeline, slot, binding) {
   const layout = pipeline.vertexLayout.layouts[slot]
 
-  assert(layout, `Pipeline does not declare vertex buffer slot ${slot}`)
+  if (!layout) {
+    return
+  }
 
-  context.bindVertexArray(null)
   context.bindBuffer(binding.buffer.type, binding.buffer.inner)
 
   for (const attribute of layout.attributes) {
     setVertexAttribute(context, attribute.id, mapVertexFormatToWebGL(attribute.format), 0, binding.offset)
   }
+}
+
+/**
+ * @param {WebGL2RenderingContext} context
+ * @param {import("./renderpipeline.js").WebGLRenderPipeline} pipeline
+ * @param {ReadonlyArray<WebGLVertexBufferBinding | undefined>} vertexBuffers
+ */
+function applyVertexLayouts(context, pipeline, vertexBuffers) {
+  for (let slot = 0; slot < vertexBuffers.length; slot++) {
+    const binding = vertexBuffers[slot]
+
+    if (binding) {
+      applyVertexLayout(context, pipeline, slot, binding)
+    }
+  }
+}
+
+/**
+ * @param {WebGL2RenderingContext} context
+ * @param {GPUBuffer} buffer
+ */
+function applyIndexBuffer(context, buffer) {
+  context.bindBuffer(buffer.type, buffer.inner)
 }
 
 /**
@@ -749,16 +752,16 @@ function getIndexFormatType(context, indexFormat) {
 }
 
 /**
- * @param {GLenum} indexType
+ * @param {"uint16" | "uint32"} indexFormat
  */
-function getIndexFormatSize(indexType) {
-  switch (indexType) {
-    case WebGL2RenderingContext.UNSIGNED_SHORT:
+function getIndexFormatSize(indexFormat) {
+  switch (indexFormat) {
+    case "uint16":
       return 2
-    case WebGL2RenderingContext.UNSIGNED_INT:
+    case "uint32":
       return 4
     default:
-      throw new Error(`Unsupported index type: ${indexType}`)
+      throw new Error(`Unsupported index format: ${indexFormat}`)
   }
 }
 

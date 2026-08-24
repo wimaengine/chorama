@@ -303,17 +303,15 @@ export function mapVertexFormatToWebGL(format) {
 }
 
 /**
- * @param {Uint8Array | Uint16Array | Uint32Array} indices
+ * @param {Uint16Array | Uint32Array} indices
+ * @returns {"uint16" | "uint32"}
  */
-export function mapToIndicesType(indices) {
-  if (indices instanceof Uint8Array) {
-    return GlDataType.UnsignedByte
-  }
+export function mapToIndexFormat(indices) {
   if (indices instanceof Uint16Array) {
-    return GlDataType.UnsignedShort
+    return "uint16"
   }
   if (indices instanceof Uint32Array) {
-    return GlDataType.UnsignedInt
+    return "uint32"
   }
   throw "This is unreachable!"
 }

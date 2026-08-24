@@ -364,7 +364,23 @@ export function drawRenderItem(pass, _context, caches, item, phaseState, bindGro
     pass.setBindGroup(1, item.bindGroup)
   }
 
-  pass.draw(mesh)
+  for (let slot = 0; slot < mesh.vertexBuffers.length; slot++) {
+    const binding = mesh.vertexBuffers[slot]
+
+    if (!binding) {
+      continue
+    }
+
+    pass.setVertexBuffer(slot, binding.buffer, binding.offset, binding.size)
+  }
+
+  if (mesh.indexBuffer) {
+    assert(mesh.indexFormat, "Indexed mesh is missing an index format")
+    pass.setIndexBuffer(mesh.indexBuffer, mesh.indexFormat, 0, mesh.indexBuffer.size)
+    pass.drawIndexed(mesh.count)
+  } else {
+    pass.draw(mesh.count)
+  }
 }
 export class RenderItem {
 

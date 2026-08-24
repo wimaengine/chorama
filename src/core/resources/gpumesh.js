@@ -1,26 +1,26 @@
 import { GPUBuffer } from "./gpubuffer"
 
-export class GPUMesh {
-  /**
-   * @type {WebGL2RenderingContext}
-   */
-  #context
+/**
+ * @typedef {object} GPUMeshVertexBufferBinding
+ * @property {GPUBuffer} buffer
+ * @property {number} [offset=0]
+ * @property {number} [size]
+ */
 
+/**
+ * @typedef {"uint16" | "uint32"} GPUMeshIndexFormat
+ */
+
+export class GPUMesh {
   /**
    * @type {boolean}
    */
   #destroyed = false
 
   /**
-   * @readonly
-   * @type {WebGLVertexArrayObject}
+   * @type {GPUMeshVertexBufferBinding[]}
    */
-  inner
-
-  /**
-   * @type {GPUBuffer[]}
-   */
-  attributeBuffers = []
+  vertexBuffers = []
 
   /**
    * @type {GPUBuffer | undefined}
@@ -28,29 +28,38 @@ export class GPUMesh {
   indexBuffer
 
   /**
-   * @type {GLenum | undefined}
+   * @type {GPUMeshIndexFormat | undefined}
    */
-  indexType
+  indexFormat
 
   /**
    * @type {number}
    */
-  count
+  count = 0
 
   /**
    * @type {number}
    */
-  layoutHash
+  layoutHash = 0
 
   /**
-   * @param {WebGL2RenderingContext} context
-   * @param {WebGLVertexArrayObject} vao
-   * @param {number} count
-   * @param {number} layoutHash
+   * @param {object} [descriptor]
+   * @param {GPUMeshVertexBufferBinding[]} [descriptor.vertexBuffers]
+   * @param {GPUBuffer} [descriptor.indexBuffer]
+   * @param {GPUMeshIndexFormat} [descriptor.indexFormat]
+   * @param {number} [descriptor.count]
+   * @param {number} [descriptor.layoutHash]
    */
-  constructor(context, vao, count, layoutHash) {
-    this.#context = context
-    this.inner = vao
+  constructor({
+    vertexBuffers = [],
+    indexBuffer,
+    indexFormat,
+    count = 0,
+    layoutHash = 0
+  } = {}) {
+    this.vertexBuffers = [...vertexBuffers]
+    this.indexBuffer = indexBuffer
+    this.indexFormat = indexFormat
     this.count = count
     this.layoutHash = layoutHash
   }
@@ -60,17 +69,18 @@ export class GPUMesh {
       return
     }
 
-    for (const buffer of this.attributeBuffers) {
-      buffer.destroy()
+    for (const binding of this.vertexBuffers) {
+      binding.buffer.destroy()
     }
 
     if (this.indexBuffer) {
       this.indexBuffer.destroy()
     }
 
-    this.#context.deleteVertexArray(this.inner)
-    this.attributeBuffers.length = 0
+    this.vertexBuffers.length = 0
     this.indexBuffer = undefined
+    this.indexFormat = undefined
+    this.count = 0
     this.#destroyed = true
   }
 }

@@ -2089,10 +2089,8 @@ function mapToIndices(accessor, view) {
 
   switch (accessor.componentType) {
     case GLTFComponentType.UnsignedByte:
-      return new Uint8Array(
-        view.buffer,
-        view.byteOffset,
-        view.byteLength / Uint8Array.BYTES_PER_ELEMENT
+      return Uint16Array.from(
+        new Uint8Array(view.buffer, view.byteOffset, view.byteLength)
       )
     case GLTFComponentType.UnsignedShort:
       return new Uint16Array(

@@ -110,7 +110,6 @@ export class SkeletonHelperPlugin extends Plugin {
     device.context.bindSampler(transformsInfo.texture_unit, gpuSampler.inner)
 
     device.context.uniformMatrix4fv(modelInfo.location, false, [...Affine3.toMatrix4(object.skinnedMesh.transform.world)])
-    device.context.bindVertexArray(null)
 
     object.rootBone.traverseBFS((parent) => {
       if (parent instanceof Bone3D) {

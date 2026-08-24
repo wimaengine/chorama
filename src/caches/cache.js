@@ -1,5 +1,4 @@
 /**@import { WebGLRenderPipelineDescriptor } from '../core/index.js' */
-/**@import { WebGLAtttributeParams } from '../function.js' */
 /** @import { UniformBuffer } from "../core/resources/index.js" */
 /** @import { Sampler } from "../texture/index.js" */
 /** @import { WebGLSamplerDescriptor } from "../core/webgl/descriptors.js" */
@@ -8,7 +7,7 @@ import { Texture } from "../texture/index.js"
 import { Attribute, Mesh } from "../mesh/index.js"
 import { GPUMesh, GPUTexture, GPUBuffer, MeshVertexLayout, WebGLRenderDevice, WebGLRenderPipeline } from "../core/index.js"
 import { BufferType, BufferUsage } from "../constants/others.js"
-import { mapToIndicesType, mapVertexFormatToWebGL } from "../function.js"
+import { mapToIndexFormat } from "../function.js"
 import { assert } from "../utils/index.js"
 import { getVertexFormatComponentNumber, getVertexFormatComponentSize } from "../constants/mesh.js"
 
@@ -54,13 +53,10 @@ export class Caches {
     }
 
     const [layout, layoutId] = this.getLayout(mesh, attributes)
-    const vao = device.context.createVertexArray()
-    const newMesh = new GPUMesh(device.context, vao, 0, layoutId)
 
     // Flush out any change detection that happened when the mesh was creates
     mesh.changed
-    device.context.bindVertexArray(vao)
-    updateVAO(device, layout, mesh, newMesh)
+    const newMesh = updateMesh(device, layout, mesh, layoutId)
     this.meshes.set(mesh, newMesh)
     if (gpuMesh) {
       gpuMesh.destroy()
@@ -263,21 +259,27 @@ function createSamplerDescriptor(sampler) {
  * @param {WebGLRenderDevice} device
  * @param {MeshVertexLayout} layout
  * @param {Mesh} mesh
- * @param {GPUMesh} gpuMesh
+ * @param {number} layoutId
+ * @returns {GPUMesh}
  */
-function updateVAO(device, layout, mesh, gpuMesh) {
+function updateMesh(device, layout, mesh, layoutId) {
   const { indices, attributes } = mesh
   let attrCount
+  /** @type {{ buffer: GPUBuffer, offset: number, size: number }[]} */
+  const vertexBuffers = []
+  /** @type {GPUBuffer | undefined} */
+  let indexBuffer
+  /** @type {"uint16" | "uint32" | undefined} */
+  let indexFormat
 
   if (indices !== undefined) {
-    const buffer = device.createBuffer({
+    indexBuffer = device.createBuffer({
       type: BufferType.ElementArray,
       usage: BufferUsage.Static,
       size: indices.byteLength
     })
-    device.queue.writeBuffer(buffer, indices)
-    gpuMesh.indexType = mapToIndicesType(indices)
-    gpuMesh.indexBuffer = buffer
+    device.queue.writeBuffer(indexBuffer, indices)
+    indexFormat = mapToIndexFormat(indices)
   }
 
   for (const vertexLayout of layout.layouts) {
@@ -295,14 +297,16 @@ function updateVAO(device, layout, mesh, gpuMesh) {
       size: data.byteLength,
       usage: BufferUsage.Static
     })
-    const params = mapVertexFormatToWebGL(attribute.format)
     const count = data.byteLength / (getVertexFormatComponentSize(attribute.format) * getVertexFormatComponentNumber(attribute.format))
 
     device.queue.writeBuffer(buffer, data)
-    setVertexAttribute(device.context, attribute.id, params)
-    gpuMesh.attributeBuffers.push(buffer)
+    vertexBuffers.push({
+      buffer,
+      offset: 0,
+      size: data.byteLength
+    })
 
-    if (attrCount) {
+    if (attrCount !== undefined) {
       if (count < attrCount) {
         attrCount = count
       }
@@ -312,41 +316,27 @@ function updateVAO(device, layout, mesh, gpuMesh) {
   }
 
   if (indices) {
-    gpuMesh.count = indices.length
+    return new GPUMesh({
+      vertexBuffers,
+      indexBuffer,
+      indexFormat,
+      count: indices.length,
+      layoutHash: layoutId
+    })
   } else if (attrCount !== undefined) {
-    gpuMesh.count = attrCount
-  } else {
-    gpuMesh.count = 0
+    return new GPUMesh({
+      vertexBuffers,
+      indexBuffer,
+      indexFormat,
+      count: attrCount,
+      layoutHash: layoutId
+    })
   }
-}
-
-/**
- * @param {WebGL2RenderingContext} context
- * @param {number} index
- * @param {WebGLAtttributeParams} params
- * @param {number} [stride = 0]
- * @param {number} [offset = 0]
- */
-function setVertexAttribute(context, index, params, stride = 0, offset = 0) {
-  const { type, size, normalized } = params
-  context.enableVertexAttribArray(index)
-  switch (type) {
-    case WebGL2RenderingContext.FLOAT:
-      context.vertexAttribPointer(index, size, type, normalized, stride, offset);
-      break;
-    case WebGL2RenderingContext.BYTE:
-    case WebGL2RenderingContext.UNSIGNED_BYTE:
-    case WebGL2RenderingContext.SHORT:
-    case WebGL2RenderingContext.UNSIGNED_SHORT:
-    case WebGL2RenderingContext.INT:
-    case WebGL2RenderingContext.UNSIGNED_INT:
-      if (normalized) {
-        context.vertexAttribPointer(index, size, type, normalized, stride, offset);
-      } else {
-        context.vertexAttribIPointer(index, size, type, stride, offset);
-      }
-      break;
-    default:
-      throw new Error(`Unsupported GlDataType: ${type.toString()}`);
-  }
+  return new GPUMesh({
+    vertexBuffers,
+    indexBuffer,
+    indexFormat,
+    count: 0,
+    layoutHash: layoutId
+  })
 }
