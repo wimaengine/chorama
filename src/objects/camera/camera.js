@@ -204,7 +204,7 @@ export class Camera extends Object3D {
 	 * Undefined means no camera tone mapping.
 	 * @type {ReinhardToneMapping | ACESFilmicTonemapping | AgXTonemapping | HableTonemapping | KhronosPBRNeutralTonemapping | undefined}
 	 */
-	toneMapping = new ReinhardToneMapping()
+	toneMapping = undefined
 
 	/**
 	 * @type {Matrix4}
