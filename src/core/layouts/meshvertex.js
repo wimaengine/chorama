@@ -18,19 +18,20 @@ export class MeshVertexLayout {
    * @param {Mesh} mesh
    */
   compatibleWithMesh(mesh) {
-    for (const attributeName of mesh.attributes.keys()) {
-      let found = false
-      for (const layout of this.layouts) {
-        found = layout.hasOnly([attributeName])
-        if (found) {
-          break
-        }
-      }
+    const meshAttributeNames = new Set(mesh.attributes.keys())
 
-      if (!found) {
+    if (meshAttributeNames.size !== this.layouts.length) {
+      return false
+    }
+
+    for (const layout of this.layouts) {
+      const attribute = layout.attributes[0]
+
+      if (!attribute || !meshAttributeNames.has(attribute.name)) {
         return false
       }
     }
+
     return true
   }
 
