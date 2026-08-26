@@ -31,6 +31,7 @@ export class TonemappingNode {
     const tonemappingUniform = renderer.getResource(TonemappingUniform)
 
     assert(tonemappingUniform, "TonemappingUniform resource missing")
+    const commandEncoder = renderDevice.createCommandEncoder()
 
     const actualViews = views.items()
     let cameraIndex = 0
@@ -72,7 +73,7 @@ export class TonemappingNode {
       const exposureBuffer = renderer.caches.getUniformBuffer(renderDevice, tonemappingUniform.buffer)
       const bindGroup = createTonemappingBindGroup(renderDevice,pipelineState,exposureBuffer,tonemappingUniform,source, gpuSampler)
 
-      const pass = renderDevice.beginRenderPass({
+      const pass = commandEncoder.beginRenderPass({
         width: outputColor.width,
         height: outputColor.height,
         colorAttachments: [{

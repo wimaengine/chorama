@@ -10,7 +10,6 @@ import { WebGLBindGroupLayout, WebGLPipelineLayout } from "../layouts/index.js"
 import { WebGLBindGroup } from "./bindgroup.js"
 import { WebGLGPUQueue } from "./gpuqueue.js"
 import { WebGLRenderPipeline } from "./renderpipeline.js"
-import { WebGLRenderPassEncoder } from "./renderpassencoder.js"
 import { GPUBuffer, GPUSampler, GPUTexture, WebGLShaderModule } from "../resources/index.js"
 import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, createProgramFromShaders, createShaderFromSrc, configureSampler } from "./utils.js"
 import { CompareFunction } from "../constants.js"
@@ -152,13 +151,6 @@ export class WebGLRenderDevice {
    */
   createBindGroup(descriptor) {
     return new WebGLBindGroup(descriptor)
-  }
-
-  /**
-   * @param {import("./descriptors.js").WebGLRenderPassDescriptor} descriptor
-   */
-  beginRenderPass(descriptor) {
-    return new WebGLRenderPassEncoder(this.context, this.drawBuffer, descriptor, this.limits)
   }
 
   /**

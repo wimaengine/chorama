@@ -33,7 +33,7 @@ function renderItems(view, viewIndex, device, renderer) {
     depthClearValue: 1
   }) : undefined
 
-  const pass = device.beginRenderPass({
+  const pass = device.createCommandEncoder().beginRenderPass({
     width: shadowMap.shadowAtlas.width,
     height: shadowMap.shadowAtlas.height,
     colorAttachments: [],

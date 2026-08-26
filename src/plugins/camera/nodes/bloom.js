@@ -397,7 +397,7 @@ function createCompositeBindGroup(device, pipelineState, bloomBuffer, bloomBindi
  * @param {number[] | undefined} [dynamicOffsets]
  */
 function renderFullscreenPass(device, outputTexture, pipeline, bindGroup, dynamicOffsets) {
-  const pass = device.beginRenderPass({
+  const pass = device.createCommandEncoder().beginRenderPass({
     width: outputTexture.width,
     height: outputTexture.height,
     colorAttachments: [{
@@ -420,7 +420,7 @@ function renderFullscreenPass(device, outputTexture, pipeline, bindGroup, dynami
  * @param {import("../../../core/resources/index.js").GPUTexture} texture
  */
 function clearTexture(device, texture) {
-  const pass = device.beginRenderPass({
+  const pass = device.createCommandEncoder().beginRenderPass({
     width: texture.width,
     height: texture.height,
     colorAttachments: [{

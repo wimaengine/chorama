@@ -52,7 +52,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const clearValue = clearColor ? /** @type {const} */ ([clearColor.r, clearColor.g, clearColor.b, clearColor.a]) : undefined
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
-  const pass = device.beginRenderPass({
+  const pass = device.createCommandEncoder().beginRenderPass({
     width,
     height,
     colorAttachments: [{

@@ -49,7 +49,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const height = renderTarget.height
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
-  const pass = device.beginRenderPass({
+  const pass = device.createCommandEncoder().beginRenderPass({
     width,
     height,
     colorAttachments: [{

@@ -27,6 +27,7 @@ export class CanvasBlitNode {
     assert(targetPool, "Render target pool resource missing")
     assert(colorTargets, "Camera color targets resource missing")
     assert(pipelineState, "CanvasBlitPipeline resource missing")
+    const commandEncoder = renderDevice.createCommandEncoder()
 
     const actualViews = views.items()
 
@@ -61,7 +62,7 @@ export class CanvasBlitNode {
 
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, canvasSource.format)
 
-        const pass = renderDevice.beginRenderPass({
+        const pass = commandEncoder.beginRenderPass({
           width: canvasTarget.width,
           height: canvasTarget.height,
           defaultFramebuffer: true,
@@ -91,7 +92,7 @@ export class CanvasBlitNode {
 
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, imageTarget.image.format)
 
-        const pass = renderDevice.beginRenderPass({
+        const pass = commandEncoder.beginRenderPass({
           width: imageTarget.width,
           height: imageTarget.height,
           colorAttachments: [{
