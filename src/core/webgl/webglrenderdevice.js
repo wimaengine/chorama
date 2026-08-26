@@ -5,6 +5,7 @@ import { assert, assertTrue } from "../../utils/index.js"
 import { getFramebufferAttachment, getWebGLTextureFormat, mapWebGLAttachmentToBufferBit } from "../../function.js"
 import { WebGLExtensions } from "../extensions.js"
 import { WebGLDeviceLimits } from "../limits.js"
+import { WebGLCommandEncoder } from "./commandencoder.js"
 import { WebGLBindGroupLayout, WebGLPipelineLayout } from "../layouts/index.js"
 import { WebGLBindGroup } from "./bindgroup.js"
 import { WebGLGPUQueue } from "./gpuqueue.js"
@@ -158,6 +159,13 @@ export class WebGLRenderDevice {
    */
   beginRenderPass(descriptor) {
     return new WebGLRenderPassEncoder(this.context, this.drawBuffer, descriptor, this.limits)
+  }
+
+  /**
+   * @returns {WebGLCommandEncoder}
+   */
+  createCommandEncoder() {
+    return new WebGLCommandEncoder(this.context, this.drawBuffer, this.readBuffer, this.limits)
   }
 
   /**

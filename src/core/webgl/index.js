@@ -1,6 +1,7 @@
 export * from './descriptors.js'
 export * from './bindgroup.js'
 export * from './gpuqueue.js'
+export * from './commandencoder.js'
 export { WebGLBindGroupLayout } from '../layouts/bindgroup.js'
 export { WebGLPipelineLayout } from '../layouts/pipeline.js'
 export * from './renderpipeline.js'
