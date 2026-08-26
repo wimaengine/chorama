@@ -1,4 +1,7 @@
 export * from "./canvasblitpipeline.js"
+export * from "./bloompipeline.js"
+export * from "./gaussianblurpipeline.js"
+export * from "./bloomuniform.js"
 export * from "./tonemappingpipeline.js"
 export * from "./cameracolortargets.js"
 export * from "./tonemappinguniform.js"

@@ -156,6 +156,51 @@ export class KhronosPBRNeutralTonemapping {
 	}
 }
 
+export class Bloom {
+	/**
+	 * @type {number}
+	 */
+	threshold
+
+	/**
+	 * @type {number}
+	 */
+	intensity
+
+	/**
+	 * Soft-knee width as a fraction of the threshold.
+	 * @type {number}
+	 */
+	softKnee
+
+	/**
+	 * @param {BloomOptions} [options]
+	 */
+	constructor({ threshold = 1, intensity = 0.8, softKnee = 0.5 } = {}) {
+		this.threshold = threshold
+		this.intensity = intensity
+		this.softKnee = softKnee
+	}
+
+	/**
+	 * @param {Bloom} bloom
+	 * @returns {this}
+	 */
+	copy(bloom) {
+		this.threshold = bloom.threshold
+		this.intensity = bloom.intensity
+		this.softKnee = bloom.softKnee
+		return this
+	}
+
+	/**
+	 * @returns {Bloom}
+	 */
+	clone() {
+		return new Bloom().copy(this)
+	}
+}
+
 export class Camera extends Object3D {
 	near = 0.1
 
@@ -207,6 +252,12 @@ export class Camera extends Object3D {
 	toneMapping = undefined
 
 	/**
+	 * Undefined means no camera bloom.
+	 * @type {Bloom | undefined}
+	 */
+	bloom = undefined
+
+	/**
 	 * @type {Matrix4}
 	 */
 	view = new Matrix4()
@@ -239,6 +290,7 @@ export class Camera extends Object3D {
 		this.target = object.target
 		this.projection = object.projection.clone()
 		this.toneMapping = object.toneMapping ? object.toneMapping.clone() : undefined
+		this.bloom = object.bloom ? object.bloom.clone() : undefined
 		this.view.copy(object.view)
 		return this
 	}
@@ -286,4 +338,11 @@ export class Camera extends Object3D {
 /**
  * @typedef KhronosPBRNeutralTonemappingOptions
  * @property {number} [exposure]
+ */
+
+/**
+ * @typedef BloomOptions
+ * @property {number} [threshold]
+ * @property {number} [intensity]
+ * @property {number} [softKnee]
  */
