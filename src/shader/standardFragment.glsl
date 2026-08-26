@@ -196,8 +196,8 @@ PBRProperties calculate_pbr_properties(){
     vec4 occlusion_texture_color = texture(occlusion_texture,v_uv);
     properties.ambient_occlusion = mix(1.0,occlusion_texture_color.r, material.ambient_occlusion_strength);
     
-    vec4 emissive_texture_color = texture(emissive_texture,v_uv);
-    properties.emissive *= emissive_texture_color.rgb;  
+    vec4 emissive_texture_color = texture(emissive_texture, v_uv);
+    properties.emissive *= quick_sRGB_to_linear(emissive_texture_color.rgb);
   #endif
 
   properties.metallic = clamp(properties.metallic, 0.0, 1.0);

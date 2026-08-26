@@ -128,6 +128,15 @@ export class GLTFLoader extends Loader {
       material.metallic = metallicFactor
       material.roughness = roughnessFactor
 
+      const emissiveStrengthExtension =
+        extensions["KHR_materials_emissive_strength"]
+      if (
+        emissiveStrengthExtension &&
+        typeof emissiveStrengthExtension.emissiveStrength === "number"
+      ) {
+        material.emissiveIntensity = emissiveStrengthExtension.emissiveStrength
+      }
+
       if (baseColorTexture) {
         const texture = textures[baseColorTexture.index]
 
