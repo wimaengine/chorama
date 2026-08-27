@@ -5,7 +5,7 @@ import { assert } from "../../../utils/index.js"
 import { ImageRenderTarget } from "../../../rendertarget/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
 import { TextureFormat } from "../../../constants/index.js"
-import { CameraColorTargets } from "../resources/index.js"
+import { CameraColorTargets, PrePassTextures } from "../resources/index.js"
 import {
   ViewBindGroups,
   ViewBindings,
@@ -34,12 +34,14 @@ export class CameraViewNode {
     const views = renderer.getResource(Views)
     const targetPool = renderer.getResource(Texture2DPool)
     const colorTargets = renderer.getResource(CameraColorTargets)
+    const prePassTextures = renderer.getResource(PrePassTextures)
     const viewBindGroups = renderer.getResource(ViewBindGroups)
     const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
 
     assert(views, "Views resource missing")
     assert(targetPool, "Render target pool resource missing")
     assert(colorTargets, "Camera color targets resource missing")
+    assert(prePassTextures, "PrePassTextures resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
     assert(viewUniformBuffer, "ViewUniformBuffer resource missing")
 
@@ -73,6 +75,16 @@ export class CameraViewNode {
             format: TextureFormat.RGBA16Float
           }
         )
+        prePassTextures.getOrSet(
+          object,
+          targetPool,
+          {
+            width: renderTarget.width,
+            height: renderTarget.height,
+            depth: 1,
+            format: TextureFormat.Depth24Plus
+          }
+        )
         /** @type {View} */
         const cameraView = new View({
           renderTarget,
@@ -102,7 +114,7 @@ export class CameraViewNode {
 
         assert(viewObject, "View object missing")
         const viewBindGroup = viewBindGroups.getOrSet(renderDevice, viewObject)
-        populateCameraViewBindGroup(viewBindGroup, renderer)
+        populateCameraViewBindGroup(viewBindGroup, renderer, /** @type {Camera} */ (viewObject))
 
         views.push(cameraView)
         return true
@@ -114,14 +126,16 @@ export class CameraViewNode {
 /**
  * @param {import("../../../renderer/resources/viewbindgroup.js").ViewBindGroup} viewBindGroup
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
+ * @param {Camera} camera
  */
-function populateCameraViewBindGroup(viewBindGroup, renderer) {
+function populateCameraViewBindGroup(viewBindGroup, renderer, camera) {
   const viewUniformBuffer = renderer.getResource(ViewUniformBuffer)
   const ambientLightUniformBuffer = renderer.getResource(AmbientLightUniformBuffer)
   const directionalLightUniformBuffer = renderer.getResource(DirectionalLightUniformBuffer)
   const pointLightUniformBuffer = renderer.getResource(PointLightUniformBuffer)
   const shadowCasterUniformBuffer = renderer.getResource(ShadowCasterUniformBuffer)
   const spotLightUniformBuffer = renderer.getResource(SpotLightUniformBuffer)
+  const prePassTextures = renderer.getResource(PrePassTextures)
   const environmentMap = renderer.getResource(EnvironmentMap)
   const shadowMap = renderer.getResource(ShadowMap)
   const boneTexture = renderer.getResource(BoneTextureResource)
@@ -158,6 +172,14 @@ function populateCameraViewBindGroup(viewBindGroup, renderer) {
   if (shadowMap) {
     viewBindGroup.setOrReplace(ShadowViewBindings.shadowAtlas.texture, shadowMap.shadowAtlas)
     viewBindGroup.setOrReplace(ShadowViewBindings.shadowAtlas.sampler, shadowMap.sampler)
+  }
+
+  if (prePassTextures) {
+    const prePassTexture = prePassTextures.get(camera)
+
+    assert(prePassTexture, "Pre-pass texture missing")
+    viewBindGroup.setOrReplace(ViewBindings.prePassDepth.texture, prePassTexture.depth)
+    viewBindGroup.setOrReplace(ViewBindings.prePassDepth.sampler, defaults.textureNearestSampler)
   }
 
   if (boneTexture) {

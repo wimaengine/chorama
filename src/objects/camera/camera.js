@@ -151,10 +151,19 @@ export class KhronosPBRNeutralTonemapping {
 	/**
 	 * @returns {KhronosPBRNeutralTonemapping}
 	 */
-	clone() {
-		return new KhronosPBRNeutralTonemapping().copy(this)
-	}
+  clone() {
+    return new KhronosPBRNeutralTonemapping().copy(this)
+  }
 }
+
+/**
+ * Bitmask of camera prepasses.
+ * @enum {number}
+ */
+export const CameraPrepasses = /** @type {const} */ ({
+	None: 0,
+	Depth: 1 << 0
+})
 
 export class Bloom {
 	/**
@@ -258,6 +267,12 @@ export class Camera extends Object3D {
 	bloom = undefined
 
 	/**
+	 * Enabled camera prepasses.
+	 * @type {number}
+	 */
+	prepasses = CameraPrepasses.None
+
+	/**
 	 * @type {Matrix4}
 	 */
 	view = new Matrix4()
@@ -291,6 +306,7 @@ export class Camera extends Object3D {
 		this.projection = object.projection.clone()
 		this.toneMapping = object.toneMapping ? object.toneMapping.clone() : undefined
 		this.bloom = object.bloom ? object.bloom.clone() : undefined
+		this.prepasses = object.prepasses
 		this.view.copy(object.view)
 		return this
 	}

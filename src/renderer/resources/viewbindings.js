@@ -10,5 +10,9 @@ export const ViewBindings = {
   boneTransforms: {
     texture: ViewBindGroup.texture(5, "bone_transforms", "2d-array"),
     sampler: ViewBindGroup.sampler(6, "bone_transforms")
+  },
+  prePassDepth: {
+    texture: ViewBindGroup.texture(12, "pre_pass_depth", "2d"),
+    sampler: ViewBindGroup.sampler(13, "pre_pass_depth")
   }
 }
