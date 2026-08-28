@@ -280,7 +280,7 @@ function createPrePassPipeline(
         stage: "fragment"
       }),
       targets: [{
-        format: TextureFormat.RGBA16Float
+        format: TextureFormat.RG16Float
       }]
     }
   }

@@ -221,19 +221,19 @@ function setPrePassTextures(prePassTextures, camera, targetPool) {
     prePassTexture.depth = undefined
   }
 
-  if (renderNormals) {
-    prePassTexture.normal = updatePrePassTexture(
-      targetPool,
-      prePassTexture.normal,
-      {
-        width: renderTarget.width,
-        height: renderTarget.height,
-        depth: 1,
-        format: TextureFormat.RGBA16Float
-      }
-    )
-  } else if (prePassTexture.normal) {
-    targetPool.recycle(prePassTexture.normal)
+    if (renderNormals) {
+      prePassTexture.normal = updatePrePassTexture(
+        targetPool,
+        prePassTexture.normal,
+        {
+          width: renderTarget.width,
+          height: renderTarget.height,
+          depth: 1,
+          format: TextureFormat.RG16Float
+        }
+      )
+    } else if (prePassTexture.normal) {
+      targetPool.recycle(prePassTexture.normal)
     prePassTexture.normal = undefined
   }
 }

@@ -11,6 +11,28 @@ vec3 tint(vec3 tex_color, vec3 tint_color){
   return tex_color * tint_color;
 }
 
+vec2 octahedral_encode(vec3 normal) {
+  normal /= abs(normal.x) + abs(normal.y) + abs(normal.z);
+
+  vec2 encoded = normal.xy;
+
+  if (normal.z < 0.0) {
+    encoded = (1.0 - abs(encoded.yx)) * sign(encoded.xy);
+  }
+
+  return encoded;
+}
+
+vec3 octahedral_decode(vec2 encoded) {
+  vec3 normal = vec3(encoded.xy, 1.0 - abs(encoded.x) - abs(encoded.y));
+
+  if (normal.z < 0.0) {
+    normal.xy = (1.0 - abs(normal.yx)) * sign(normal.xy);
+  }
+
+  return normalize(normal);
+}
+
 ivec2 map_to_index_2d(uint index, uint width) {
   return ivec2(int(index % width), int(index / width));
 }
