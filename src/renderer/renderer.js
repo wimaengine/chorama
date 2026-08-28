@@ -1,6 +1,6 @@
 import { WebGLRenderDevice } from "../core/index.js"
 import { Object3D } from "../objects/index.js"
-import { colorShaderLib, commonShaderLib, lightShaderLib, mathShaderLib, tonemapShaderLib } from "../shader/index.js"
+import { colorShaderLib, commonShaderLib, lightShaderLib, mathShaderLib, meshShaderLib, tonemapShaderLib } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
 import { TextureFilter, TextureType } from "../constants/index.js"
 import { assert } from '../utils/index.js'
@@ -93,6 +93,7 @@ export class WebGLRenderer {
       .set("common", commonShaderLib)
       .set("color", colorShaderLib)
       .set("light", lightShaderLib)
+      .set("mesh", meshShaderLib)
       .set("math", mathShaderLib)
       .set("tonemap", tonemapShaderLib)
   }

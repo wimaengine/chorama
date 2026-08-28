@@ -1,5 +1,6 @@
 export { default as colorShaderLib } from './color.glsl'
 export { default as commonShaderLib } from './common.glsl'
 export { default as lightShaderLib } from './light.glsl'
+export { default as meshShaderLib } from './mesh.glsl'
 export { default as mathShaderLib } from './math.glsl'
 export { default as tonemapShaderLib } from './tonemap.glsl'

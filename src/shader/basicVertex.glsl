@@ -1,24 +1,14 @@
 #include <common>
+#include <mesh>
 
 uniform CameraBlock {
   Camera camera;
 };
 
 uniform MeshInstanceBlock {
-  mat4 model;
-  uint skin_index;
-  uint bone_count;
+  MeshInstance mesh_instance;
 };
 uniform sampler2DArray bone_transforms;
-
-mat4 get_skin_bone(uint joint_index) {
-  if (bone_count == 0u) {
-    return mat4(1.0);
-  }
-
-  uint resolved_joint = min(joint_index, bone_count - 1u);
-  return get_value_from_texture(skin_index + resolved_joint, bone_transforms);
-}
 
 in vec3 position;
 in vec2 uv;
@@ -51,10 +41,10 @@ out vec3 cam_direction;
 
 void main(){
   #ifdef SKINNED
-    mat4 boneMat0 = get_skin_bone(joint_index.x);
-    mat4 boneMat1 = get_skin_bone(joint_index.y);
-    mat4 boneMat2 = get_skin_bone(joint_index.z);
-    mat4 boneMat3 = get_skin_bone(joint_index.w);
+    mat4 boneMat0 = get_skin_bone(mesh_instance, joint_index.x, bone_transforms);
+    mat4 boneMat1 = get_skin_bone(mesh_instance, joint_index.y, bone_transforms);
+    mat4 boneMat2 = get_skin_bone(mesh_instance, joint_index.z, bone_transforms);
+    mat4 boneMat3 = get_skin_bone(mesh_instance, joint_index.w, bone_transforms);
 
     vec4 skeleton_space_position = vec4(position, 1.0);
     vec4 skinned_position =
@@ -62,11 +52,11 @@ void main(){
       (boneMat1 * skeleton_space_position) * joint_weight.y +
       (boneMat2 * skeleton_space_position) * joint_weight.z +
       (boneMat3 * skeleton_space_position) * joint_weight.w;
-    mat3 normal_matrix = mat3(model);
-    vec3 world_space_position = (model * skinned_position).xyz;
+    mat3 normal_matrix = mat3(mesh_instance.transform);
+    vec3 world_space_position = (mesh_instance.transform * skinned_position).xyz;
   #else
-    vec3 world_space_position = (model * vec4(position,1.0)).xyz;
-    mat3 normal_matrix = mat3(model);
+    vec3 world_space_position = (mesh_instance.transform * vec4(position,1.0)).xyz;
+    mat3 normal_matrix = mat3(mesh_instance.transform);
   #endif
   
   v_position = world_space_position;
