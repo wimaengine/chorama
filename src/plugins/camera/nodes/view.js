@@ -67,7 +67,6 @@ export class CameraViewNode {
         renderTarget.changed()
         colorTargets.getOrSet(
           object,
-          targetPool,
           {
             width: renderTarget.width,
             height: renderTarget.height,

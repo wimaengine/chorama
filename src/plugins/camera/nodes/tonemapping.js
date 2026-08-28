@@ -6,7 +6,6 @@ import { CompareFunction, MeshVertexLayout, Shader } from "../../../core/index.j
 import { CullFace, PrimitiveTopology, TextureFormat } from "../../../constants/index.js"
 import { assert } from "../../../utils/index.js"
 import { fullscreenVertex, tonemappingFragment } from "../../../shader/index.js"
-import { Texture2DPool } from "../RenderTarget2DPool.js"
 import { CameraColorTargets, TonemappingPipeline, TonemappingUniform } from "../resources/index.js"
 
 export class TonemappingNode {
@@ -20,12 +19,10 @@ export class TonemappingNode {
   execute(context) {
     const { renderer, renderDevice } = context
     const views = renderer.getResource(Views)
-    const targetPool = renderer.getResource(Texture2DPool)
     const pipelineState = renderer.getResource(TonemappingPipeline)
     const colorTargets = renderer.getResource(CameraColorTargets)
 
     assert(views, "Views resource missing")
-    assert(targetPool, "Render target pool resource missing")
     assert(pipelineState, "TonemappingPipeline resource missing")
     assert(colorTargets, "Camera color targets resource missing")
     const tonemappingUniform = renderer.getResource(TonemappingUniform)
@@ -47,31 +44,23 @@ export class TonemappingNode {
         continue
       }
 
-      /** @type {import("../resources/index.js").CameraColorTarget | undefined} */
       const cameraColorTarget = colorTargets.get(view.object)
-
-      assert(cameraColorTarget, "Camera color target missing")
-
-      const colorSource = cameraColorTarget.target
-      const toneMapping = view.object.toneMapping
-
-      if (!colorSource) {
+      if (!cameraColorTarget) {
         continue
       }
 
-      const pipeline = getTonemappingPipeline(renderDevice, renderer, pipelineState, toneMapping)
+      const colorSource = cameraColorTarget.readTarget
+      const toneMapping = view.object.toneMapping
 
-      const outputColor = targetPool.get({
-        width: view.object.target.canvas.width,
-        height: view.object.target.canvas.height,
-        format: TextureFormat.RGBA8Unorm
-      })
+      const pipeline = getTonemappingPipeline(renderDevice, renderer, pipelineState, toneMapping)
 
       const source = renderer.caches.getTexture(renderDevice, colorSource)
       const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
       const dynamicOffset = tonemappingUniform.setExposure(cameraIndex, getToneMappingExposure(toneMapping))
       const exposureBuffer = renderer.caches.getUniformBuffer(renderDevice, tonemappingUniform.buffer)
       const bindGroup = createTonemappingBindGroup(renderDevice,pipelineState,exposureBuffer,tonemappingUniform,source, gpuSampler)
+
+      const [, outputColor] = cameraColorTarget.getColorPair()
 
       const pass = commandEncoder.beginRenderPass({
         width: outputColor.width,
@@ -90,7 +79,6 @@ export class TonemappingNode {
       pass.draw(3)
       pass.end()
 
-      cameraColorTarget.setColor(targetPool, outputColor)
       cameraIndex++
     }
   }
@@ -156,7 +144,7 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
         stage: "fragment"
       }),
       targets: [{
-        format: TextureFormat.RGBA8Unorm
+        format: TextureFormat.RGBA16Float
       }]
     }
   }

@@ -30,19 +30,17 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const renderTarget = view.renderTarget
   const cameraColorTarget = colorTargets.get(camera)
 
-  assert(cameraColorTarget, "Camera color target missing")
   assert(renderTarget, "Camera render target missing")
   assert(sceneBindGroups, "SceneBindGroups resource missing")
   assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  if (!cameraColorTarget) {
+    return
+  }
   const object = view.object
 
   assert(object, "View object missing")
 
-  const colorTarget = cameraColorTarget.target
-
-  if (!colorTarget) {
-    return
-  }
+  const colorTarget = cameraColorTarget.readTarget
 
   const caches = renderer.caches
   const width = renderTarget.width

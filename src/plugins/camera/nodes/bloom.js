@@ -42,12 +42,8 @@ export class BloomNode {
         continue
       }
 
-      /** @type {import("../resources/index.js").CameraColorTarget | undefined} */
       const cameraColorTarget = colorTargets.get(view.object)
-      assert(cameraColorTarget, "Camera color target missing")
-
-      const sourceColor = cameraColorTarget.target
-      if (!sourceColor) {
+      if (!cameraColorTarget) {
         continue
       }
 
@@ -55,6 +51,8 @@ export class BloomNode {
       if (!bloom) {
         continue
       }
+
+      const sourceColor = cameraColorTarget.readTarget
 
       const sourceTexture = renderer.caches.getTexture(renderDevice, sourceColor)
       const sampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureSampler)
@@ -84,7 +82,6 @@ export class BloomNode {
       }
 
       const fullResDescriptor = createBloomTextureDescriptor(sourceColor.width, sourceColor.height)
-      const outputColor = targetPool.get(fullResDescriptor)
 
       const firstLevel = bloomLevels[0]
       assert(firstLevel, "Bloom pyramid base level missing")
@@ -163,6 +160,8 @@ export class BloomNode {
 
       const bloomTexture = accumulationSourceTexture
 
+      const [, outputColor] = cameraColorTarget.getColorPair()
+
       renderFullscreenPass(
         renderDevice,
         renderer.caches.getTexture(renderDevice, outputColor),
@@ -178,8 +177,6 @@ export class BloomNode {
         ),
         [bloomOffset]
       )
-
-      cameraColorTarget.setColor(targetPool, outputColor)
 
       for (const texture of temporaryTextures) {
         targetPool.recycle(texture)

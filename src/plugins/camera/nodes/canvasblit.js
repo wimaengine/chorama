@@ -44,10 +44,7 @@ export class CanvasBlitNode {
         continue
       }
 
-      const canvasSource = cameraColorTarget.target
-      if (!canvasSource) {
-        continue
-      }
+      const canvasSource = cameraColorTarget.readTarget
 
       const sourceTexture = renderer.caches.getTexture(renderDevice, canvasSource)
       const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
@@ -79,13 +76,6 @@ export class CanvasBlitNode {
         pass.setBindGroup(0, bindGroup)
         pass.draw(3)
         pass.end()
-
-        cameraColorTarget.setColor(targetPool, targetPool.get({
-          width: canvasTarget.width,
-          height: canvasTarget.height,
-          depth: 1,
-          format: TextureFormat.RGBA16Float
-        }))
       } else if (cameraTarget instanceof ImageRenderTarget) {
         const imageTarget = /**@type {ImageRenderTarget} */ (cameraTarget)
         const imageTexture = renderer.caches.getTexture(renderDevice, imageTarget.image)
