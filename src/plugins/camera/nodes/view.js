@@ -1,4 +1,4 @@
-import { Camera, Object3D } from "../../../objects/index.js"
+import { Camera, CameraPrepasses, Object3D } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
 import { Vector3 } from "../../../math/index.js"
 import { assert } from "../../../utils/index.js"
@@ -75,16 +75,7 @@ export class CameraViewNode {
             format: TextureFormat.RGBA16Float
           }
         )
-        prePassTextures.getOrSet(
-          object,
-          targetPool,
-          {
-            width: renderTarget.width,
-            height: renderTarget.height,
-            depth: 1,
-            format: TextureFormat.Depth24Plus
-          }
-        )
+        setPrePassTextures(prePassTextures, object, targetPool)
         /** @type {View} */
         const cameraView = new View({
           renderTarget,
@@ -176,14 +167,108 @@ function populateCameraViewBindGroup(viewBindGroup, renderer, camera) {
 
   if (prePassTextures) {
     const prePassTexture = prePassTextures.get(camera)
+    const renderNormals = (camera.prepasses & CameraPrepasses.Normal) !== 0
+    const renderDepth = (camera.prepasses & CameraPrepasses.Depth) !== 0 || renderNormals
 
-    assert(prePassTexture, "Pre-pass texture missing")
-    viewBindGroup.setOrReplace(ViewBindings.prePassDepth.texture, prePassTexture.depth)
-    viewBindGroup.setOrReplace(ViewBindings.prePassDepth.sampler, defaults.textureNearestSampler)
+    if (prePassTexture) {
+      if (renderDepth) {
+        assert(prePassTexture.depth, "Depth pre-pass texture missing")
+        viewBindGroup.setOrReplace(ViewBindings.depthPrePass.texture, prePassTexture.depth)
+        viewBindGroup.setOrReplace(ViewBindings.depthPrePass.sampler, defaults.textureNearestSampler)
+      }
+
+      if (renderNormals) {
+        assert(prePassTexture.normal, "Normal pre-pass texture missing")
+        viewBindGroup.setOrReplace(ViewBindings.normalPrePass.texture, prePassTexture.normal)
+        viewBindGroup.setOrReplace(ViewBindings.normalPrePass.sampler, defaults.textureNearestSampler)
+      }
+    }
   }
 
   if (boneTexture) {
     viewBindGroup.setOrReplace(ViewBindings.boneTransforms.texture, boneTexture.texture)
     viewBindGroup.setOrReplace(ViewBindings.boneTransforms.sampler, defaults.textureNearestSampler)
   }
+}
+
+/**
+ * @param {PrePassTextures} prePassTextures
+ * @param {Camera} camera
+ * @param {Texture2DPool} targetPool
+ * @returns {void}
+ */
+function setPrePassTextures(prePassTextures, camera, targetPool) {
+  const renderTarget = camera.target
+
+  assert(renderTarget, "Camera render target missing")
+
+  const renderNormals = (camera.prepasses & CameraPrepasses.Normal) !== 0
+  const renderDepth = (camera.prepasses & CameraPrepasses.Depth) !== 0 || renderNormals
+  const prePassTexture = prePassTextures.getOrSet(camera)
+
+  if (renderDepth) {
+    prePassTexture.depth = updatePrePassTexture(
+      targetPool,
+      prePassTexture.depth,
+      {
+        width: renderTarget.width,
+        height: renderTarget.height,
+        depth: 1,
+        format: TextureFormat.Depth24Plus
+      }
+    )
+  } else if (prePassTexture.depth) {
+    targetPool.recycle(prePassTexture.depth)
+    prePassTexture.depth = undefined
+  }
+
+  if (renderNormals) {
+    prePassTexture.normal = updatePrePassTexture(
+      targetPool,
+      prePassTexture.normal,
+      {
+        width: renderTarget.width,
+        height: renderTarget.height,
+        depth: 1,
+        format: TextureFormat.RGBA16Float
+      }
+    )
+  } else if (prePassTexture.normal) {
+    targetPool.recycle(prePassTexture.normal)
+    prePassTexture.normal = undefined
+  }
+}
+
+/**
+ * @param {Texture2DPool} targetPool
+ * @param {import("../../../texture/index.js").Texture | undefined} current
+ * @param {import("../../../texture/index.js").TextureSettings} descriptor
+ * @returns {import("../../../texture/index.js").Texture}
+ */
+function updatePrePassTexture(targetPool, current, descriptor) {
+  if (current && textureMatchesDescriptor(current, descriptor)) {
+    return current
+  }
+
+  const nextTexture = targetPool.get(descriptor)
+
+  if (current) {
+    targetPool.recycle(current)
+  }
+
+  return nextTexture
+}
+
+/**
+ * @param {import("../../../texture/index.js").Texture} texture
+ * @param {import("../../../texture/index.js").TextureSettings} descriptor
+ * @returns {boolean}
+ */
+function textureMatchesDescriptor(texture, descriptor) {
+  return (
+    texture.width === descriptor.width &&
+    texture.height === descriptor.height &&
+    texture.depth === descriptor.depth &&
+    texture.format === descriptor.format
+  )
 }

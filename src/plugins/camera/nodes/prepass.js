@@ -1,11 +1,12 @@
 /** @import { WebGLRenderDevice } from "../../../core/index.js" */
 import { CompareFunction, Shader } from "../../../core/index.js"
+import { TextureFormat } from "../../../constants/index.js"
 import { Camera, CameraPrepasses } from "../../../objects/index.js"
 import { View, ViewBindGroups, Views, MeshInstanceBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { snapUp } from "../../../math/index.js"
 import { Attribute } from "../../../mesh/index.js"
-import { basicVertex } from "../../../shader/index.js"
+import { basicVertex, prepassFragment } from "../../../shader/index.js"
 import { PrePassPipeline, PrePassTextures } from "../resources/index.js"
 
 const MESH_INSTANCE_BIND_GROUP_INDEX = 1
@@ -63,7 +64,10 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
   }
 
   const camera = view.object
-  if ((camera.prepasses & CameraPrepasses.Depth) === 0) {
+  const renderNormals = (camera.prepasses & CameraPrepasses.Normal) !== 0
+  const renderDepth = (camera.prepasses & CameraPrepasses.Depth) !== 0 || renderNormals
+
+  if (!renderDepth) {
     return
   }
 
@@ -72,6 +76,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
 
   assert(renderTarget, "Camera render target missing")
   assert(prePassTexture, "Pre-pass texture missing")
+  assert(prePassTexture.depth, "Depth pre-pass texture missing")
 
   const sourceDepthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
   if (!sourceDepthTexture) {
@@ -86,10 +91,24 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
   assert(phaseState.bindGroup, "Mesh instance phase bind group missing")
 
   const commandEncoder = device.createCommandEncoder()
+  let normalTexture
+
+  if (renderNormals) {
+    assert(prePassTexture.normal, "Normal pre-pass texture missing")
+    normalTexture = caches.getTexture(device, prePassTexture.normal)
+  }
+
   const pass = commandEncoder.beginRenderPass({
     width: renderTarget.width,
     height: renderTarget.height,
-    colorAttachments: [],
+    colorAttachments: renderNormals ? [{
+      texture: normalTexture,
+      mipLevel: 0,
+      layer: 0,
+      loadOp: "clear",
+      storeOp: "store",
+      clearValue: [0, 0, 0, 0]
+    }] : [],
     depthStencilAttachment: {
       texture: sourceDepthTexture,
       mipLevel: view.depthMipmapLevel,
@@ -107,6 +126,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
   const sceneBindGroup = sceneBindGroupState.createBindGroup(device, caches)
   const meshItems = opaqueStage.getMeshItems(view)
+  const pipelineKind = renderNormals ? "normal" : "depth"
 
   pass.setBindGroup(0, sceneBindGroup, [dynamicOffset])
 
@@ -119,7 +139,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
     }
 
     const skinned = isSkinned(sourcePipeline, item)
-    const pipelineKey = createPrePassPipelineKey(sourcePipeline, skinned)
+    const pipelineKey = createPrePassPipelineKey(pipelineKind, sourcePipeline, skinned)
     const sceneBindGroupLayout = /** @type {import("../../../core/layouts/bindgroup.js").WebGLBindGroupLayout} */ (sceneBindGroupState.layout)
 
     assert(sceneBindGroupLayout, "Scene bind group layout missing")
@@ -132,6 +152,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
         renderer,
         sourcePipeline,
         skinned,
+        renderNormals,
         sceneBindGroupLayout,
         meshInstanceBindGroups.getBindGroupLayout(device)
       )
@@ -181,12 +202,14 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
 }
 
 /**
+ * @param {string} kind
  * @param {import("../../../core/index.js").WebGLRenderPipeline} sourcePipeline
  * @param {boolean} skinned
  * @returns {string}
  */
-function createPrePassPipelineKey(sourcePipeline, skinned) {
+function createPrePassPipelineKey(kind, sourcePipeline, skinned) {
   return [
+    kind,
     sourcePipeline.topology,
     sourcePipeline.cullMode,
     sourcePipeline.frontFace,
@@ -199,6 +222,7 @@ function createPrePassPipelineKey(sourcePipeline, skinned) {
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  * @param {import("../../../core/index.js").WebGLRenderPipeline} sourcePipeline
  * @param {boolean} skinned
+ * @param {boolean} renderNormals
  * @param {import("../../../core/layouts/bindgroup.js").WebGLBindGroupLayout} sceneBindGroupLayout
  * @param {import("../../../core/layouts/bindgroup.js").WebGLBindGroupLayout} meshInstanceBindGroupLayout
  * @returns {number}
@@ -208,6 +232,7 @@ function createPrePassPipeline(
   renderer,
   sourcePipeline,
   skinned,
+  renderNormals,
   sceneBindGroupLayout,
   meshInstanceBindGroupLayout
 ) {
@@ -239,9 +264,27 @@ function createPrePassPipeline(
     vertexShader.defines.set("VERTEX_TANGENTS", "")
   }
 
-  /**
-   * @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor}
-   */
+  /** @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor["fragment"]} */
+  let fragment = undefined
+
+  if (renderNormals) {
+    const fragmentShader = new Shader({
+      source: prepassFragment,
+      defines: new Map(renderer.defines),
+      includes: new Map(renderer.includes)
+    })
+
+    fragment = {
+      source: device.createShaderModule({
+        code: fragmentShader.compile(),
+        stage: "fragment"
+      }),
+      targets: [{
+        format: TextureFormat.RGBA16Float
+      }]
+    }
+  }
+
   const descriptor = {
     depthWrite: true,
     depthCompare: CompareFunction.Less,
@@ -252,7 +295,8 @@ function createPrePassPipeline(
     vertex: device.createShaderModule({
       code: vertexShader.compile(),
       stage: "vertex"
-    })
+    }),
+    fragment
   }
 
   const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)

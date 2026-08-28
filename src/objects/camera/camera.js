@@ -162,7 +162,8 @@ export class KhronosPBRNeutralTonemapping {
  */
 export const CameraPrepasses = /** @type {const} */ ({
 	None: 0,
-	Depth: 1 << 0
+	Depth: 1 << 0,
+	Normal: 1 << 1
 })
 
 export class Bloom {
