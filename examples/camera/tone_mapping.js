@@ -43,6 +43,30 @@ const cameraControls = new OrbitCameraControls(camera, canvas)
 const textureLoader = new TextureLoader()
 const gltfLoader = new GLTFLoader()
 
+const colorLutOptions = {
+  None: "none",
+  "Black & White": "black_and_white",
+  Colorify: "colorify",
+  "Deep Sea": "deep_sea",
+  Dimension: "dimension",
+  Landscape: "landscape",
+  "Vibrant Light": "vibrant_light",
+  "Vintage City": "vintage_city",
+  "Violet Midlight": "violet_midlight",
+}
+/** @type {Record<string, import("chorama").Texture>} */
+const colorLutTextures = {}
+
+for (const lut of Object.values(colorLutOptions)) {
+  if (lut === colorLutOptions.None) {
+    continue
+  }
+
+  colorLutTextures[lut] = textureLoader.load({
+    paths: [`/images/luts/color_grade/${lut}.cube`]
+  })
+}
+
 const day = textureLoader.load({
   paths: [
     "/images/skybox/miramar_right.png",
@@ -82,6 +106,7 @@ const toneMappingOptions = {
 }
 const settings = {
   toneMapping: toneMappingOptions.Reinhard,
+  colorLut: colorLutOptions.None,
   exposure: 1,
   saturation: 1,
   contrast: 1,
@@ -134,6 +159,10 @@ function createControls() {
     .add(settings, "toneMapping", toneMappingOptions)
     .name("Tone Mapping")
     .onChange(applyToneMapping)
+  cameraFolder
+    .add(settings, "colorLut", colorLutOptions)
+    .name("Color LUT")
+    .onChange(applyColorGrading)
   cameraFolder
     .add(settings, "exposure", 0.1, 5, 0.01)
     .name("Exposure")
@@ -205,6 +234,7 @@ function applyColorGrading() {
   camera.colorGrading.saturation = settings.saturation
   camera.colorGrading.contrast = settings.contrast
   camera.colorGrading.brightness = settings.brightness
+  camera.colorGrading.lut = colorLutTextures[settings.colorLut]
 }
 
 // demo-only performance monitor
