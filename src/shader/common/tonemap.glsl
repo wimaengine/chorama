@@ -1,15 +1,11 @@
-vec3 reinhard_tonemapping(vec3 color, float exposure) {
-  vec3 exposed_color = color * exposure;
-
-  return exposed_color / (exposed_color + vec3(1.0));
+vec3 reinhard_tonemapping(vec3 color) {
+  return color / (color + vec3(1.0));
 }
 
-vec3 aces_filmic_tonemapping(vec3 color, float exposure) {
-  vec3 exposed_color = color * exposure;
-
+vec3 aces_filmic_tonemapping(vec3 color) {
   return clamp(
-    (exposed_color * (2.51 * exposed_color + vec3(0.03))) /
-    (exposed_color * (2.43 * exposed_color + vec3(0.59)) + vec3(0.14)),
+    (color * (2.51 * color + vec3(0.03))) /
+    (color * (2.43 * color + vec3(0.59)) + vec3(0.14)),
     0.0,
     1.0
   );
@@ -29,13 +25,12 @@ vec3 hable_curve(vec3 color) {
   ) - E / F;
 }
 
-vec3 hable_tonemapping(vec3 color, float exposure) {
+vec3 hable_tonemapping(vec3 color) {
   const float white_point = 11.2;
 
-  vec3 exposed_color = color * exposure;
   float white_scale = 1.0 / hable_curve(vec3(white_point)).r;
 
-  return clamp(hable_curve(exposed_color) * white_scale, 0.0, 1.0);
+  return clamp(hable_curve(color) * white_scale, 0.0, 1.0);
 }
 
 vec3 agx_default_contrast_approx(vec3 color) {
@@ -52,7 +47,7 @@ vec3 agx_default_contrast_approx(vec3 color) {
     0.00232;
 }
 
-vec3 agx_tonemapping(vec3 color, float exposure) {
+vec3 agx_tonemapping(vec3 color) {
   const mat3 LINEAR_SRGB_TO_LINEAR_REC2020 = mat3(
     vec3(0.6274, 0.0691, 0.0164),
     vec3(0.3293, 0.9195, 0.0880),
@@ -76,43 +71,40 @@ vec3 agx_tonemapping(vec3 color, float exposure) {
   const float min_ev = -12.47393;
   const float max_ev = 4.026069;
 
-  vec3 exposed_color = color * exposure;
+  color = LINEAR_SRGB_TO_LINEAR_REC2020 * color;
+  color = AGX_INSET_MATRIX * color;
+  color = max(color, vec3(1e-10));
+  color = log2(color);
+  color = (color - min_ev) / (max_ev - min_ev);
+  color = clamp(color, 0.0, 1.0);
+  color = agx_default_contrast_approx(color);
+  color = AGX_OUTSET_MATRIX * color;
+  color = pow(max(vec3(0.0), color), vec3(2.2));
+  color = LINEAR_REC2020_TO_LINEAR_SRGB * color;
 
-  exposed_color = LINEAR_SRGB_TO_LINEAR_REC2020 * exposed_color;
-  exposed_color = AGX_INSET_MATRIX * exposed_color;
-  exposed_color = max(exposed_color, vec3(1e-10));
-  exposed_color = log2(exposed_color);
-  exposed_color = (exposed_color - min_ev) / (max_ev - min_ev);
-  exposed_color = clamp(exposed_color, 0.0, 1.0);
-  exposed_color = agx_default_contrast_approx(exposed_color);
-  exposed_color = AGX_OUTSET_MATRIX * exposed_color;
-  exposed_color = pow(max(vec3(0.0), exposed_color), vec3(2.2));
-  exposed_color = LINEAR_REC2020_TO_LINEAR_SRGB * exposed_color;
-
-  return clamp(exposed_color, 0.0, 1.0);
+  return clamp(color, 0.0, 1.0);
 }
 
-vec3 khronos_pbr_neutral_tonemapping(vec3 color, float exposure) {
+vec3 khronos_pbr_neutral_tonemapping(vec3 color) {
   const float start_compression = 0.8 - 0.04;
   const float desaturation = 0.15;
 
-  vec3 exposed_color = color * exposure;
-  float x = min(exposed_color.r, min(exposed_color.g, exposed_color.b));
+  float x = min(color.r, min(color.g, color.b));
   float offset = x < 0.08 ? x - 6.25 * x * x : 0.04;
 
-  exposed_color -= offset;
+  color -= offset;
 
-  float peak = max(exposed_color.r, max(exposed_color.g, exposed_color.b));
+  float peak = max(color.r, max(color.g, color.b));
   if (peak < start_compression) {
-    return exposed_color;
+    return color;
   }
 
   float d = 1.0 - start_compression;
   float new_peak = 1.0 - d * d / (peak + d - start_compression);
 
-  exposed_color *= new_peak / peak;
+  color *= new_peak / peak;
 
   float g = 1.0 - 1.0 / (desaturation * (peak - new_peak) + 1.0);
 
-  return mix(exposed_color, vec3(new_peak), g);
+  return mix(color, vec3(new_peak), g);
 }
