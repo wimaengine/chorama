@@ -1,7 +1,7 @@
 /**@import { WebGLWriteTextureDescriptor } from './descriptors.js' */
 /** @import { GPUBuffer } from "../resources/index.js" */
 import { TextureType } from "../../constants/index.js"
-import { updateTexture2D, updateCubeMap, updateTexture2DArray } from "./utils.js"
+import { updateTexture2D, updateCubeMap, updateTexture2DArray, updateTexture3D } from "./utils.js"
 
 /**
  * WebGPU-shaped upload queue for WebGL-backed devices.
@@ -55,6 +55,9 @@ export class WebGLGPUQueue {
         break
       case TextureType.Texture2DArray:
         updateTexture2DArray(context, descriptor)
+        break
+      case TextureType.Texture3D:
+        updateTexture3D(context, descriptor)
         break
       default:
         throw "Unsupported texture type."

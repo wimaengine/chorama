@@ -11,7 +11,7 @@ import { WebGLBindGroup } from "./bindgroup.js"
 import { WebGLGPUQueue } from "./gpuqueue.js"
 import { WebGLRenderPipeline } from "./renderpipeline.js"
 import { GPUBuffer, GPUSampler, GPUTexture, WebGLShaderModule } from "../resources/index.js"
-import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, createProgramFromShaders, createShaderFromSrc, configureSampler } from "./utils.js"
+import { allocateTexture2D, allocateCubemap, allocateTexture2DArray, allocateTexture3D, createProgramFromShaders, createShaderFromSrc, configureSampler } from "./utils.js"
 import { CompareFunction } from "../constants.js"
 
 export class WebGLRenderDevice {
@@ -200,6 +200,9 @@ export class WebGLRenderDevice {
         break
       case TextureType.Texture2DArray:
         allocateTexture2DArray(context, descriptor, form)
+        break
+      case TextureType.Texture3D:
+        allocateTexture3D(context, descriptor, form)
         break
       default:
         throw "The texture type is not supported."

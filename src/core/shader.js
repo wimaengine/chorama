@@ -38,7 +38,8 @@ const shaderPrecision = [
   "precision mediump int;",
   "precision mediump sampler2D;",
   "precision mediump samplerCube;",
-  "precision mediump sampler2DArray;"
+  "precision mediump sampler2DArray;",
+  "precision mediump sampler3D;"
 ].join("\n")
 
 /**
