@@ -55,6 +55,7 @@
     "hash-it": "^7.0.2",
     "hisabati": "^0.1.0",
     "marangi": "^0.1.0",
+    "maumbo": "file:../maumbo",
     "stats.js": "^0.17.0",
     "vifaa": "^0.3.0"
   }

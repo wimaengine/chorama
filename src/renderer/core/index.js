@@ -2,7 +2,7 @@
 /** @import { MeshInstanceUniform } from "../resources/meshinstanceuniform.js" */
 /** @import { MeshInstancePhaseBindGroup } from "../resources/meshinstancebindgroups.js" */
 import { GPUMesh } from "../../core/index.js"
-import { Affine3, Matrix4, Vector3 } from "../../math/index.js"
+import { Affine3, Frustum, Matrix4, Vector3 } from "../../math/index.js"
 import { Object3D, RenderMask } from "../../objects/index.js"
 import { RenderTarget } from "../../rendertarget/index.js"
 import { assert } from "../../utils/index.js"
@@ -86,6 +86,9 @@ export class View {
    */
   viewPosition
 
+  /** @type {Frustum} */
+  frustum = new Frustum()
+
   /**
    * @type {number}
    */
@@ -157,6 +160,9 @@ export class View {
     this.depthTexture = depthTexture
     this.object = object
     this.renderMask.copy(renderMask)
+
+    const viewProjection = Matrix4.multiply(this.projectionMatrix, this.viewMatrix)
+    this.frustum.setFromMatrix(viewProjection)
   }
 
   /**

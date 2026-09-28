@@ -1,7 +1,8 @@
 import { PrimitiveTopology } from "../constants/index.js"
 import { Attribute } from "./attribute/index.js"
 import { SeparateAttributeData } from "./attributedata/separate.js"
-import { Affine3 } from "../math/index.js"
+import { Affine3, Vector3 } from "../math/index.js"
+import { BoundingBox3D, BoundingSphere } from "maumbo"
 
 /**
  * @typedef {object} MorphTarget
@@ -36,6 +37,9 @@ export class Mesh {
    * @type {boolean}
    * */
   #changed = false
+
+  /** @type {BoundingBox3D | import('maumbo').BoundingSphere | undefined} */
+  bounds
 
   /**
    * @param {SeparateAttributeData} attributes
@@ -73,6 +77,56 @@ export class Mesh {
   get attributes() {
     return this.#attributes
   }
+
+  /**
+   * Calculates an axis-aligned bounding box from the mesh positions.
+   */
+  calculateAABBBounds() {
+    const positions = this.attributes.get(Attribute.Position.name)
+    if (!positions || positions.byteLength < 12) return
+    const values = new Float32Array(positions.buffer, positions.byteOffset, Math.floor(positions.byteLength / 4))
+    const min = new Vector3(Infinity, Infinity, Infinity)
+    const max = new Vector3(-Infinity, -Infinity, -Infinity)
+
+    for (let i = 0; i + 2 < values.length; i += 3) {
+      min.x = Math.min(min.x, values[i] ?? 0)
+      min.y = Math.min(min.y, values[i + 1] ?? 0)
+      min.z = Math.min(min.z, values[i + 2] ?? 0)
+      max.x = Math.max(max.x, values[i] ?? 0)
+      max.y = Math.max(max.y, values[i + 1] ?? 0)
+      max.z = Math.max(max.z, values[i + 2] ?? 0)
+    }
+
+    this.bounds = new BoundingBox3D(min.x, min.y, min.z, max.x, max.y, max.z)
+  }
+
+  /**
+   * Calculates a bounding sphere from the mesh positions.
+   */
+  calculateBoundingSphere() {
+    const positions = this.attributes.get(Attribute.Position.name)
+    if (!positions || positions.byteLength < 12) return
+    const values = new Float32Array(positions.buffer, positions.byteOffset, Math.floor(positions.byteLength / 4))
+    this.calculateAABBBounds()
+    const bounds = this.bounds
+    if (!(bounds instanceof BoundingBox3D)) return
+
+    const center = new Vector3(
+      (bounds.min.x + bounds.max.x) / 2,
+      (bounds.min.y + bounds.max.y) / 2,
+      (bounds.min.z + bounds.max.z) / 2
+    )
+    let radiusSquared = 0
+    for (let i = 0; i + 2 < values.length; i += 3) {
+      const dx = (values[i] ?? 0) - center.x
+      const dy = (values[i + 1] ?? 0) - center.y
+      const dz = (values[i + 2] ?? 0) - center.z
+      radiusSquared = Math.max(radiusSquared, dx * dx + dy * dy + dz * dz)
+    }
+
+    this.bounds = new BoundingSphere(center.x, center.y, center.z, Math.sqrt(radiusSquared))
+  }
+
   set attributes(value) {
     this.#attributes = value
     this.#changed = true

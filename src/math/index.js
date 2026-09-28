@@ -1,3 +1,5 @@
 export * from 'marangi'
 export * from 'hisabati'
 export * from './transform.js'
+export * from './frustum.js'
+export * from './intersect.js'

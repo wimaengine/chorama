@@ -4,6 +4,7 @@ import { AlphaMaskMode, TransparentMode } from "../../../material/index.js"
 import { ViewBindGroups, Views } from "../../../renderer/index.js"
 import { BoneTextureResource, MeshMaterialPipelines } from "../resources/index.js"
 import { createMeshMaterialRenderItem } from "../meshmaterial.js"
+import { containsFrustum } from "../../../math/index.js"
 
 export class MeshMaterialNode {
   subgraph() {
@@ -70,6 +71,10 @@ export class MeshMaterialNode {
             return true
           }
 
+          if (!isMeshVisible(child, view)) {
+            return true
+          }
+
           const item = createMeshMaterialRenderItem(child, renderDevice, renderer, pipelines, view)
 
           if (item) {
@@ -88,4 +93,25 @@ export class MeshMaterialNode {
       }
     }
   }
+}
+
+/**
+ * Culls a mesh against the current camera view. Bounds are local to the mesh
+ * and are transformed conservatively by the object's world transform.
+ */
+/** @param {MeshMaterial3D} object @param {import('../../../renderer/core/index.js').View} view */
+function isMeshVisible(object, view) {
+  const {mesh, skin } = object
+  const {morphTargets, bounds } = mesh
+
+  // Base vertex bounds are not safe for animated vertex positions.
+  if (skin || morphTargets.length > 0) {
+    return true
+  }
+
+  if (!bounds) return true
+
+  const transform = object.transform.world
+
+  return containsFrustum(view.frustum, bounds, transform)
 }
