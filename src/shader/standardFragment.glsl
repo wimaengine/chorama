@@ -84,6 +84,10 @@ uniform sampler2D thickness_texture;
 uniform sampler2D emissive_texture;
 uniform samplerCube environment_map;
 
+vec3 calculate_geometric_normal(vec3 position) {
+  return normalize(cross(dFdx(position), dFdy(position)));
+}
+
 out vec4 fragment_color;
 
 vec3 fresnel_schlick(float HdotV, vec3 F0){
@@ -220,7 +224,7 @@ PBRProperties calculate_pbr_properties(){
     #ifdef VERTEX_NORMALS
       vec3 normal = normalize(v_normal);
     #else
-      #error "Mesh vertex normals are required for lighting."
+      vec3 normal = calculate_geometric_normal(v_position);
     #endif
     #ifdef VERTEX_UVS
       vec3 tangent = normalize(v_tangent.xyz);
@@ -235,7 +239,7 @@ PBRProperties calculate_pbr_properties(){
     #ifdef VERTEX_NORMALS
       properties.normal = v_normal;
     #else
-      #error "Mesh vertex normals are required for lighting."
+      properties.normal = calculate_geometric_normal(v_position);
     #endif
   #endif
 

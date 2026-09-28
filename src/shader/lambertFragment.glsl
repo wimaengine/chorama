@@ -44,6 +44,10 @@ uniform SpotLightBlock {
 uniform sampler2D mainTexture;
 out vec4 fragment_color;
 
+vec3 calculate_geometric_normal(vec3 position) {
+  return normalize(cross(dFdx(position), dFdy(position)));
+}
+
 void main(){
   vec3 base_color =  material.color.rgb;
   float opacity = material.color.a;
@@ -60,7 +64,7 @@ void main(){
   #ifdef VERTEX_NORMALS
     vec3 normal = normalize(v_normal);
   #else
-    #error "Mesh vertex normals are required for lighting."
+    vec3 normal = calculate_geometric_normal(v_position);
   #endif
 #ifdef ALPHA_MASK_MODE
   if (opacity < material.alpha_cutoff) {
