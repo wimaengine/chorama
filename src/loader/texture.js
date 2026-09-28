@@ -23,6 +23,11 @@ export class TextureLoader extends Loader {
    * @param {TextureParseSettings} [settings]
    */
   async parse(buffers, destination, settings = {}) {
+    if (buffers[0] && isCubeLut(settings)) {
+      parseCubeLut(buffers[0], destination)
+      return
+    }
+
     const textureFormat = TextureFormat.RGBA8Unorm
     const pixelSize = getTextureFormatSize(textureFormat)
     const {
@@ -113,6 +118,122 @@ export class TextureLoader extends Loader {
 
     return texture
   }
+}
+
+/**
+ * @param {TextureParseSettings} settings
+ * @returns {boolean}
+ */
+function isCubeLut(settings) {
+  const path = settings.paths?.[0] ?? ""
+  return /\.cube(?:$|[?#])/i.test(path) || /cube/i.test(settings.mimeType ?? "")
+}
+
+/**
+ * Parses a normalized 3D .cube LUT into a 3D RGBA texture.
+ * .cube files enumerate red fastest, then green, then blue, which matches
+ * the engine's x/y/z texture memory layout.
+ *
+ * @param {ArrayBuffer} buffer
+ * @param {Texture} destination
+ */
+function parseCubeLut(buffer, destination) {
+  const text = new TextDecoder().decode(buffer)
+  const values = []
+  let size
+  let domainMin = [0, 0, 0]
+  let domainMax = [1, 1, 1]
+
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.replace(/#.*/, "").trim()
+    if (!line) {
+      continue
+    }
+
+    const tokens = line.split(/\s+/)
+    const directive = tokens[0]
+
+    if (directive === "TITLE" || directive === "LUT_3D_INPUT_RANGE" || directive === "LUT_3D_OUTPUT_RANGE") {
+      continue
+    }
+
+    if (directive === "LUT_1D_SIZE") {
+      throw new Error("TextureLoader only supports 3D .cube LUTs")
+    }
+
+    if (directive === "LUT_3D_SIZE") {
+      size = parseInteger(tokens[1], "LUT_3D_SIZE")
+      continue
+    }
+
+    if (directive === "DOMAIN_MIN" || directive === "DOMAIN_MAX") {
+      const domain = tokens.slice(1, 4).map(Number)
+      if (domain.length !== 3 || domain.some((value) => !Number.isFinite(value))) {
+        throw new Error(`${directive} must contain three numeric values`)
+      }
+      if (directive === "DOMAIN_MIN") {
+        domainMin = domain
+      } else {
+        domainMax = domain
+      }
+      continue
+    }
+
+    const sample = tokens.map(Number)
+    if (sample.length < 3 || sample.slice(0, 3).some((value) => !Number.isFinite(value))) {
+      throw new Error(`Invalid .cube LUT sample: ${line}`)
+    }
+    values.push(sample[0], sample[1], sample[2])
+  }
+
+  if (size === undefined || size < 2) {
+    throw new Error(".cube LUT is missing a valid LUT_3D_SIZE")
+  }
+
+  if (domainMin.some((value, index) => value !== 0 || domainMax[index] !== 1)) {
+    throw new Error("TextureLoader expects .cube LUTs with DOMAIN_MIN 0 and DOMAIN_MAX 1")
+  }
+
+  const expectedValueCount = size * size * size * 3
+  if (values.length !== expectedValueCount) {
+    throw new Error(`.cube LUT contains ${values.length / 3} samples; expected ${expectedValueCount / 3}`)
+  }
+
+  const data = new Uint8Array(size * size * size * 4)
+  for (let i = 0; i < size * size * size; i++) {
+    data[i * 4] = toByte(/**@type {number} */(values[i * 3]))
+    data[i * 4 + 1] = toByte(/**@type {number} */(values[i * 3 + 1]))
+    data[i * 4 + 2] = toByte(/**@type {number} */(values[i * 3 + 2]))
+    data[i * 4 + 3] = 255
+  }
+
+  destination.data = [data.buffer]
+  destination.type = TextureType.Texture3D
+  destination.format = TextureFormat.RGBA8Unorm
+  destination.width = size
+  destination.height = size
+  destination.depth = size
+}
+
+/**
+ * @param {string | undefined} value
+ * @param {string} name
+ * @returns {number}
+ */
+function parseInteger(value, name) {
+  const result = Number(value)
+  if (!Number.isInteger(result) || result < 2) {
+    throw new Error(`${name} must be an integer greater than or equal to 2`)
+  }
+  return result
+}
+
+/**
+ * @param {number} value
+ * @returns {number}
+ */
+function toByte(value) {
+  return Math.round(Math.min(1, Math.max(0, value)) * 255)
 }
 
 /**
