@@ -5,6 +5,8 @@ import { RenderTarget } from "../../rendertarget/index.js"
 import { PerspectiveProjection, Projection } from "./projection.js"
 import { Range, ViewRectangle } from "../../utils/index.js"
 
+/** @import { Texture } from "../../texture/index.js" */
+
 export class ReinhardToneMapping {
 	/**
 	 * @type {number}
@@ -162,6 +164,9 @@ export class KhronosPBRNeutralTonemapping {
  * linear RGB is encoded as sRGB.
  */
 export class ColorGrading {
+	/** @type {Texture | undefined} */
+	lut
+
 	/** @type {number} */
 	saturation
 
@@ -172,7 +177,8 @@ export class ColorGrading {
 	brightness
 
 	/** @param {ColorGradingOptions} [options] */
-	constructor({ saturation = 1, contrast = 1, brightness = 0 } = {}) {
+	constructor({ saturation = 1, contrast = 1, brightness = 0, lut = undefined } = {}) {
+		this.lut = lut
 		this.saturation = saturation
 		this.contrast = contrast
 		this.brightness = brightness
@@ -180,6 +186,7 @@ export class ColorGrading {
 
 	/** @param {ColorGrading} grading @returns {this} */
 	copy(grading) {
+		this.lut = grading.lut
 		this.saturation = grading.saturation
 		this.contrast = grading.contrast
 		this.brightness = grading.brightness
@@ -412,6 +419,7 @@ export class Camera extends Object3D {
  * @property {number} [saturation]
  * @property {number} [contrast]
  * @property {number} [brightness]
+ * @property {Texture} [lut] A 3D LUT sampled after the scalar grading controls.
  */
 
 /**

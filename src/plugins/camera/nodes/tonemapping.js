@@ -56,13 +56,25 @@ export class TonemappingNode {
 
       const source = renderer.caches.getTexture(renderDevice, colorSource)
       const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
+      const lut = view.object.colorGrading?.lut ?? pipelineState.identityLut
+      const lutTexture = renderer.caches.getTexture(renderDevice, lut)
+      const lutSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureSampler)
       const dynamicOffset = tonemappingUniform.setValues(
         cameraIndex,
         getToneMappingExposure(toneMapping),
         view.object.colorGrading
       )
       const exposureBuffer = renderer.caches.getUniformBuffer(renderDevice, tonemappingUniform.buffer)
-      const bindGroup = createTonemappingBindGroup(renderDevice,pipelineState,exposureBuffer,tonemappingUniform,source, gpuSampler)
+      const bindGroup = createTonemappingBindGroup(
+        renderDevice,
+        pipelineState,
+        exposureBuffer,
+        tonemappingUniform,
+        source,
+        gpuSampler,
+        lutTexture,
+        lutSampler
+      )
 
       const [, outputColor] = cameraColorTarget.getColorPair()
 
@@ -167,8 +179,10 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
  * @param {TonemappingUniform} tonemappingUniform
  * @param {import("../../../index.js").GPUTexture} source
  * @param {import("../../../index.js").GPUSampler} gpuSampler
+ * @param {import("../../../index.js").GPUTexture} lutTexture
+ * @param {import("../../../index.js").GPUSampler} lutSampler
  */
-function createTonemappingBindGroup(renderDevice, pipelineState, exposureBuffer, tonemappingUniform, source, gpuSampler) {
+function createTonemappingBindGroup(renderDevice, pipelineState, exposureBuffer, tonemappingUniform, source, gpuSampler, lutTexture, lutSampler) {
   return renderDevice.createBindGroup({
     label: "TonemappingBindGroup",
     layout: pipelineState.bindGroupLayout,
@@ -190,6 +204,18 @@ function createTonemappingBindGroup(renderDevice, pipelineState, exposureBuffer,
         binding: 2,
         resource: {
           sampler: gpuSampler
+        }
+      },
+      {
+        binding: 3,
+        resource: {
+          texture: lutTexture
+        }
+      },
+      {
+        binding: 4,
+        resource: {
+          sampler: lutSampler
         }
       }
     ]
