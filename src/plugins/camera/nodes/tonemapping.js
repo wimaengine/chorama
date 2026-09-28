@@ -56,7 +56,11 @@ export class TonemappingNode {
 
       const source = renderer.caches.getTexture(renderDevice, colorSource)
       const gpuSampler = renderer.caches.getSampler(renderDevice, renderer.defaults.textureNearestSampler)
-      const dynamicOffset = tonemappingUniform.setExposure(cameraIndex, getToneMappingExposure(toneMapping))
+      const dynamicOffset = tonemappingUniform.setValues(
+        cameraIndex,
+        getToneMappingExposure(toneMapping),
+        view.object.colorGrading
+      )
       const exposureBuffer = renderer.caches.getUniformBuffer(renderDevice, tonemappingUniform.buffer)
       const bindGroup = createTonemappingBindGroup(renderDevice,pipelineState,exposureBuffer,tonemappingUniform,source, gpuSampler)
 

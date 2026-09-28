@@ -158,6 +158,41 @@ export class KhronosPBRNeutralTonemapping {
 }
 
 /**
+ * Display-referred color adjustments applied after tone mapping and before
+ * linear RGB is encoded as sRGB.
+ */
+export class ColorGrading {
+	/** @type {number} */
+	saturation
+
+	/** @type {number} */
+	contrast
+
+	/** @type {number} */
+	brightness
+
+	/** @param {ColorGradingOptions} [options] */
+	constructor({ saturation = 1, contrast = 1, brightness = 0 } = {}) {
+		this.saturation = saturation
+		this.contrast = contrast
+		this.brightness = brightness
+	}
+
+	/** @param {ColorGrading} grading @returns {this} */
+	copy(grading) {
+		this.saturation = grading.saturation
+		this.contrast = grading.contrast
+		this.brightness = grading.brightness
+		return this
+	}
+
+	/** @returns {ColorGrading} */
+	clone() {
+		return new ColorGrading().copy(this)
+	}
+}
+
+/**
  * Bitmask of camera prepasses.
  * @enum {number}
  */
@@ -263,6 +298,12 @@ export class Camera extends Object3D {
 	toneMapping = undefined
 
 	/**
+	 * Optional display-referred color grading applied in the tonemapping pass.
+	 * @type {ColorGrading | undefined}
+	 */
+	colorGrading = undefined
+
+	/**
 	 * Undefined means no camera bloom.
 	 * @type {Bloom | undefined}
 	 */
@@ -313,6 +354,7 @@ export class Camera extends Object3D {
 		this.target = object.target
 		this.projection = object.projection.clone()
 		this.toneMapping = object.toneMapping ? object.toneMapping.clone() : undefined
+		this.colorGrading = object.colorGrading ? object.colorGrading.clone() : undefined
 		this.bloom = object.bloom ? object.bloom.clone() : undefined
 		this.fog = object.fog ? object.fog.clone() : undefined
 		this.prepasses = object.prepasses
@@ -363,6 +405,13 @@ export class Camera extends Object3D {
 /**
  * @typedef KhronosPBRNeutralTonemappingOptions
  * @property {number} [exposure]
+ */
+
+/**
+ * @typedef ColorGradingOptions
+ * @property {number} [saturation]
+ * @property {number} [contrast]
+ * @property {number} [brightness]
  */
 
 /**

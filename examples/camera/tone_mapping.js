@@ -5,6 +5,7 @@ import {
   AgXTonemapping,
   AmbientLight,
   Camera,
+  ColorGrading,
   CameraPlugin,
   CanvasTarget,
   DirectionalLight,
@@ -82,12 +83,16 @@ const toneMappingOptions = {
 const settings = {
   toneMapping: toneMappingOptions.Reinhard,
   exposure: 1,
+  saturation: 1,
+  contrast: 1,
+  brightness: 0,
   ambientLight: ambientLight.intensity,
   directionalLight: directionalLight.intensity,
 }
 
 cameraControls.distance = 0.8
 cameraControls.offset.y = 0.5
+camera.colorGrading = new ColorGrading()
 applyToneMapping()
 
 if (camera.projection instanceof PerspectiveProjection) {
@@ -133,6 +138,18 @@ function createControls() {
     .add(settings, "exposure", 0.1, 5, 0.01)
     .name("Exposure")
     .onChange(applyExposure)
+  cameraFolder
+    .add(settings, "saturation", 0, 2, 0.01)
+    .name("Saturation")
+    .onChange(applyColorGrading)
+  cameraFolder
+    .add(settings, "contrast", 0, 2, 0.01)
+    .name("Contrast")
+    .onChange(applyColorGrading)
+  cameraFolder
+    .add(settings, "brightness", -1, 1, 0.01)
+    .name("Brightness")
+    .onChange(applyColorGrading)
   cameraFolder.open()
 
   lightingFolder
@@ -178,6 +195,16 @@ function applyExposure() {
   if (camera.toneMapping) {
     camera.toneMapping.exposure = settings.exposure
   }
+}
+
+function applyColorGrading() {
+  if (!camera.colorGrading) {
+    camera.colorGrading = new ColorGrading()
+  }
+
+  camera.colorGrading.saturation = settings.saturation
+  camera.colorGrading.contrast = settings.contrast
+  camera.colorGrading.brightness = settings.brightness
 }
 
 // demo-only performance monitor

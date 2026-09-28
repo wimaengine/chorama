@@ -2,14 +2,14 @@ import { UniformBuffer } from "../../../core/resources/index.js"
 import { snapUp } from "../../../math/index.js"
 
 /**
- * CPU-side payload for the tonemapping exposure block.
+ * CPU-side payload for the tonemapping and color grading block.
  *
  * Each view gets its own aligned slot in the backing buffer so the render pass
  * can use dynamic offsets when binding exposure data.
  */
 export class TonemappingUniform {
   /**
-   * std140 keeps a single float block aligned to a 16-byte slot.
+   * Four floats fit in one std140 slot.
    * @type {number}
    */
   static BlockSize = 16
@@ -48,16 +48,22 @@ export class TonemappingUniform {
   }
 
   /**
-   * Writes a camera exposure into the slot at the requested view index.
+   * Writes camera tone-mapping and grading values into the slot at the
+   * requested view index.
    * @param {number} viewIndex
    * @param {number} exposure
    * @returns {number} The dynamic offset for the slot.
+   * @param {import("../../../index.js").ColorGrading | undefined} colorGrading
    */
-  setExposure(viewIndex, exposure) {
+  setValues(viewIndex, exposure, colorGrading) {
     const offset = viewIndex * this.bindingSize
     const data = this.#ensureCapacity(offset + this.bindingSize)
 
-    new DataView(data).setFloat32(offset, exposure, true)
+    const view = new DataView(data)
+    view.setFloat32(offset, exposure, true)
+    view.setFloat32(offset + 4, colorGrading?.saturation ?? 1, true)
+    view.setFloat32(offset + 8, colorGrading?.contrast ?? 1, true)
+    view.setFloat32(offset + 12, colorGrading?.brightness ?? 0, true)
     this.buffer.data = data
 
     return offset
