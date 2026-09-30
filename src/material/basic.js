@@ -55,6 +55,11 @@ export class BasicMaterial extends Material {
     return basicFragment
   }
 
+  /** @override */
+  getmainTexture() {
+    return this.mainTexture
+  }
+
   /**
    * @override
    * @returns {import("./alphablend.js").AlphaBlend}

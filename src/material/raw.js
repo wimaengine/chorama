@@ -10,6 +10,15 @@ export class RawMaterial {
   constructor(){
     abstractClass(this, RawMaterial)
   }
+
+  /**
+   * Returns the material's primary color texture, when one exists.
+   *
+   * @returns {import("../texture/index.js").Texture | undefined}
+   */
+  getmainTexture() {
+    return undefined
+  }
   /**
    * @returns {string}
    */

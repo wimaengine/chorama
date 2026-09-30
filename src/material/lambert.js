@@ -53,6 +53,11 @@ export class LambertMaterial extends Material {
     return lambertFragment
   }
 
+  /** @override */
+  getmainTexture() {
+    return this.mainTexture
+  }
+
   /**
    * @override
    * @returns {import("./alphablend.js").AlphaBlend}

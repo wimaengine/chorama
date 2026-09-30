@@ -56,6 +56,11 @@ export class PhongMaterial extends Material {
     return phongFragment
   }
 
+  /** @override */
+  getmainTexture() {
+    return this.mainTexture
+  }
+
   /**
    * @override
    * @returns {import("./alphablend.js").AlphaBlend}

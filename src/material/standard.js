@@ -217,6 +217,11 @@ export class StandardMaterial extends Material {
     return standardFragment
   }
 
+  /** @override */
+  getmainTexture() {
+    return this.mainTexture
+  }
+
   /**
    * @override
    * @returns {import("./alphablend.js").AlphaBlend}
