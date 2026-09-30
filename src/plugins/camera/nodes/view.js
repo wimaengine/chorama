@@ -1,6 +1,6 @@
 import { Camera, CameraPrepasses, Object3D } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
-import { Vector3 } from "../../../math/index.js"
+import { Vector2, Vector3 } from "../../../math/index.js"
 import { assert } from "../../../utils/index.js"
 import { ImageRenderTarget } from "../../../rendertarget/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
@@ -65,22 +65,26 @@ export class CameraViewNode {
         )
 
         renderTarget.changed()
+        const viewportSize = new Vector2(
+          Math.round(renderTarget.width * object.viewport.size.x),
+          Math.round(renderTarget.height * object.viewport.size.y)
+        )
         colorTargets.getOrSet(
           object,
           {
-            width: renderTarget.width,
-            height: renderTarget.height,
+            width: viewportSize.x,
+            height: viewportSize.y,
             depth: 1,
             format: TextureFormat.RGBA16Float
           }
         )
-        setPrePassTextures(prePassTextures, object, targetPool)
+        setPrePassTextures(prePassTextures, object, targetPool, viewportSize)
         /** @type {View} */
         const cameraView = new View({
           renderTarget,
           depthTexture: targetPool.get({
-            width: renderTarget.width,
-            height: renderTarget.height,
+            width: viewportSize.x,
+            height: viewportSize.y,
             format: TextureFormat.Depth24Plus
           }),
           viewport: object.viewport,
@@ -198,9 +202,10 @@ function populateCameraViewBindGroup(viewBindGroup, renderer, camera) {
  * @param {PrePassTextures} prePassTextures
  * @param {Camera} camera
  * @param {Texture2DPool} targetPool
+ * @param {Vector2} viewportSize
  * @returns {void}
  */
-function setPrePassTextures(prePassTextures, camera, targetPool) {
+function setPrePassTextures(prePassTextures, camera, targetPool, viewportSize) {
   const renderTarget = camera.target
 
   assert(renderTarget, "Camera render target missing")
@@ -214,8 +219,8 @@ function setPrePassTextures(prePassTextures, camera, targetPool) {
       targetPool,
       prePassTexture.depth,
       {
-        width: renderTarget.width,
-        height: renderTarget.height,
+        width: viewportSize.x,
+        height: viewportSize.y,
         depth: 1,
         format: TextureFormat.Depth24Plus
       }
@@ -230,8 +235,8 @@ function setPrePassTextures(prePassTextures, camera, targetPool) {
         targetPool,
         prePassTexture.normal,
         {
-          width: renderTarget.width,
-          height: renderTarget.height,
+          width: viewportSize.x,
+          height: viewportSize.y,
           depth: 1,
           format: TextureFormat.RG16Float
         }

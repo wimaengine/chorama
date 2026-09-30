@@ -44,8 +44,8 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
 
   renderTarget.changed()
 
-  const width = renderTarget.width
-  const height = renderTarget.height
+  const width = colorTarget.width
+  const height = colorTarget.height
   const clearColor = camera.clearColor
   const clearValue = clearColor ? /** @type {const} */ ([clearColor.r, clearColor.g, clearColor.b, clearColor.a]) : undefined
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
@@ -69,8 +69,6 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
       depthStoreOp: "store",
       depthClearValue: camera.clearDepth
     }) : undefined,
-    viewport: view.viewport,
-    scissor: view.scissor || view.viewport,
     depthRange: view.depthRange
   })
 

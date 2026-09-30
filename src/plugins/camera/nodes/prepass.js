@@ -102,8 +102,8 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
   }
 
   const pass = commandEncoder.beginRenderPass({
-    width: renderTarget.width,
-    height: renderTarget.height,
+    width: prePassTexture.depth.width,
+    height: prePassTexture.depth.height,
     colorAttachments: renderNormals ? [{
       texture: normalTexture,
       mipLevel: 0,
@@ -120,8 +120,6 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
       depthStoreOp: "store",
       depthClearValue: camera.clearDepth ?? 1
     },
-    viewport: view.viewport,
-    scissor: view.scissor || view.viewport,
     depthRange: view.depthRange
   })
 

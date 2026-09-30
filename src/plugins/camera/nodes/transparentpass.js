@@ -43,8 +43,8 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const colorTarget = cameraColorTarget.readTarget
 
   const caches = renderer.caches
-  const width = renderTarget.width
-  const height = renderTarget.height
+  const width = colorTarget.width
+  const height = colorTarget.height
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
   const pass = device.createCommandEncoder().beginRenderPass({
@@ -65,8 +65,6 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
       depthStoreOp: "store",
       depthReadOnly: true
     }) : undefined,
-    viewport: view.viewport,
-    scissor: view.scissor || view.viewport,
     depthRange: view.depthRange
   })
   const alignment = device.limits.minUniformBufferOffsetAlignment
