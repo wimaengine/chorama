@@ -11,18 +11,19 @@ const MESH_INSTANCE_BIND_GROUP_INDEX = 1
  * @param {number} viewIndex
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
+ * @param {ViewBindGroups} viewBindGroups
+ * @param {MeshInstanceBindGroups} meshInstanceBindGroups
+ * @param {ShadowMap} shadowMap
  */
-function renderItems(view, viewIndex, device, renderer) {
-  const { opaque: opaqueStage } = view
+function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap) {
+  if (!view.object || view.object instanceof Camera) {
+    return
+  }
 
+  const object = view.object
+  const { opaque: opaqueStage } = view
   const context = device.context
   const caches = renderer.caches
-  const viewBindGroups = renderer.getResource(ViewBindGroups)
-  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
-  const shadowMap = renderer.getResource(ShadowMap)
-
-  assert(shadowMap, "Shadow map resource missing")
-
   const depthTexture = caches.getTexture(device, shadowMap.shadowAtlas)
   const depthStencilAttachment = depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
     texture: depthTexture,
@@ -42,11 +43,6 @@ function renderItems(view, viewIndex, device, renderer) {
     scissor: view.scissor || view.viewport
   })
 
-  assert(viewBindGroups, "ViewBindGroups resource missing")
-  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
-  const object = view.object
-
-  assert(object, "View object missing")
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
 
@@ -68,19 +64,23 @@ export class ShadowOpaquePassNode {
   execute(context) {
     const { renderer, renderDevice } = context
     const views = renderer.getResource(Views)
+    const viewBindGroups = renderer.getResource(ViewBindGroups)
+    const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+    const shadowMap = renderer.getResource(ShadowMap)
 
     assert(views, "Views resource missing")
+    assert(viewBindGroups, "ViewBindGroups resource missing")
+    assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+    assert(shadowMap, "Shadow map resource missing")
 
     const viewsItems = views.items()
 
     for (let i = 0; i < viewsItems.length; i++) {
       const view = /**@type {View}*/(viewsItems[i])
 
-      if (view.tag === Camera.name) {
-        continue
-      }
 
-      renderItems(view, i, renderDevice, renderer)
+
+      renderItems(view, i, renderDevice, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap)
     }
   }
 }

@@ -13,35 +13,29 @@ const MESH_INSTANCE_BIND_GROUP_INDEX = 2
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  * @param {CameraColorTargets} colorTargets
+ * @param {ViewBindGroups} viewBindGroups
+ * @param {MeshInstanceBindGroups} meshInstanceBindGroups
+ * @param {MeshMaterialBindGroups} materialBindGroups
  */
-function renderItems(view, viewIndex, device, renderer, colorTargets) {
+function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGroups, meshInstanceBindGroups, materialBindGroups) {
+  if (!(view.object instanceof Camera)) {
+    return
+  }
+
+  const camera = view.object
   const opaqueStage = view.opaque
   const alphaMaskStage = view.alphaMask
 
   const context = device.context
   const caches = renderer.caches
-  const viewBindGroups = renderer.getResource(ViewBindGroups)
-  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
-  const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
-
-  if (!(view.object instanceof Camera)) {
-    throw "Camera opaque pass expects a camera view"
-  }
-
-  const camera = view.object
   const renderTarget = view.renderTarget
   const cameraColorTarget = colorTargets.get(camera)
 
   assert(renderTarget, "Camera render target missing")
-  assert(viewBindGroups, "ViewBindGroups resource missing")
-  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
-  assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
   if (!cameraColorTarget) {
     return
   }
-  const object = view.object
-
-  assert(object, "View object missing")
+  const object = camera
 
   const colorTarget = cameraColorTarget.readTarget
 
@@ -99,20 +93,22 @@ export class CameraOpaquePassNode {
     const { renderer, renderDevice } = context
     const views = renderer.getResource(Views)
     const colorTargets = renderer.getResource(CameraColorTargets)
+    const viewBindGroups = renderer.getResource(ViewBindGroups)
+    const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+    const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
     assert(views, "Views resource missing")
     assert(colorTargets, "Camera color targets resource missing")
+    assert(viewBindGroups, "ViewBindGroups resource missing")
+    assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+    assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
 
     const viewsItems = views.items()
 
     for (let i = 0; i < viewsItems.length; i++) {
       const view = /**@type {View}*/(viewsItems[i])
 
-      if (view.tag !== Camera.name) {
-        continue
-      }
-
-      renderItems(view, i, renderDevice, renderer, colorTargets)
+      renderItems(view, i, renderDevice, renderer, colorTargets, viewBindGroups, meshInstanceBindGroups, materialBindGroups)
     }
   }
 }

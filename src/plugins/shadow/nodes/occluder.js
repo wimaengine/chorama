@@ -24,11 +24,15 @@ export class ShadowOccluderNode {
     const shadowPipelines = renderer.getResource(ShadowPipelines)
     const boneTexture = renderer.getResource(BoneTextureResource)
     const morphTargetTextures = renderer.getResource(MorphTargetTextures)
+    const viewBindGroups = renderer.getResource(ViewBindGroups)
+    const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
 
     assert(views, "Views resource missing")
     assert(shadowPipelines, "ShadowPipelines resource missing")
     assert(boneTexture, "BoneTextureResource missing")
     assert(morphTargetTextures, "MorphTargetTextures resource missing")
+    assert(viewBindGroups, "ViewBindGroups resource missing")
+    assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
 
     const collectedSkins = new Set()
 
@@ -53,13 +57,14 @@ export class ShadowOccluderNode {
 
     for (const view of views.items()) {
       if (
-        view.tag !== DirectionalLight.name &&
-        view.tag !== PointLight.name &&
-        view.tag !== SpotLight.name
+        !(view.object instanceof DirectionalLight) &&
+        !(view.object instanceof PointLight) &&
+        !(view.object instanceof SpotLight)
       ) {
         continue
       }
 
+      const camera = view.object
       const opaqueStage = view.opaque
 
       for (let i = 0; i < objects.length; i++) {
@@ -83,10 +88,12 @@ export class ShadowOccluderNode {
             renderer,
             gpuMesh,
             shadowPipelines,
-            view,
             skinned,
             morphed,
-            morphTargetTextures
+            morphTargetTextures,
+            viewBindGroups,
+            meshInstanceBindGroups,
+            camera
           )
           const pipeline = caches.getRenderPipeline(pipelineId)
 
@@ -126,10 +133,12 @@ export class ShadowOccluderNode {
  * @param {WebGLRenderer} renderer
  * @param {GPUMesh} mesh
  * @param {ShadowPipelines} pipelines
- * @param {import("../../../renderer/index.js").View} view
  * @param {boolean} skinned
  * @param {boolean} morphed
  * @param {MorphTargetTextures} morphTargetTextures
+ * @param {import("../../../renderer/index.js").ViewBindGroups} viewBindGroups
+ * @param {import("../../../renderer/index.js").MeshInstanceBindGroups} meshInstanceBindGroups
+ * @param {Object3D} viewObject
  * @returns {number}
  */
 function getRenderPipelineId(
@@ -137,19 +146,16 @@ function getRenderPipelineId(
   renderer,
   mesh,
   pipelines,
-  view,
   skinned,
   morphed,
-  morphTargetTextures
+  morphTargetTextures,
+  viewBindGroups,
+  meshInstanceBindGroups,
+  viewObject
 ) {
   const { caches, includes, defines: globalDefines } = renderer
-  const viewBindGroups = renderer.getResource(ViewBindGroups)
-  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
   const pipelineKey = createShadowPipelineKey(mesh.layoutHash, skinned, morphed)
   const pipelineId = pipelines.get(pipelineKey)
-
-  assert(viewBindGroups, "ViewBindGroups resource missing")
-  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
 
   if (pipelineId !== undefined) {
     return pipelineId
@@ -158,10 +164,7 @@ function getRenderPipelineId(
   const layout = caches.getMeshVertexLayout(mesh.layoutHash)
 
   assert(layout, "Invalid mesh layout")
-  const object = view.object
-
-  assert(object, "View object missing")
-  const viewBindGroup = viewBindGroups.getOrSet(device, object)
+  const viewBindGroup = viewBindGroups.getOrSet(device, viewObject)
   assert(viewBindGroup.layout, "View bind group layout missing")
   const vertexShader = new Shader({
     source: basicVertex,

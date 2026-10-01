@@ -24,20 +24,24 @@ export class CameraPrePassNode {
     const { renderer, renderDevice } = context
     const views = renderer.getResource(Views)
     const prePassTextures = renderer.getResource(PrePassTextures)
+    const viewBindGroups = renderer.getResource(ViewBindGroups)
+    const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+    const prePassPipelines = renderer.getResource(PrePassPipeline)
+    const morphTargetTextures = renderer.getResource(MorphTargetTextures)
 
     assert(views, "Views resource missing")
     assert(prePassTextures, "PrePassTextures resource missing")
+    assert(viewBindGroups, "ViewBindGroups resource missing")
+    assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+    assert(prePassPipelines, "PrePassPipeline resource missing")
+    assert(morphTargetTextures, "MorphTargetTextures resource missing")
 
     const actualViews = views.items()
 
     for (let i = 0; i < actualViews.length; i++) {
       const view = /** @type {View} */ (actualViews[i])
 
-      if (!(view.object instanceof Camera)) {
-        continue
-      }
-
-      renderItems(view, i, renderDevice, renderer, prePassTextures)
+      renderItems(view, i, renderDevice, renderer, prePassTextures, viewBindGroups, meshInstanceBindGroups, prePassPipelines, morphTargetTextures)
     }
   }
 }
@@ -48,25 +52,20 @@ export class CameraPrePassNode {
  * @param {WebGLRenderDevice} device
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  * @param {PrePassTextures} prePassTextures
+ * @param {ViewBindGroups} viewBindGroups
+ * @param {MeshInstanceBindGroups} meshInstanceBindGroups
+ * @param {PrePassPipeline} prePassPipelines
+ * @param {MorphTargetTextures} morphTargetTextures
  */
-function renderItems(view, viewIndex, device, renderer, prePassTextures) {
-  const opaqueStage = view.opaque
-  const caches = renderer.caches
-  const viewBindGroups = renderer.getResource(ViewBindGroups)
-  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
-  const prePassPipelines = renderer.getResource(PrePassPipeline)
-  const morphTargetTextures = renderer.getResource(MorphTargetTextures)
-
-  assert(viewBindGroups, "ViewBindGroups resource missing")
-  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
-  assert(prePassPipelines, "PrePassPipeline resource missing")
-  assert(morphTargetTextures, "MorphTargetTextures resource missing")
-
+function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBindGroups, meshInstanceBindGroups, prePassPipelines, morphTargetTextures) {
   if (!(view.object instanceof Camera)) {
-    throw "Camera pre-pass expects a camera view"
+    return
   }
 
   const camera = view.object
+  const opaqueStage = view.opaque
+  const caches = renderer.caches
+
   const renderNormals = (camera.prepasses & CameraPrepasses.Normal) !== 0
   const renderDepth = (camera.prepasses & CameraPrepasses.Depth) !== 0 || renderNormals
 

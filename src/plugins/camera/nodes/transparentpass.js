@@ -13,35 +13,29 @@ const MESH_INSTANCE_BIND_GROUP_INDEX = 2
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  * @param {CameraColorTargets} colorTargets
+ * @param {ViewBindGroups} viewBindGroups
+ * @param {MeshInstanceBindGroups} meshInstanceBindGroups
+ * @param {MeshMaterialBindGroups} materialBindGroups
  */
-function renderItems(view, viewIndex, device, renderer, colorTargets) {
-  const transparentStage = view.transparent
-  const viewBindGroups = renderer.getResource(ViewBindGroups)
-  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
-  const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
-
+function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGroups, meshInstanceBindGroups, materialBindGroups) {
   if (!(view.object instanceof Camera)) {
-    throw "Camera transparent pass expects a camera view"
+    return
   }
+
+  const camera = view.object
+  const transparentStage = view.transparent
 
   if (transparentStage.meshItems.length === 0 && transparentStage.nonMeshItems.length === 0) {
     return
   }
 
-  const camera = view.object
   const renderTarget = view.renderTarget
   const cameraColorTarget = colorTargets.get(camera)
 
   assert(renderTarget, "Camera render target missing")
-  assert(viewBindGroups, "ViewBindGroups resource missing")
-  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
-  assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
   if (!cameraColorTarget) {
     return
   }
-  const object = view.object
-
-  assert(object, "View object missing")
 
   const colorTarget = cameraColorTarget.readTarget
 
@@ -73,9 +67,9 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
 
-  pass.setBindGroup(0, viewBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
+  pass.setBindGroup(0, viewBindGroups.getOrSet(device, camera).createBindGroup(device, caches), [dynamicOffset])
 
-  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
+  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(camera)
   transparentStage.renderItems(pass, device.context, caches, meshInstanceEntry.transparent, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
   pass.end()
 }
@@ -92,19 +86,21 @@ export class CameraTransparentPassNode {
     const { renderer, renderDevice } = context
     const views = renderer.getResource(Views)
     const colorTargets = renderer.getResource(CameraColorTargets)
+    const viewBindGroups = renderer.getResource(ViewBindGroups)
+    const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+    const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
     assert(views, "Views resource missing")
     assert(colorTargets, "Camera color targets resource missing")
+    assert(viewBindGroups, "ViewBindGroups resource missing")
+    assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+    assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
 
     const viewsItems = views.items()
 
     for (let i = 0; i < viewsItems.length; i++) {
       const view = /**@type {View}*/(viewsItems[i])
-      if (view.tag !== Camera.name) {
-        continue
-      }
-
-      renderItems(view, i, renderDevice, renderer, colorTargets)
+      renderItems(view, i, renderDevice, renderer, colorTargets, viewBindGroups, meshInstanceBindGroups, materialBindGroups)
     }
   }
 }
