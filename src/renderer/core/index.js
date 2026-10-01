@@ -277,7 +277,7 @@ export class RenderStage {
    * @param {MeshInstancePhaseBindGroup} phaseState
    * @param {number} bindGroupIndex
    * @param {View} view
-   * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} [materialBindGroups]
+   * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} materialBindGroups
    */
   renderItems(pass, context, caches, phaseState, bindGroupIndex, view, materialBindGroups) {
     const meshItems = this.getMeshItems(view)
@@ -286,7 +286,7 @@ export class RenderStage {
     for (let i = 0; i < meshItems.length; i++) {
       const meshItem = /** @type {MeshRenderItem} */ (meshItems[i])
 
-      drawMeshRenderItem(pass, context, caches, meshItem, phaseState, bindGroupIndex, i, materialBindGroups)
+      drawMeshRenderItem(pass, context, caches, meshItem, materialBindGroups, phaseState, bindGroupIndex, i)
     }
 
     for (let i = 0; i < nonMeshItems.length; i++) {
@@ -339,12 +339,12 @@ function getViewSpaceDepth(view, item) {
  * @param {WebGL2RenderingContext} _context
  * @param {import("../../caches/cache.js").Caches} caches
  * @param {MeshRenderItem} item
+ * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} materialBindGroups
  * @param {MeshInstancePhaseBindGroup} [phaseState]
  * @param {number} [bindGroupIndex=0]
  * @param {number} [meshIndex=0]
- * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} [materialBindGroups]
  */
-export function drawMeshRenderItem(pass, _context, caches, item, phaseState, bindGroupIndex = 0, meshIndex = 0, materialBindGroups) {
+export function drawMeshRenderItem(pass, _context, caches, item, materialBindGroups, phaseState, bindGroupIndex = 0, meshIndex = 0) {
   const { pipelineId, mesh } = item
   const pipeline = caches.getRenderPipeline(pipelineId)
 
@@ -360,7 +360,7 @@ export function drawMeshRenderItem(pass, _context, caches, item, phaseState, bin
     pass.setBindGroup(bindGroupIndex, phaseState.bindGroup, [phaseState.getOffset(meshIndex)])
   }
 
-  const materialBindGroup = item.material && materialBindGroups?.get(item.material)
+  const materialBindGroup = materialBindGroups?.get(item.material)
 
   if (materialBindGroup) {
     pass.setBindGroup(1, materialBindGroup)
@@ -430,7 +430,7 @@ export class MeshRenderItem {
   meshInstance
 
   /**
-   * @type {import("../../material/index.js").RawMaterial | undefined}
+   * @type {import("../../material/index.js").RawMaterial}
    */
   material
 
@@ -576,7 +576,7 @@ export class NonMeshRenderItem {
  * @property {Affine3} transform
  * @property {GPUMesh} mesh
  * @property {number} pipelineId
- * @property {import("../../material/index.js").RawMaterial} [material]
+ * @property {import("../../material/index.js").RawMaterial} material
  * @property {import("../../core/index.js").WebGLBindGroup} [morphBindGroup]
  * @property {MeshInstanceUniform} [meshInstance]
  * @property {string} tag

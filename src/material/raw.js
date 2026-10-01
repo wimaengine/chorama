@@ -1,4 +1,5 @@
 import { CullFace, FrontFaceDirection } from "../constants/others.js"
+import { basicVertex, prepassFragment as defaultPrepassFragment } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
 import { abstractClass, abstractMethod } from "../utils/index.js"
 
@@ -7,7 +8,7 @@ import { abstractClass, abstractMethod } from "../utils/index.js"
  */
 export class RawMaterial {
 
-  constructor(){
+  constructor() {
     abstractClass(this, RawMaterial)
   }
 
@@ -23,7 +24,7 @@ export class RawMaterial {
    * @returns {string}
    */
   vertex() {
-    abstractMethod(this, RawMaterial, RawMaterial.prototype.vertex.name)
+    return basicVertex
   }
 
   /**
@@ -31,6 +32,24 @@ export class RawMaterial {
    */
   fragment() {
     abstractMethod(this, RawMaterial, RawMaterial.prototype.fragment.name)
+  }
+
+  /**
+   * Returns the vertex shader used by the camera prepass.
+   *
+   * @returns {string}
+   */
+  prepassVertex() {
+    return this.vertex()
+  }
+
+  /**
+   * Returns the fragment shader used by the camera prepass.
+   *
+   * @returns {string}
+   */
+  prepassFragment() {
+    return defaultPrepassFragment
   }
 
   /**
@@ -50,7 +69,7 @@ export class RawMaterial {
   /**
    * @returns {[string, number, Texture | undefined, Sampler | undefined][]}
    */
-  getTextures(){
+  getTextures() {
     return []
   }
 

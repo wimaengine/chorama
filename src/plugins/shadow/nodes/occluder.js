@@ -7,7 +7,7 @@ import { MeshRenderItem, ViewBindGroups, Views, MeshInstanceBindGroups, MeshInst
 import { WebGLRenderer } from "../../../renderer/index.js"
 import { basicVertex } from "../../../shader/index.js"
 import { ShadowPipelines } from "../resources/index.js"
-import { BoneTextureResource, MorphTargetTextures } from "../../meshmaterial/resources/index.js"
+import { BoneTextureResource, MeshMaterialBindGroups, MorphTargetTextures } from "../../meshmaterial/resources/index.js"
 
 export class ShadowOccluderNode {
   subgraph() {
@@ -26,6 +26,7 @@ export class ShadowOccluderNode {
     const morphTargetTextures = renderer.getResource(MorphTargetTextures)
     const viewBindGroups = renderer.getResource(ViewBindGroups)
     const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+    const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
     assert(views, "Views resource missing")
     assert(shadowPipelines, "ShadowPipelines resource missing")
@@ -33,6 +34,7 @@ export class ShadowOccluderNode {
     assert(morphTargetTextures, "MorphTargetTextures resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
     assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+    assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
 
     const collectedSkins = new Set()
 
@@ -82,7 +84,12 @@ export class ShadowOccluderNode {
           const gpuMesh = caches.getMesh(renderDevice, child.mesh, renderer.attributes)
           const skinned = isSkinned(child)
           const morphed = child.mesh.morphTargets.length > 0
+          const materialBindGroupLayout = materialBindGroups.getLayout(child.material)
           const morphTextureState = morphed ? morphTargetTextures.getOrAllocate(child.mesh) : undefined
+          
+          if(!materialBindGroupLayout){
+            return true
+          }
           const pipelineId = getRenderPipelineId(
             renderDevice,
             renderer,
@@ -93,7 +100,9 @@ export class ShadowOccluderNode {
             morphTargetTextures,
             viewBindGroups,
             meshInstanceBindGroups,
-            camera
+            camera,
+            child.material,
+            materialBindGroupLayout
           )
           const pipeline = caches.getRenderPipeline(pipelineId)
 
@@ -110,6 +119,7 @@ export class ShadowOccluderNode {
             morphWeights: child.morphWeights
           })
           const item = new MeshRenderItem({
+            material: child.material,
             pipelineId,
             meshInstance,
             morphBindGroup: morphTextureState
@@ -139,6 +149,8 @@ export class ShadowOccluderNode {
  * @param {import("../../../renderer/index.js").ViewBindGroups} viewBindGroups
  * @param {import("../../../renderer/index.js").MeshInstanceBindGroups} meshInstanceBindGroups
  * @param {Object3D} viewObject
+ * @param {import("../../../material/index.js").RawMaterial} material
+ * @param {import("../../../core/layouts/bindgroup.js").WebGLBindGroupLayout} materialBindGroupLayout
  * @returns {number}
  */
 function getRenderPipelineId(
@@ -151,10 +163,12 @@ function getRenderPipelineId(
   morphTargetTextures,
   viewBindGroups,
   meshInstanceBindGroups,
-  viewObject
+  viewObject,
+  material,
+  materialBindGroupLayout
 ) {
   const { caches, includes, defines: globalDefines } = renderer
-  const pipelineKey = createShadowPipelineKey(mesh.layoutHash, skinned, morphed)
+  const pipelineKey = createShadowPipelineKey(mesh.layoutHash, material, skinned, morphed)
   const pipelineId = pipelines.get(pipelineKey)
 
   if (pipelineId !== undefined) {
@@ -186,8 +200,8 @@ function getRenderPipelineId(
     layout: device.createPipelineLayout({
       bindGroupLayouts: [
         viewBindGroup.layout,
+        materialBindGroupLayout,
         meshInstanceBindGroups.getBindGroupLayout(device),
-        device.createBindGroupLayout({ entries: [] }),
         ...(morphed ? [morphTargetTextures.getBindGroupLayout(device)] : [])
       ]
     }),
@@ -207,12 +221,13 @@ function getRenderPipelineId(
 
 /**
  * @param {number} layoutHash
+ * @param {import("../../../material/index.js").RawMaterial} material
  * @param {boolean} skinned
  * @param {boolean} morphed
  * @returns {string}
  */
-function createShadowPipelineKey(layoutHash, skinned, morphed) {
-  return [layoutHash, skinned ? 1 : 0, morphed ? 1 : 0].join(":")
+function createShadowPipelineKey(layoutHash, material, skinned, morphed) {
+  return [layoutHash, material.constructor.name, material.getPipelineBits().toString(), skinned ? 1 : 0, morphed ? 1 : 0].join(":")
 }
 
 /**

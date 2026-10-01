@@ -3,8 +3,9 @@ import { View, Views, ViewBindGroups, MeshInstanceBindGroups } from "../../../re
 import { assert } from "../../../utils/index.js"
 import { snapUp } from "../../../math/index.js"
 import { ShadowMap } from "../resources/index.js"
+import { MeshMaterialBindGroups } from "../../meshmaterial/resources/index.js"
 
-const MESH_INSTANCE_BIND_GROUP_INDEX = 1
+const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
 /**
  * @param {import("../../../renderer/index.js").View} view
@@ -14,8 +15,9 @@ const MESH_INSTANCE_BIND_GROUP_INDEX = 1
  * @param {ViewBindGroups} viewBindGroups
  * @param {MeshInstanceBindGroups} meshInstanceBindGroups
  * @param {ShadowMap} shadowMap
+ * @param {MeshMaterialBindGroups} materialBindGroups
  */
-function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap) {
+function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap, materialBindGroups) {
   if (!view.object || view.object instanceof Camera) {
     return
   }
@@ -49,7 +51,7 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInst
   pass.setBindGroup(0, viewBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
   const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
-  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view)
+  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
   pass.end()
 }
 
@@ -67,11 +69,13 @@ export class ShadowOpaquePassNode {
     const viewBindGroups = renderer.getResource(ViewBindGroups)
     const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
     const shadowMap = renderer.getResource(ShadowMap)
+    const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
     assert(views, "Views resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
     assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
     assert(shadowMap, "Shadow map resource missing")
+    assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
 
     const viewsItems = views.items()
 
@@ -80,7 +84,7 @@ export class ShadowOpaquePassNode {
 
 
 
-      renderItems(view, i, renderDevice, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap)
+      renderItems(view, i, renderDevice, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap, materialBindGroups)
     }
   }
 }
