@@ -108,18 +108,18 @@ function createSkyboxRenderItem(object, device, renderer, view) {
  */
 function getSkyboxRenderPipeline(device, renderer, view) {
   const skyboxPipeline = renderer.getResource(SkyboxPipeline)
-  const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const viewBindGroups = renderer.getResource(ViewBindGroups)
   const { caches, includes, defines: globalDefines } = renderer
 
   assert(skyboxPipeline, "SkyboxPipeline resource missing")
-  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(viewBindGroups, "ViewBindGroups resource missing")
   const object = view.object
 
   assert(object, "View object missing")
-  const sceneBindGroup = sceneBindGroups.getOrSet(device, object)
+  const viewBindGroup = viewBindGroups.getOrSet(device, object)
 
-  assert(sceneBindGroup, "Scene bind group missing")
-  assert(sceneBindGroup.layout, "SceneBindGroup layout missing")
+  assert(viewBindGroup, "View bind group missing")
+  assert(viewBindGroup.layout, "ViewBindGroup layout missing")
 
   if (skyboxPipeline.pipelineId !== undefined) {
     return skyboxPipeline.pipelineId
@@ -135,36 +135,6 @@ function getSkyboxRenderPipeline(device, renderer, view) {
     includes: new Map(includes)
   })
 
-  /**
-   * @type {WebGLRenderPipelineDescriptor}
-   */
-  const descriptor = {
-    depthWrite: false,
-    depthCompare: CompareFunction.Lequal,
-    cullFace: CullFace.None,
-    topology: PrimitiveTopology.Triangles,
-    vertexLayout: new MeshVertexLayout([]),
-    vertex: device.createShaderModule({
-      code: vertexShader.compile(),
-      stage: "vertex"
-    }),
-    fragment: {
-      source: device.createShaderModule({
-        code: fragmentShader.compile(),
-        stage: "fragment"
-      }),
-      targets: [{
-        format: TextureFormat.RGBA8Unorm
-      }]
-    }
-  }
-
-  const [pipeline, newId] = caches.createRenderPipeline(device, descriptor)
-
-  const skyboxBlockLayout = pipeline.uniformBlocks.get("SkyBoxBlock")
-
-  assert(skyboxBlockLayout, "SkyBoxBlock uniform block missing")
-
   const bindGroupLayout = device.createBindGroupLayout({
     label: "SkyBoxBindGroupLayout",
     entries: [
@@ -174,7 +144,7 @@ function getSkyboxRenderPipeline(device, renderer, view) {
         visibility: 0,
         buffer: {
           type: "uniform",
-          minBindingSize: skyboxBlockLayout.size
+          minBindingSize: SkyBoxUniforms.BlockSize
         }
       },
       {
@@ -212,16 +182,40 @@ function getSkyboxRenderPipeline(device, renderer, view) {
     ]
   })
 
-  skyboxPipeline.bindGroupLayout = bindGroupLayout
-  skyboxPipeline.pipelineLayout = pipeline.layout
-
-  const sceneLayout = skyboxPipeline.pipelineLayout.getBindGroupLayout(0)
-
-  if (!sceneLayout) {
-    skyboxPipeline.pipelineLayout.setBindGroupLayout(0, sceneBindGroup.layout)
+  /**
+   * @type {WebGLRenderPipelineDescriptor}
+   */
+  const descriptor = {
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [viewBindGroup.layout, bindGroupLayout]
+    }),
+    depthWrite: false,
+    depthCompare: CompareFunction.Lequal,
+    cullFace: CullFace.None,
+    topology: PrimitiveTopology.Triangles,
+    vertexLayout: new MeshVertexLayout([]),
+    vertex: device.createShaderModule({
+      code: vertexShader.compile(),
+      stage: "vertex"
+    }),
+    fragment: {
+      source: device.createShaderModule({
+        code: fragmentShader.compile(),
+        stage: "fragment"
+      }),
+      targets: [{
+        format: TextureFormat.RGBA8Unorm
+      }]
+    }
   }
 
-  skyboxPipeline.pipelineLayout.setBindGroupLayout(1, bindGroupLayout)
+  const [pipeline, newId] = caches.createRenderPipeline(device, descriptor)
+
+  const skyboxBlockLayout = pipeline.uniformBlocks.get("SkyBoxBlock")
+  assert(skyboxBlockLayout, "SkyBoxBlock uniform block missing")
+
+  skyboxPipeline.bindGroupLayout = bindGroupLayout
+  skyboxPipeline.pipelineLayout = pipeline.layout
 
   skyboxPipeline.pipelineId = newId
 

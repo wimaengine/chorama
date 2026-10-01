@@ -1,6 +1,6 @@
 /** @import { WebGLBindGroup } from "../webgl/bindgroup.js" */
 /** @import { WebGLBindGroupLayout } from "./bindgroup.js" */
-import { assert, assertTrue } from "../../utils/index.js";
+import { assert } from "../../utils/index.js";
 
 export class WebGLPipelineLayout {
   /**
@@ -10,6 +10,8 @@ export class WebGLPipelineLayout {
   label
 
   /**
+   * @package
+   * @readonly
    * @type {(WebGLBindGroupLayout | undefined)[]}
    */
   bindGroupLayouts
@@ -54,26 +56,7 @@ export class WebGLPipelineLayout {
   }
 
   /**
-   * Installs a bind group layout into this pipeline layout and reserves
-   * binding points for its buffer entries immediately.
-   * @param {number} index
-   * @param {WebGLBindGroupLayout} layout
-   */
-  setBindGroupLayout(index, layout) {
-    assertTrue(Number.isInteger(index) && index >= 0, `Invalid bind group layout index ${index}`)
-
-    const existing = this.bindGroupLayouts[index]
-
-    if (existing) {
-      assertTrue(existing === layout, `Pipeline layout already defines bind group layout ${index}`)
-      return
-    }
-
-    this.bindGroupLayouts[index] = layout
-    this.allocateBindGroupBufferPoints(index, layout)
-  }
-
-  /**
+   * @package
    * @param {number} bindGroupIndex
    * @param {number} binding
    * @returns {number | undefined}
@@ -83,6 +66,7 @@ export class WebGLPipelineLayout {
   }
 
   /**
+   * @private
    * @param {number} bindGroupIndex
    * @param {WebGLBindGroupLayout} layout
    */

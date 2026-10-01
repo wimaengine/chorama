@@ -3,7 +3,7 @@ import { assert } from '../../utils/index.js'
 import { MeshVertexLayout, Shader, WebGLRenderDevice } from "../../core/index.js";
 import { Mesh, Attribute } from "../../mesh/index.js";
 import { MeshMaterial3D, Object3D } from "../../objects/index.js";
-import { Plugin, MeshRenderItem, SortViewsNode, WebGLRenderer, MeshInstanceBindGroups, MeshInstanceUniform } from "../../renderer/index.js";
+import { Plugin, MeshRenderItem, SortViewsNode, WebGLRenderer, MeshInstanceBindGroups, MeshInstanceUniform, ViewBindGroups } from "../../renderer/index.js";
 import { PrimitiveTopology, TextureFormat } from '../../constants/index.js';
 import { CameraViewNode } from '../camera/index.js';
 import { MeshMaterialNode, PrepareMaterialBindGroupsNode } from './nodes/index.js';
@@ -49,6 +49,8 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
 
   const { caches, attributes } = renderer
   const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  const viewBindGroups = renderer.getResource(ViewBindGroups)
+  const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
   const morphTargetTextures = renderer.getResource(MorphTargetTextures)
   const { material, mesh, transform } = object
   const materials = renderer.getResource(MeshMaterials)
@@ -60,9 +62,21 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
 
   assert(viewObject, "View object missing")
   assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  assert(viewBindGroups, "ViewBindGroups resource missing")
+  assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
   assert(materials, "MeshMaterials resource missing")
   materials.add(material)
 
+  const viewBindGroup = viewBindGroups.getOrSet(device, viewObject)
+  const materialBindGroupLayout = materialBindGroups.getLayout(material)
+
+  // Material bind-group layouts are prepared by `PrepareMaterialBindGroupsNode`.
+  // Material bind-group layouts are prepared asyncrounously too
+  if (!materialBindGroupLayout || !viewBindGroup.layout) {
+    return
+  }
+
+  const viewBindGroupLayout = viewBindGroup.layout
   const gpuMesh = caches.getMesh(device, mesh, attributes)
   const meshBits = createPipelineBitsFromMesh(mesh, object)
   const materialBits = material.getPipelineBits()
@@ -105,6 +119,16 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
 
       const pipelineDescriptor = {
         ...descriptor,
+        layout: device.createPipelineLayout({
+          bindGroupLayouts: [
+            viewBindGroupLayout,
+            materialBindGroupLayout,
+            meshInstanceBindGroups.getBindGroupLayout(device),
+            ...(keyMeshBits & MeshKey.MorphTargets
+              ? [getMorphTargetBindGroupLayout(morphTargetTextures, device)]
+              : [])
+          ]
+        }),
         vertex: device.createShaderModule({
           code: descriptor.vertex.compile(),
           stage: "vertex"
@@ -121,29 +145,12 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
       }
 
       const [, newId] = caches.createRenderPipeline(device, pipelineDescriptor)
-
-      const pipeline = caches.getRenderPipeline(newId)
-
-      assert(pipeline, "Mesh material pipeline missing")
-      if (!pipeline.layout.getBindGroupLayout(2)) {
-        pipeline.layout.setBindGroupLayout(2, meshInstanceBindGroups.getBindGroupLayout(device))
-      }
-      if ((keyMeshBits & MeshKey.MorphTargets) !== 0n) {
-        assert(morphTargetTextures, "MorphTargetTextures resource missing")
-        if (!pipeline.layout.getBindGroupLayout(3)) {
-          pipeline.layout.setBindGroupLayout(3, morphTargetTextures.getBindGroupLayout(device))
-        }
-      }
-
       return newId
   })
 
   const pipeline = caches.getRenderPipeline(pipelineId)
-  if (pipeline && !pipeline.layout.getBindGroupLayout(2)) {
-    pipeline.layout.setBindGroupLayout(2, meshInstanceBindGroups.getBindGroupLayout(device))
-  }
-  if (pipeline && morphTextureState && morphTargetTextures && !pipeline.layout.getBindGroupLayout(3)) {
-    pipeline.layout.setBindGroupLayout(3, morphTargetTextures.getBindGroupLayout(device))
+  if (!pipeline) {
+    return
   }
   const meshInstance = new MeshInstanceUniform({
     transform: transform.world,
@@ -166,6 +173,15 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
   })
 
   return item
+}
+
+/**
+ * @param {MorphTargetTextures | undefined} morphTargetTextures
+ * @param {WebGLRenderDevice} device
+ */
+function getMorphTargetBindGroupLayout(morphTargetTextures, device) {
+  assert(morphTargetTextures, "MorphTargetTextures resource missing")
+  return morphTargetTextures.getBindGroupLayout(device)
 }
 
 /**

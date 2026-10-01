@@ -16,7 +16,7 @@ const MESH_INSTANCE_BIND_GROUP_INDEX = 2
  */
 function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const transparentStage = view.transparent
-  const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const viewBindGroups = renderer.getResource(ViewBindGroups)
   const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
   const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
@@ -33,7 +33,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const cameraColorTarget = colorTargets.get(camera)
 
   assert(renderTarget, "Camera render target missing")
-  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(viewBindGroups, "ViewBindGroups resource missing")
   assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
   assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
   if (!cameraColorTarget) {
@@ -73,7 +73,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
 
-  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
+  pass.setBindGroup(0, viewBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
   const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
   transparentStage.renderItems(pass, device.context, caches, meshInstanceEntry.transparent, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)

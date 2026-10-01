@@ -54,13 +54,13 @@ export class MeshMaterialNode {
         continue
       }
 
-      const sceneBindGroups = renderer.getResource(ViewBindGroups)
+      const viewBindGroups = renderer.getResource(ViewBindGroups)
 
-      assert(sceneBindGroups, "SceneBindGroups resource missing")
+      assert(viewBindGroups, "ViewBindGroups resource missing")
       const object = view.object
 
       assert(object, "View object missing")
-      sceneBindGroups.getOrSet(renderDevice, object)
+      viewBindGroups.getOrSet(renderDevice, object)
 
       for (let i = 0; i < objects.length; i++) {
         // SAFETY: Asssume the list is dense

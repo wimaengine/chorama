@@ -212,6 +212,9 @@ function createBloomPipeline(device, renderer, bindGroupLayout, define) {
    * @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor}
    */
   const descriptor = {
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [bindGroupLayout]
+    }),
     depthWrite: false,
     depthCompare: CompareFunction.Always,
     cullFace: CullFace.None,
@@ -232,7 +235,6 @@ function createBloomPipeline(device, renderer, bindGroupLayout, define) {
     }
   }
 
-  const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
-  pipeline.layout.setBindGroupLayout(0, bindGroupLayout)
+  const [, newId] = renderer.caches.createRenderPipeline(device, descriptor)
   return newId
 }

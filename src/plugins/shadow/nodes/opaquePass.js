@@ -17,7 +17,7 @@ function renderItems(view, viewIndex, device, renderer) {
 
   const context = device.context
   const caches = renderer.caches
-  const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const viewBindGroups = renderer.getResource(ViewBindGroups)
   const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
   const shadowMap = renderer.getResource(ShadowMap)
 
@@ -42,7 +42,7 @@ function renderItems(view, viewIndex, device, renderer) {
     scissor: view.scissor || view.viewport
   })
 
-  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(viewBindGroups, "ViewBindGroups resource missing")
   assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
   const object = view.object
 
@@ -50,7 +50,7 @@ function renderItems(view, viewIndex, device, renderer) {
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
 
-  pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
+  pass.setBindGroup(0, viewBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
   const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
   opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view)

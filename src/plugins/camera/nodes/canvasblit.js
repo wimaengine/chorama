@@ -169,6 +169,9 @@ function getCanvasBlitPipeline(device, renderer, pipelineState, format) {
    * @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor}
    */
   const descriptor = {
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [pipelineState.bindGroupLayout]
+    }),
     depthWrite: false,
     depthCompare: CompareFunction.Always,
     cullFace: CullFace.None,
@@ -191,7 +194,6 @@ function getCanvasBlitPipeline(device, renderer, pipelineState, format) {
 
 
   const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
-  pipeline.layout.setBindGroupLayout(0, pipelineState.bindGroupLayout)
   pipelineState.pipelineIds.set(format, newId)
   return pipeline
 }

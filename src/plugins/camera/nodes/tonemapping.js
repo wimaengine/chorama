@@ -145,6 +145,9 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
    * @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor}
    */
   const descriptor = {
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [pipelineState.bindGroupLayout]
+    }),
     depthWrite: false,
     depthCompare: CompareFunction.Always,
     cullFace: CullFace.None,
@@ -167,7 +170,6 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
 
 
   const [pipeline, newId] = renderer.caches.createRenderPipeline(device, descriptor)
-  pipeline.layout.setBindGroupLayout(0, pipelineState.bindGroupLayout)
   pipelineState.pipelineIds.set(key, newId)
   return pipeline
 }

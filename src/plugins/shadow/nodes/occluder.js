@@ -143,25 +143,15 @@ function getRenderPipelineId(
   morphTargetTextures
 ) {
   const { caches, includes, defines: globalDefines } = renderer
-  const sceneBindGroups = renderer.getResource(ViewBindGroups)
+  const viewBindGroups = renderer.getResource(ViewBindGroups)
   const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
   const pipelineKey = createShadowPipelineKey(mesh.layoutHash, skinned, morphed)
   const pipelineId = pipelines.get(pipelineKey)
 
-  assert(sceneBindGroups, "SceneBindGroups resource missing")
+  assert(viewBindGroups, "ViewBindGroups resource missing")
   assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
 
   if (pipelineId !== undefined) {
-    const pipeline = caches.getRenderPipeline(pipelineId)
-
-    assert(pipeline, "Shadow pipeline missing")
-    if (!pipeline.layout.getBindGroupLayout(1)) {
-      pipeline.layout.setBindGroupLayout(1, meshInstanceBindGroups.getBindGroupLayout(device))
-    }
-    if (morphed && !pipeline.layout.getBindGroupLayout(3)) {
-      pipeline.layout.setBindGroupLayout(3, morphTargetTextures.getBindGroupLayout(device))
-    }
-
     return pipelineId
   }
 
@@ -171,8 +161,8 @@ function getRenderPipelineId(
   const object = view.object
 
   assert(object, "View object missing")
-  const sceneBindGroup = sceneBindGroups.getOrSet(device, object)
-  assert(sceneBindGroup.layout, "Scene bind group layout missing")
+  const viewBindGroup = viewBindGroups.getOrSet(device, object)
+  assert(viewBindGroup.layout, "View bind group layout missing")
   const vertexShader = new Shader({
     source: basicVertex,
     defines: new Map(globalDefines),
@@ -190,6 +180,14 @@ function getRenderPipelineId(
    * @type {import("../../../core/index.js").WebGLRenderPipelineDescriptor}
    */
   const descriptor = {
+    layout: device.createPipelineLayout({
+      bindGroupLayouts: [
+        viewBindGroup.layout,
+        meshInstanceBindGroups.getBindGroupLayout(device),
+        device.createBindGroupLayout({ entries: [] }),
+        ...(morphed ? [morphTargetTextures.getBindGroupLayout(device)] : [])
+      ]
+    }),
     depthWrite: true,
     topology: PrimitiveTopology.Triangles,
     vertexLayout: layout,
@@ -199,14 +197,6 @@ function getRenderPipelineId(
     })
   }
   const [, newId] = caches.createRenderPipeline(device, descriptor)
-  const pipeline = caches.getRenderPipeline(newId)
-
-  assert(pipeline, "Shadow pipeline missing")
-  pipeline.layout.setBindGroupLayout(0, sceneBindGroup.layout)
-  pipeline.layout.setBindGroupLayout(1, meshInstanceBindGroups.getBindGroupLayout(device))
-  if (morphed) {
-    pipeline.layout.setBindGroupLayout(3, morphTargetTextures.getBindGroupLayout(device))
-  }
 
   pipelines.set(pipelineKey, newId)
   return newId
