@@ -111,7 +111,7 @@ export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInsta
   const bindGroupLayout = meshInstanceBindGroups.getBindGroupLayout(device)
 
   for (let i = 0; i < meshItems.length; i++) {
-    const item = /** @type {import("../core/index.js").RenderItem} */ (meshItems[i])
+    const item = /** @type {import("../core/index.js").MeshRenderItem} */ (meshItems[i])
     const meshInstance = /** @type {import("../resources/meshinstanceuniform.js").MeshInstanceUniform} */ (item.meshInstance)
 
     phaseState.setData(i, meshInstance)

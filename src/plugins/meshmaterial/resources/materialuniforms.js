@@ -2,6 +2,7 @@ import { UniformBuffer } from "../../../core/resources/index.js"
 /** @import { RawMaterial } from "../../../material/index.js" */
 
 export class MaterialUniforms {
+  static DefaultSize = 256
   /**
    * @type {Map<RawMaterial, UniformBuffer>}
    */
@@ -20,7 +21,7 @@ export class MaterialUniforms {
    * Returns a buffer for the material, creating it if needed.
    * The backing `ArrayBuffer` is grown to at least `minSize`.
    * @param {RawMaterial} material
-   * @param {number} [minSize=0]
+   * @param {number} [minSize=MaterialUniforms.DefaultSize]
    * @returns {UniformBuffer}
    */
   getOrSet(material, minSize = 0) {
@@ -40,10 +41,10 @@ export class MaterialUniforms {
    * Packs a material payload into its cached primary buffer and returns it.
    *
    * @param {RawMaterial} material
-   * @param {number} [minSize=0]
+   * @param {number} [minSize=MaterialUniforms.DefaultSize]
    * @returns {UniformBuffer}
    */
-  setData(material, minSize = 0) {
+  setData(material, minSize = MaterialUniforms.DefaultSize) {
     const buffer = this.getOrSet(material, minSize)
     const data = buffer.data
 

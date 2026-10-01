@@ -132,7 +132,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures) {
   pass.setBindGroup(0, sceneBindGroup, [dynamicOffset])
 
   for (let i = 0; i < meshItems.length; i++) {
-    const item = /** @type {import("../../../renderer/index.js").RenderItem} */ (meshItems[i])
+    const item = /** @type {import("../../../renderer/index.js").MeshRenderItem} */ (meshItems[i])
     const sourcePipeline = caches.getRenderPipeline(item.pipelineId)
 
     if (!sourcePipeline) {
@@ -327,7 +327,7 @@ function createPrePassPipeline(
 
 /**
  * @param {import("../../../core/index.js").WebGLRenderPipeline} sourcePipeline
- * @param {import("../../../renderer/index.js").RenderItem} item
+ * @param {import("../../../renderer/index.js").MeshRenderItem} item
  * @returns {boolean}
  */
 function isSkinned(sourcePipeline, item) {

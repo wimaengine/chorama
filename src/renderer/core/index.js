@@ -225,7 +225,7 @@ export class View {
 
 export class RenderStage {
   /**
-   * @type {RenderItem[]}
+   * @type {MeshRenderItem[]}
    */
   meshItems = []
 
@@ -235,7 +235,7 @@ export class RenderStage {
   nonMeshItems = []
 
   /**
-   * @param {RenderItem | NonMeshRenderItem} item
+   * @param {MeshRenderItem | NonMeshRenderItem} item
    */
   add(item) {
     if (item instanceof NonMeshRenderItem) {
@@ -254,7 +254,7 @@ export class RenderStage {
    * Returns mesh items in the order they should be prepared and drawn.
    *
    * @param {View} _view
-   * @returns {RenderItem[]}
+   * @returns {MeshRenderItem[]}
    */
   getMeshItems(_view) {
     return this.meshItems
@@ -277,15 +277,16 @@ export class RenderStage {
    * @param {MeshInstancePhaseBindGroup} phaseState
    * @param {number} bindGroupIndex
    * @param {View} view
+   * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} [materialBindGroups]
    */
-  renderItems(pass, context, caches, phaseState, bindGroupIndex, view) {
+  renderItems(pass, context, caches, phaseState, bindGroupIndex, view, materialBindGroups) {
     const meshItems = this.getMeshItems(view)
     const nonMeshItems = this.getNonMeshItems(view)
 
     for (let i = 0; i < meshItems.length; i++) {
-      const meshItem = /** @type {RenderItem} */ (meshItems[i])
+      const meshItem = /** @type {MeshRenderItem} */ (meshItems[i])
 
-      drawRenderItem(pass, context, caches, meshItem, phaseState, bindGroupIndex, i)
+      drawMeshRenderItem(pass, context, caches, meshItem, phaseState, bindGroupIndex, i, materialBindGroups)
     }
 
     for (let i = 0; i < nonMeshItems.length; i++) {
@@ -301,7 +302,7 @@ export class SortedRenderStage extends RenderStage {
    * Returns mesh items back-to-front using the supplied view as the sorting reference.
    * @override
    * @param {View} view
-   * @returns {RenderItem[]}
+   * @returns {MeshRenderItem[]}
    */
   getMeshItems(view) {
     return this.meshItems
@@ -317,7 +318,7 @@ export class SortedRenderStage extends RenderStage {
 
 /**
  * @param {View} view
- * @param {RenderItem} item
+ * @param {MeshRenderItem} item
  */
 function getViewSpaceDepth(view, item) {
   const { viewMatrix } = view
@@ -337,12 +338,13 @@ function getViewSpaceDepth(view, item) {
  * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
  * @param {WebGL2RenderingContext} _context
  * @param {import("../../caches/cache.js").Caches} caches
- * @param {RenderItem} item
+ * @param {MeshRenderItem} item
  * @param {MeshInstancePhaseBindGroup} [phaseState]
  * @param {number} [bindGroupIndex=0]
  * @param {number} [meshIndex=0]
+ * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} [materialBindGroups]
  */
-export function drawRenderItem(pass, _context, caches, item, phaseState, bindGroupIndex = 0, meshIndex = 0) {
+export function drawMeshRenderItem(pass, _context, caches, item, phaseState, bindGroupIndex = 0, meshIndex = 0, materialBindGroups) {
   const { pipelineId, mesh } = item
   const pipeline = caches.getRenderPipeline(pipelineId)
 
@@ -358,8 +360,10 @@ export function drawRenderItem(pass, _context, caches, item, phaseState, bindGro
     pass.setBindGroup(bindGroupIndex, phaseState.bindGroup, [phaseState.getOffset(meshIndex)])
   }
 
-  if (item.bindGroup) {
-    pass.setBindGroup(1, item.bindGroup)
+  const materialBindGroup = item.material && materialBindGroups?.get(item.material)
+
+  if (materialBindGroup) {
+    pass.setBindGroup(1, materialBindGroup)
   }
 
   if (item.morphBindGroup) {
@@ -408,7 +412,7 @@ export function drawNonMeshRenderItem(pass, _context, caches, item) {
 
   pass.draw(item.vertexCount, item.instanceCount, item.firstVertex, item.firstInstance)
 }
-export class RenderItem {
+export class MeshRenderItem {
 
   /**
    * @type {number}
@@ -426,9 +430,9 @@ export class RenderItem {
   meshInstance
 
   /**
-   * @type {import("../../core/index.js").WebGLBindGroup | undefined}
+   * @type {import("../../material/index.js").RawMaterial | undefined}
    */
-  bindGroup
+  material
 
   /**
    * @type {import("../../core/index.js").WebGLBindGroup | undefined}
@@ -446,13 +450,13 @@ export class RenderItem {
   transform
 
   /**
-   * @param {RenderItemOptions} options 
+   * @param {MeshRenderItemOptions} options 
    */
   constructor({
     pipelineId,
     mesh,
     tag,
-    bindGroup,
+    material,
     morphBindGroup,
     meshInstance,
     transform
@@ -461,7 +465,7 @@ export class RenderItem {
     this.transform = transform
     this.mesh = mesh
     this.tag = tag
-    this.bindGroup = bindGroup
+    this.material = material
     this.morphBindGroup = morphBindGroup
     this.meshInstance = meshInstance
   }
@@ -568,11 +572,11 @@ export class NonMeshRenderItem {
  */
 
 /**
- * @typedef RenderItemOptions
+ * @typedef MeshRenderItemOptions
  * @property {Affine3} transform
  * @property {GPUMesh} mesh
  * @property {number} pipelineId
- * @property {import("../../core/index.js").WebGLBindGroup} [bindGroup]
+ * @property {import("../../material/index.js").RawMaterial} [material]
  * @property {import("../../core/index.js").WebGLBindGroup} [morphBindGroup]
  * @property {MeshInstanceUniform} [meshInstance]
  * @property {string} tag

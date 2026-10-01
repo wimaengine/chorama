@@ -1,5 +1,6 @@
 import { Camera } from "../../../objects/index.js"
 import { View, ViewBindGroups, Views, MeshInstanceBindGroups } from "../../../renderer/index.js"
+import { MeshMaterialBindGroups } from "../../meshmaterial/resources/index.js"
 import { assert } from "../../../utils/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 import { snapUp } from "../../../math/index.js"
@@ -21,6 +22,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   const caches = renderer.caches
   const sceneBindGroups = renderer.getResource(ViewBindGroups)
   const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
   if (!(view.object instanceof Camera)) {
     throw "Camera opaque pass expects a camera view"
@@ -33,6 +35,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   assert(renderTarget, "Camera render target missing")
   assert(sceneBindGroups, "SceneBindGroups resource missing")
   assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
   if (!cameraColorTarget) {
     return
   }
@@ -78,9 +81,9 @@ function renderItems(view, viewIndex, device, renderer, colorTargets) {
   pass.setBindGroup(0, sceneBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
   const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
-  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view)
+  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
 
-  alphaMaskStage.renderItems(pass, context, caches, meshInstanceEntry.alphaMask, MESH_INSTANCE_BIND_GROUP_INDEX, view)
+  alphaMaskStage.renderItems(pass, context, caches, meshInstanceEntry.alphaMask, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
   pass.end()
 }
 

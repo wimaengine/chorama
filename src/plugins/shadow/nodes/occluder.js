@@ -3,7 +3,7 @@ import { PrimitiveTopology } from "../../../constants/index.js"
 import { WebGLRenderDevice, GPUMesh, Shader } from "../../../core/index.js"
 import { DirectionalLight, PointLight, SpotLight, MeshMaterial3D, Object3D } from "../../../objects/index.js"
 import { Attribute } from "../../../mesh/index.js"
-import { RenderItem, ViewBindGroups, Views, MeshInstanceBindGroups, MeshInstanceUniform } from "../../../renderer/index.js"
+import { MeshRenderItem, ViewBindGroups, Views, MeshInstanceBindGroups, MeshInstanceUniform } from "../../../renderer/index.js"
 import { WebGLRenderer } from "../../../renderer/index.js"
 import { basicVertex } from "../../../shader/index.js"
 import { ShadowPipelines } from "../resources/index.js"
@@ -102,7 +102,7 @@ export class ShadowOccluderNode {
             morphTargetCount: morphTextureState?.targetCount ?? 0,
             morphWeights: child.morphWeights
           })
-          const item = new RenderItem({
+          const item = new MeshRenderItem({
             pipelineId,
             meshInstance,
             morphBindGroup: morphTextureState

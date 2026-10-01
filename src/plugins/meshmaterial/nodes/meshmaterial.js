@@ -2,7 +2,7 @@ import { assert } from "../../../utils/index.js"
 import { Camera, MeshMaterial3D, Object3D } from "../../../objects/index.js"
 import { AlphaMaskMode, TransparentMode } from "../../../material/index.js"
 import { ViewBindGroups, Views } from "../../../renderer/index.js"
-import { BoneTextureResource, MeshMaterialPipelines } from "../resources/index.js"
+import { BoneTextureResource, MeshMaterialPipelines, MeshMaterials } from "../resources/index.js"
 import { createMeshMaterialRenderItem } from "../meshmaterial.js"
 import { containsFrustum } from "../../../math/index.js"
 
@@ -19,10 +19,14 @@ export class MeshMaterialNode {
     const views = renderer.getResource(Views)
     const pipelines = renderer.getResource(MeshMaterialPipelines)
     const boneTexture = renderer.getResource(BoneTextureResource)
+    const materials = renderer.getResource(MeshMaterials)
 
     assert(views, "Views resource missing")
     assert(pipelines, "MeshMaterialPipelines resource missing")
     assert(boneTexture, "BoneTextureResource missing")
+    assert(materials, "MeshMaterials resource missing")
+
+    materials.clear()
 
     const collectedSkins = new Set()
 

@@ -1,9 +1,17 @@
 /** @import { RawMaterial } from "../../../material/index.js" */
 /** @import { WebGLBindGroup } from "../../../core/index.js" */
+/** @import { WebGLBindGroupLayout } from "../../../core/layouts/bindgroup.js" */
 
 export class MeshMaterialBindGroups {
   /** @type {Map<RawMaterial, WebGLBindGroup>} */
   #bindGroups = new Map()
+  /** @type {Map<RawMaterial, WebGLBindGroupLayout>} */
+  #bindGroupLayouts = new Map()
+
+  clear() {
+    this.#bindGroups.clear()
+    this.#bindGroupLayouts.clear()
+  }
 
   /**
    * @param {RawMaterial} material
@@ -15,26 +23,20 @@ export class MeshMaterialBindGroups {
 
   /**
    * @param {RawMaterial} material
-   * @param {WebGLBindGroup} bindGroup
+   * @returns {WebGLBindGroupLayout | undefined}
    */
-  set(material, bindGroup) {
-    this.#bindGroups.set(material, bindGroup)
+  getLayout(material) {
+    return this.#bindGroupLayouts.get(material)
   }
 
   /**
    * @param {RawMaterial} material
-   * @param {() => WebGLBindGroup} compute
-   * @returns {WebGLBindGroup}
+   * @param {WebGLBindGroup} bindGroup
+   * @param {WebGLBindGroupLayout} layout
    */
-  getOrSetCompute(material, compute) {
-    const existing = this.get(material)
-
-    if (existing) {
-      return existing
-    }
-
-    const bindGroup = compute()
-    this.set(material, bindGroup)
-    return bindGroup
+  set(material, bindGroup, layout) {
+    this.#bindGroups.set(material, bindGroup)
+    this.#bindGroupLayouts.set(material, layout)
   }
+
 }

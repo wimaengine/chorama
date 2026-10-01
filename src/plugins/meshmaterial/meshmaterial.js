@@ -1,14 +1,13 @@
 /**@import { Brand } from '../../utils/index.js' */
-/**@import { WebGLRenderPipeline } from '../../core/index.js' */
 import { assert } from '../../utils/index.js'
 import { MeshVertexLayout, Shader, WebGLRenderDevice } from "../../core/index.js";
 import { Mesh, Attribute } from "../../mesh/index.js";
 import { MeshMaterial3D, Object3D } from "../../objects/index.js";
-import { Plugin, RenderItem, ViewBindGroups, SortViewsNode, WebGLRenderer, MeshInstanceBindGroups, MeshInstanceUniform } from "../../renderer/index.js";
-import { PrimitiveTopology, TextureFormat, TextureType } from '../../constants/index.js';
+import { Plugin, MeshRenderItem, SortViewsNode, WebGLRenderer, MeshInstanceBindGroups, MeshInstanceUniform } from "../../renderer/index.js";
+import { PrimitiveTopology, TextureFormat } from '../../constants/index.js';
 import { CameraViewNode } from '../camera/index.js';
-import { MeshMaterialNode } from './nodes/index.js';
-import { BoneTextureResource, EnvironmentMap, MaterialUniforms, MeshMaterialPipelines, MorphTargetTextures } from './resources/index.js';
+import { MeshMaterialNode, PrepareMaterialBindGroupsNode } from './nodes/index.js';
+import { BoneTextureResource, EnvironmentMap, MaterialUniforms, MeshMaterialBindGroups, MeshMaterialPipelines, MeshMaterials, MorphTargetTextures } from './resources/index.js';
 
 export class MeshMaterialPlugin extends Plugin {
   /**
@@ -19,13 +18,18 @@ export class MeshMaterialPlugin extends Plugin {
   init(renderer, renderDevice) {
     renderer.setResource(new MeshMaterialPipelines())
     renderer.setResource(new MaterialUniforms())
+    renderer.setResource(new MeshMaterials())
+    renderer.setResource(new MeshMaterialBindGroups())
     renderer.setResource(new EnvironmentMap())
     if (!renderer.getResource(BoneTextureResource)) {
       renderer.setResource(new BoneTextureResource(renderDevice.limits))
     }
     renderer.setResource(new MorphTargetTextures(renderDevice.limits))
     renderer.renderGraph.addNode(MeshMaterialNode.name, new MeshMaterialNode())
+    renderer.renderGraph.addNode(PrepareMaterialBindGroupsNode.name, new PrepareMaterialBindGroupsNode())
     renderer.renderGraph.addDependency(CameraViewNode.name, MeshMaterialNode.name)
+    renderer.renderGraph.addDependency(MeshMaterialNode.name, PrepareMaterialBindGroupsNode.name)
+    renderer.renderGraph.addDependency(PrepareMaterialBindGroupsNode.name, SortViewsNode.name)
     renderer.renderGraph.addDependency(MeshMaterialNode.name, SortViewsNode.name)
   }
 }
@@ -36,7 +40,7 @@ export class MeshMaterialPlugin extends Plugin {
  * @param {WebGLRenderer} renderer
  * @param {MeshMaterialPipelines} pipelines
  * @param {import("../../renderer/index.js").View} view
- * @returns {RenderItem | undefined}
+ * @returns {MeshRenderItem | undefined}
  */
 export function createMeshMaterialRenderItem(object, device, renderer, pipelines, view) {
   if (!(object instanceof MeshMaterial3D)) {
@@ -47,6 +51,7 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
   const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
   const morphTargetTextures = renderer.getResource(MorphTargetTextures)
   const { material, mesh, transform } = object
+  const materials = renderer.getResource(MeshMaterials)
   const skinTextureState = object.skin ? getSkinTextureState(renderer, object.skin) : undefined
   const morphTextureState = mesh.morphTargets.length > 0
     ? getMorphTextureState(morphTargetTextures, mesh)
@@ -55,6 +60,8 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
 
   assert(viewObject, "View object missing")
   assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  assert(materials, "MeshMaterials resource missing")
+  materials.add(material)
 
   const gpuMesh = caches.getMesh(device, mesh, attributes)
   const meshBits = createPipelineBitsFromMesh(mesh, object)
@@ -138,7 +145,6 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
   if (pipeline && morphTextureState && morphTargetTextures && !pipeline.layout.getBindGroupLayout(3)) {
     pipeline.layout.setBindGroupLayout(3, morphTargetTextures.getBindGroupLayout(device))
   }
-  const materialBindGroup = pipeline ? createMaterialBindGroup(device, renderer, pipeline, material, view) : undefined
   const meshInstance = new MeshInstanceUniform({
     transform: transform.world,
     skinIndex: skinTextureState ? skinTextureState.slot.index : 0,
@@ -147,8 +153,8 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
     morphWeights: object.morphWeights
   })
 
-  const item = new RenderItem({
-    bindGroup: materialBindGroup,
+  const item = new MeshRenderItem({
+    material,
     morphBindGroup: morphTextureState && morphTargetTextures
       ? morphTargetTextures.getBindGroup(device, renderer, mesh)
       : undefined,
@@ -160,92 +166,6 @@ export function createMeshMaterialRenderItem(object, device, renderer, pipelines
   })
 
   return item
-}
-
-/**
- * @param {WebGLRenderDevice} device
- * @param {WebGLRenderer} renderer
- * @param {WebGLRenderPipeline} pipeline
- * @param {import("../../material/index.js").RawMaterial} material
- * @param {import("../../renderer/index.js").View} view
- * @returns {import("../../core/index.js").WebGLBindGroup | undefined}
- */
-function createMaterialBindGroup(device, renderer, pipeline, material, view) {
-  const { caches, defaults } = renderer
-  const materialUniforms = renderer.getResource(MaterialUniforms)
-  const viewBindGroups = renderer.getResource(ViewBindGroups)
-  /**
-   * @type {Array<{
-   *   binding: number,
-   *   layout: import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry,
-   *   entry: import("../../core/webgl/descriptors.js").WebGLBindGroupEntry
-   * }>}
-   */
-  const bindings = []
-  const materialBlockLayout = pipeline.uniformBlocks.get("MaterialBlock")
-  let binding = 0
-
-  assert(materialUniforms, "MaterialUniforms resource missing")
-  assert(viewBindGroups, "ViewBindGroups resource missing")
-
-  const viewObject = view.object
-
-  assert(viewObject, "View object missing")
-  const viewBindGroup = viewBindGroups.getOrSet(device, viewObject)
-
-  assert(viewBindGroup.layout, "View bind group layout missing")
-
-  if (!pipeline.layout.getBindGroupLayout(0)) {
-    pipeline.layout.setBindGroupLayout(0, viewBindGroup.layout)
-  }
-
-  if (materialBlockLayout) {
-    const materialBuffer = materialUniforms.setData(material, materialBlockLayout.size)
-    const gpuBuffer = caches.getUniformBuffer(device, materialBuffer)
-
-    bindings.push(createBufferBinding(binding++, "MaterialBlock", gpuBuffer, materialBlockLayout.size))
-  }
-
-  for (const [name, _unusedBinding, texture, sampler] of material.getTextures()) {
-    if (!hasActiveTextureUniform(pipeline, name)) {
-      continue
-    }
-
-    const sourceTexture = texture ?? defaults.texture2D
-    const gpuTexture = caches.getTexture(device, sourceTexture)
-    const sourceSampler = sampler ?? defaults.textureSampler
-    const gpuSampler = caches.getSampler(device, sourceSampler)
-
-    bindings.push(...createTextureSamplerBindings(
-      binding,
-      name,
-      gpuTexture,
-      gpuSampler,
-      sourceTexture.type,
-      sourceTexture.format
-    ))
-    binding += 2
-  }
-
-  if (bindings.length === 0) {
-    return undefined
-  }
-
-  let bindGroupLayout = pipeline.layout.getBindGroupLayout(1)
-
-  if (!bindGroupLayout) {
-    bindGroupLayout = device.createBindGroupLayout({
-      label: `${material.constructor.name}BindGroupLayout`,
-      entries: bindings.map((binding) => binding.layout)
-    })
-    pipeline.layout.setBindGroupLayout(1, bindGroupLayout)
-  }
-
-  return device.createBindGroup({
-    label: `${material.constructor.name}BindGroup`,
-    layout: bindGroupLayout,
-    entries: bindings.map((binding) => binding.entry)
-  })
 }
 
 /**
@@ -271,158 +191,6 @@ function getSkinTextureState(renderer, skin) {
 function getMorphTextureState(resource, mesh) {
   assert(resource, "MorphTargetTextures resource missing")
   return resource.getOrAllocate(mesh)
-}
-
-/**
- * @param {number} binding
- * @param {string} name
- * @param {import("../../core/resources/index.js").GPUBuffer} buffer
- * @param {number} minBindingSize
- * @returns {{
- *   binding: number,
- *   layout: import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry,
- *   entry: import("../../core/webgl/descriptors.js").WebGLBindGroupEntry
- * }}
- */
-function createBufferBinding(binding, name, buffer, minBindingSize) {
-  return {
-    binding,
-    layout: {
-      binding,
-      name,
-      visibility: 0,
-      buffer: {
-        type: /** @type {"uniform"} */ ("uniform"),
-        minBindingSize
-      }
-    },
-    entry: {
-      binding,
-      resource: {
-        buffer
-      }
-    }
-  }
-}
-
-/**
- * @param {number} binding
- * @param {string} name
- * @param {import("../../core/resources/index.js").GPUTexture} texture
- * @param {TextureType} type
- * @param {TextureFormat} format
- * @returns {{
- *   binding: number,
- *   layout: import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry,
- *   entry: import("../../core/webgl/descriptors.js").WebGLBindGroupEntry
- * }}
- */
-function createTextureBinding(binding, name, texture, type, format) {
-  return {
-    binding,
-    layout: {
-      binding,
-      name,
-      visibility: 0,
-      texture: {
-        viewDimension: textureViewDimensionFromType(type),
-        sampleType: textureSampleTypeFromFormat(format)
-      }
-    },
-    entry: {
-      binding,
-      resource: {
-        texture
-      }
-    }
-  }
-}
-
-/**
- * @param {number} binding
- * @param {string} name
- * @param {import("../../core/resources/index.js").GPUSampler} sampler
- * @returns {{
- *   binding: number,
- *   layout: import("../../core/layouts/bindgroup.js").WebGLBindGroupLayoutEntry,
- *   entry: import("../../core/webgl/descriptors.js").WebGLBindGroupEntry
- * }}
- */
-function createSamplerBinding(binding, name, sampler) {
-  return {
-    binding,
-    layout: {
-      binding,
-      name,
-      visibility: 0,
-      sampler: {
-        type: sampler.type
-      }
-    },
-    entry: {
-      binding,
-      resource: {
-        sampler
-      }
-    }
-  }
-}
-
-/**
- * @param {number} binding
- * @param {string} name
- * @param {import("../../core/resources/index.js").GPUTexture} texture
- * @param {import("../../core/resources/index.js").GPUSampler} sampler
- * @param {TextureType} type
- * @param {TextureFormat} format
- */
-function createTextureSamplerBindings(binding, name, texture, sampler, type, format) {
-  return [
-    createTextureBinding(binding, name, texture, type, format),
-    createSamplerBinding(binding + 1, name, sampler)
-  ]
-}
-
-/**
- * @param {WebGLRenderPipeline} pipeline
- * @param {string} name
- */
-function hasActiveTextureUniform(pipeline, name) {
-  return pipeline.uniforms.get(name)?.texture_unit !== undefined
-}
-
-/**
- * @param {TextureType} type
- * @returns {"2d" | "2d-array" | "cube" | "3d"}
- */
-function textureViewDimensionFromType(type) {
-  switch (type) {
-    case TextureType.Texture2DArray:
-      return "2d-array"
-    case TextureType.TextureCubeMap:
-      return "cube"
-    case TextureType.Texture3D:
-      return "3d"
-    default:
-      return "2d"
-  }
-}
-
-/**
- * @param {TextureFormat} format
- * @returns {"float" | "depth"}
- */
-function textureSampleTypeFromFormat(format) {
-  switch (format) {
-    case TextureFormat.Depth16Unorm:
-    case TextureFormat.Depth24Plus:
-    case TextureFormat.Depth24PlusStencil8:
-    case TextureFormat.Depth32Float:
-    case TextureFormat.Depth32FloatStencil8:
-      return "depth"
-    default:
-      return "float"
-  }
 }
 
 /**
