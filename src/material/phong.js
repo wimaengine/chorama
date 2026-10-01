@@ -1,7 +1,7 @@
 import { Material } from "./material.js"
 import { AlphaMaskMode, OpaqueMode } from "./alphablend.js"
 import { Color } from "../math/index.js"
-import { basicVertex, phongFragment } from "../shader/index.js"
+import { basicVertex, phongFragment, phongPrepassFragment } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
 
 export class PhongMaterial extends Material {
@@ -54,6 +54,11 @@ export class PhongMaterial extends Material {
    */
   fragment() {
     return phongFragment
+  }
+
+  /** @override */
+  prepassFragment() {
+    return phongPrepassFragment
   }
 
   /** @override */

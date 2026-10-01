@@ -1,6 +1,6 @@
 import { Material } from "./material.js"
 import { OpaqueMode } from "./alphablend.js"
-import { basicVertex, normalFragment} from "../shader/index.js"
+import { basicVertex, normalFragment, normalPrepassFragment} from "../shader/index.js"
 
 export class NormalMaterial extends Material {
 
@@ -25,6 +25,11 @@ export class NormalMaterial extends Material {
    */
   fragment() {
     return normalFragment
+  }
+
+  /** @override */
+  prepassFragment() {
+    return normalPrepassFragment
   }
 
   /**

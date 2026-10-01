@@ -1,6 +1,6 @@
 import { Color } from "../math/index.js";
 import { AlphaMaskMode, OpaqueMode } from "./alphablend.js";
-import { basicVertex, standardFragment } from "../shader/index.js";
+import { basicVertex, standardFragment, standardPrepassFragment } from "../shader/index.js";
 import { Sampler, Texture } from "../texture/index.js";
 import { Material } from "./material.js";
 
@@ -215,6 +215,11 @@ export class StandardMaterial extends Material {
    */
   fragment() {
     return standardFragment
+  }
+
+  /** @override */
+  prepassFragment() {
+    return standardPrepassFragment
   }
 
   /** @override */

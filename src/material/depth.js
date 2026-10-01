@@ -1,6 +1,6 @@
 import { Material } from "./material.js"
 import { OpaqueMode } from "./alphablend.js"
-import { basicVertex, depthFragment } from "../shader/index.js"
+import { basicVertex, depthFragment, depthPrepassFragment } from "../shader/index.js"
 import { Texture } from "../texture/index.js"
 import { Sampler } from "../texture/sampler.js"
 import { TextureFilter } from "../constants/texture.js"
@@ -52,6 +52,11 @@ export class DepthMaterial extends Material {
    */
   fragment() {
     return depthFragment
+  }
+
+  /** @override */
+  prepassFragment() {
+    return depthPrepassFragment
   }
 
   /**

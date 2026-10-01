@@ -1,7 +1,7 @@
 import { Material } from "./material.js"
 import { AlphaMaskMode, OpaqueMode } from "./alphablend.js"
 import { Color } from "../math/index.js"
-import { basicVertex, lambertFragment } from "../shader/index.js"
+import { basicVertex, lambertFragment, lambertPrepassFragment } from "../shader/index.js"
 import { Texture, Sampler } from "../texture/index.js"
 
 export class LambertMaterial extends Material {
@@ -51,6 +51,11 @@ export class LambertMaterial extends Material {
    */
   fragment() {
     return lambertFragment
+  }
+
+  /** @override */
+  prepassFragment() {
+    return lambertPrepassFragment
   }
 
   /** @override */

@@ -295,6 +295,11 @@ function createPrePassPipeline(
       defines: new Map(renderer.defines),
       includes: new Map(renderer.includes)
     })
+    fragmentShader.defines.set("NORMAL_PASS", "")
+
+    for (const [name, value] of vertexShader.defines) {
+      fragmentShader.defines.set(name, value)
+    }
 
     fragment = {
       source: device.createShaderModule({

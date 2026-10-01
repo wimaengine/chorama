@@ -1,5 +1,5 @@
 import { CullFace, FrontFaceDirection } from "../constants/others.js"
-import { basicVertex, prepassFragment as defaultPrepassFragment } from "../shader/index.js"
+import { basicVertex } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
 import { abstractClass, abstractMethod } from "../utils/index.js"
 
@@ -49,7 +49,7 @@ export class RawMaterial {
    * @returns {string}
    */
   prepassFragment() {
-    return defaultPrepassFragment
+    abstractMethod(this, RawMaterial, RawMaterial.prototype.prepassFragment.name)
   }
 
   /**

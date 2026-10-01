@@ -5,7 +5,6 @@ import { DirectionalLight, PointLight, SpotLight, MeshMaterial3D, Object3D } fro
 import { Attribute } from "../../../mesh/index.js"
 import { MeshRenderItem, ViewBindGroups, Views, MeshInstanceBindGroups, MeshInstanceUniform } from "../../../renderer/index.js"
 import { WebGLRenderer } from "../../../renderer/index.js"
-import { basicVertex } from "../../../shader/index.js"
 import { ShadowPipelines } from "../resources/index.js"
 import { BoneTextureResource, MeshMaterialBindGroups, MorphTargetTextures } from "../../meshmaterial/resources/index.js"
 
@@ -181,10 +180,38 @@ function getRenderPipelineId(
   const viewBindGroup = viewBindGroups.getOrSet(device, viewObject)
   assert(viewBindGroup.layout, "View bind group layout missing")
   const vertexShader = new Shader({
-    source: basicVertex,
+    source: material.prepassVertex(),
     defines: new Map(globalDefines),
     includes: new Map(includes)
   })
+  const fragmentShader = new Shader({
+    source: material.prepassFragment(),
+    defines: new Map(globalDefines),
+    includes: new Map(includes)
+  })
+
+  vertexShader.defines.set("SHADOWPASS", "")
+  fragmentShader.defines.set("SHADOWPASS", "")
+
+  if (layout.hasAttribute(Attribute.UV)) {
+    vertexShader.defines.set("VERTEX_UVS", "")
+  }
+
+  if (layout.hasAttribute(Attribute.Color)) {
+    vertexShader.defines.set("VERTEX_COLORS", "")
+  }
+
+  if (layout.hasAttribute(Attribute.Normal)) {
+    vertexShader.defines.set("VERTEX_NORMALS", "")
+  }
+
+  if (layout.hasAttribute(Attribute.Tangent)) {
+    vertexShader.defines.set("VERTEX_TANGENTS", "")
+  }
+
+  for (const [name, value] of vertexShader.defines) {
+    fragmentShader.defines.set(name, value)
+  }
 
   if (skinned) {
     vertexShader.defines.set("SKINNED", "")
@@ -211,7 +238,14 @@ function getRenderPipelineId(
     vertex: device.createShaderModule({
       code: vertexShader.compile(),
       stage: "vertex"
-    })
+    }),
+    fragment: {
+      source: device.createShaderModule({
+        code: fragmentShader.compile(),
+        stage: "fragment"
+      }),
+      targets: []
+    }
   }
   const [, newId] = caches.createRenderPipeline(device, descriptor)
 
