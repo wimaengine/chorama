@@ -74,18 +74,18 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
   const prePassTexture = prePassTextures.get(camera)
   const sourceDepthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
   const viewBindGroupState = viewBindGroups.getOrSet(device, camera)
+  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(camera)
+  const phaseState = meshInstanceEntry.opaque
+  const meshItems = opaqueStage.getMeshItems(view)
 
   if (
     !renderDepth || !renderTarget ||
     !prePassTexture || !prePassTexture.depth ||
-    !sourceDepthTexture || !viewBindGroupState
+    !sourceDepthTexture || !viewBindGroupState ||
+    meshItems.length === 0 || !phaseState.bindGroup
   ) {
     return
   }
-
-  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(camera)
-  const phaseState = meshInstanceEntry.opaque
-  assert(phaseState.bindGroup, "Mesh instance phase bind group missing")
 
   const commandEncoder = device.createCommandEncoder()
   let normalTexture
@@ -120,7 +120,6 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
   const viewBindGroup = viewBindGroupState.createBindGroup(device, caches)
-  const meshItems = opaqueStage.getMeshItems(view)
   const pipelineKind = renderNormals ? "normal" : "depth"
 
   pass.setBindGroup(0, viewBindGroup, [dynamicOffset])
