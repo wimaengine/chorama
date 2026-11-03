@@ -225,6 +225,10 @@ export function createMeshMaterialRenderItem({
 
   const { caches, attributes } = renderer
   const { material, mesh, transform } = object
+  if (!mesh.attributes.has(Attribute.Position3D.name)) {
+    console.warn("MeshMaterial3D requires a mesh with a position3d attribute; skipping render item")
+    return
+  }
   let skinTextureState
   if (object.skin) {
     skinTextureState = { resource: boneTexture, slot: boneTexture.getOrAllocate(object.skin) }

@@ -25,7 +25,7 @@ export class LightNode {
 }
 
 /**
- * @param {import("../../../objects/index.js").Object3D[]} objects
+ * @param {import("../../../objects/index.js").ObjectBase[]} objects
  * @param {import("../../../renderer/index.js").WebGLRenderer} renderer
  */
 function updateLights(objects, renderer) {

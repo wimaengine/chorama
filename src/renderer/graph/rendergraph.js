@@ -10,7 +10,7 @@ import { assert } from "../../utils/index.js"
 /**
  * @typedef RenderGraphContext
  * @property {import("../renderer.js").WebGLRenderer} renderer
- * @property {import("../../objects/index.js").Object3D[]} objects
+ * @property {import("../../objects/index.js").ObjectBase[]} objects
  * @property {import("../../core/index.js").WebGLRenderDevice} renderDevice
  */
 

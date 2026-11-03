@@ -26,6 +26,38 @@ export class MeshInstanceUniform {
   static BlockSize = (16 + 4 + MeshInstanceUniform.MorphTargetWeightVectors * 4) * Float32Array.BYTES_PER_ELEMENT
 
   /**
+   * Creates a mesh-instance payload from a 2D affine transform.
+   *
+   * The 2D transform occupies the XY plane and the object's z-index becomes
+   * the promoted affine's Z translation so the existing MeshInstanceBlock can
+   * be reused by the 2D pipeline.
+   *
+   * @param {import("hisabati").Affine2} transform
+   * @param {number} [zIndex=0]
+   * @returns {MeshInstanceUniform}
+   */
+  static from2D(transform, zIndex = 0) {
+    const promotedTransform = new Affine3(
+      transform.a,
+      transform.c,
+      0,
+      transform.x,
+      transform.b,
+      transform.d,
+      0,
+      transform.y,
+      0,
+      0,
+      1,
+      zIndex
+    )
+
+    return new MeshInstanceUniform({
+      transform: promotedTransform
+    })
+  }
+
+  /**
    * Current world transform for the instance.
    * @type {Affine3}
    */

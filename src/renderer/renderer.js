@@ -1,5 +1,5 @@
 import { WebGLRenderDevice } from "../core/index.js"
-import { Object2D, Object3D } from "../objects/index.js"
+import { Object2D, Object3D, ObjectBase } from "../objects/index.js"
 import { colorShaderLib, commonShaderLib, lightShaderLib, mathShaderLib, meshShaderLib, tonemapShaderLib } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
 import { TextureFilter, TextureType } from "../constants/index.js"
@@ -117,7 +117,7 @@ export class WebGLRenderer {
   }
 
   /**
-   * @param {Object3D[]} objects
+   * @param {ObjectBase[]} objects
    * @param {WebGLRenderDevice} renderDevice
    */
   render(objects, renderDevice) {

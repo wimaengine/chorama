@@ -1,5 +1,7 @@
-import { Attribute, Mesh } from "../mesh/index.js"
+import { Mesh } from "../mesh/index.js"
+import { BasicMaterial } from "../material/basic.js"
 import { RawMaterial } from "../material/index.js"
+import { Object2D } from "./object2d.js"
 import { Object3D } from "./object3d.js"
 import { Affine3 } from "../math/index.js"
 import { Bone3D } from "./bone.js";
@@ -75,13 +77,6 @@ export class MeshMaterial3D extends Object3D {
    */
   constructor(mesh, material) {
     super()
-
-    const hasPosition3D = mesh.attributes.has(Attribute.Position3D.name)
-    const hasPosition2D = mesh.attributes.has(Attribute.Position2D.name)
-    if (!hasPosition3D || hasPosition2D) {
-      throw new Error("MeshMaterial3D requires a mesh with only a position3d attribute")
-    }
-
     this.mesh = mesh
     this.material = material
   }
@@ -98,6 +93,49 @@ export class MeshMaterial3D extends Object3D {
     newMesh.material = this.material
     newMesh.skin = this.skin?.clone()
     newMesh.morphWeights = this.morphWeights?.slice()
+
+    return newMesh
+  }
+}
+
+/**
+ * A 2D mesh object using the basic material pipeline.
+ */
+export class MeshMaterial2D extends Object2D {
+  /**
+   * @type {Mesh}
+   */
+  mesh
+
+  /**
+   * @type {BasicMaterial}
+   */
+  material
+
+  /**
+   * @param {Mesh} mesh
+   * @param {BasicMaterial} material
+   */
+  constructor(mesh, material) {
+    super()
+    if (!(material instanceof BasicMaterial)) {
+      throw new Error("MeshMaterial2D requires a BasicMaterial")
+    }
+
+    this.mesh = mesh
+    this.material = material
+  }
+
+  /**
+   * @override
+   * @param {Map<Object2D, Object2D>} [entityMap]
+   */
+  clone(entityMap) {
+    const newMesh = /** @type {this} */ (new MeshMaterial2D(this.mesh, this.material))
+    newMesh.copy(this, entityMap)
+
+    newMesh.mesh = this.mesh
+    newMesh.material = this.material
 
     return newMesh
   }
