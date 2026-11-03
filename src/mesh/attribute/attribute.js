@@ -37,6 +37,12 @@ export class Attribute {
     VertexFormat.Float32x3
   )
 
+  static Position2D = new Attribute(
+    'position2d',
+    8,
+    VertexFormat.Float32x2
+  )
+
   static UV = new Attribute(
     'uv',
     1,
