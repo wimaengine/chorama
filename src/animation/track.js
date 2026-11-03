@@ -1,5 +1,5 @@
 import { Quaternion, lerp } from "../math/index.js"
-import { MeshMaterial3D, Object3D } from "../objects/index.js"
+import { MeshMaterial3D, Object2D, Object3D } from "../objects/index.js"
 
 /**
  * Animation interpolation modes.
@@ -262,6 +262,10 @@ export class PositionAnimationTrack extends AnimationTrack {
    * @override
    */
   apply(object, values) {
+    if (!(object instanceof Object3D)) {
+      return
+    }
+
     object.transform.position.set(
       /** @type {number} */ (values[0]),
       /** @type {number} */ (values[1]),
@@ -344,6 +348,10 @@ export class OrientationAnimationTrack extends AnimationTrack {
    * @override
    */
   apply(object, values) {
+    if (!(object instanceof Object3D)) {
+      return
+    }
+
     object.transform.orientation.set(
       /** @type {number} */ (values[0]),
       /** @type {number} */ (values[1]),
@@ -364,10 +372,78 @@ export class ScaleAnimationTrack extends AnimationTrack {
    * @override
    */
   apply(object, values) {
+    if (!(object instanceof Object3D)) {
+      return
+    }
+
     object.transform.scale.set(
       /** @type {number} */ (values[0]),
       /** @type {number} */ (values[1]),
       /** @type {number} */ (values[2])
+    )
+  }
+}
+
+export class Position2DAnimationTrack extends AnimationTrack {
+  constructor() {
+    super(2)
+  }
+
+  /**
+   * @param {Object2D} object
+   * @param {number[]} values
+   * @override
+   */
+  apply(object, values) {
+    if (!(object instanceof Object2D)) {
+      return
+    }
+
+    object.transform.position.set(
+      /** @type {number} */ (values[0]),
+      /** @type {number} */ (values[1])
+    )
+  }
+}
+
+export class Rotation2DAnimationTrack extends AnimationTrack {
+  constructor() {
+    super(1)
+  }
+
+  /**
+   * @param {Object2D} object
+   * @param {number[]} values
+   * @override
+   */
+  apply(object, values) {
+    if (!(object instanceof Object2D)) {
+      return
+    }
+
+    const angle = /** @type {number} */ (values[0])
+    object.transform.rotation.set(Math.cos(angle), Math.sin(angle))
+  }
+}
+
+export class Scale2DAnimationTrack extends AnimationTrack {
+  constructor() {
+    super(2)
+  }
+
+  /**
+   * @param {Object2D} object
+   * @param {number[]} values
+   * @override
+   */
+  apply(object, values) {
+    if (!(object instanceof Object2D)) {
+      return
+    }
+
+    object.transform.scale.set(
+      /** @type {number} */ (values[0]),
+      /** @type {number} */ (values[1])
     )
   }
 }

@@ -1,9 +1,9 @@
-import { Object3D } from "../objects/object3d.js"
+import { Object2D, Object3D, ObjectBase } from "../objects/index.js"
 import { AnimationClip } from "./clip.js"
 import { Playback } from "./playback.js"
 import { PlaybackRepeat } from "./repeat.js"
 
-export class AnimationPlayer extends Object3D {
+export class AnimationPlayer extends ObjectBase {
   /**
    * @type {Map<AnimationClip, Playback>}
    */
@@ -27,7 +27,7 @@ export class AnimationPlayer extends Object3D {
 
   /**
    * @param {this} object
-   * @param {Map<Object3D, Object3D>} [entityMap]
+   * @param {Map<ObjectBase, ObjectBase>} [entityMap]
    * @returns {this}
    * @override
    */
@@ -48,7 +48,7 @@ export class AnimationPlayer extends Object3D {
   }
 
   /**
-   * @param {Map<Object3D, Object3D>} [entityMap]
+   * @param {Map<ObjectBase, ObjectBase>} [entityMap]
    * @returns {this}
    * @override
    */
@@ -216,13 +216,9 @@ export class AnimationPlayer extends Object3D {
       return this
     }
 
-    const targetsByName = /** @type {Map<string, Object3D[]>} */ (new Map())
+    const targetsByName = /** @type {Map<string, ObjectBase[]>} */ (new Map())
     const targetRoot = this.parent ?? this
     targetRoot.traverseDFS((object) => {
-      if (!(object instanceof Object3D)) {
-        return true
-      }
-
       if (object.name.length > 0) {
         const matches = targetsByName.get(object.name)
 
@@ -260,7 +256,7 @@ export class AnimationPlayer extends Object3D {
           }
 
           for (let i = 0; i < targets.length; i++) {
-            const target = /** @type {Object3D} */ (targets[i])
+            const target = /** @type {ObjectBase} */ (targets[i])
             track.apply(target, values)
           }
         }
@@ -268,7 +264,9 @@ export class AnimationPlayer extends Object3D {
     })
 
     this.traverseDFS((object) => {
-      object.update()
+      if (object instanceof Object2D || object instanceof Object3D) {
+        object.update()
+      }
       return true
     })
 
