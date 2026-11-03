@@ -1,4 +1,43 @@
-import { Vector3, Quaternion, Affine3 } from "hisabati"
+import { Vector2, Vector3, Rotary, Quaternion, Affine2, Affine3 } from "hisabati"
+
+export class Transform2D {
+  constructor() {
+    this.world = new Affine2()
+    this.position = new Vector2()
+    this.rotation = new Rotary()
+    this.scale = new Vector2(1, 1)
+  }
+
+  /**
+   * @param {Transform2D} [parent]
+   */
+  updateMatrix(parent) {
+    this.world.compose(
+      this.position,
+      this.rotation,
+      this.scale
+    )
+    if (parent) {
+      Affine2.multiply(parent.world, this.world, this.world)
+    }
+  }
+
+  /**
+   * @param {Transform2D} other
+   */
+  copy(other) {
+    this.position.copy(other.position)
+    this.rotation.copy(other.rotation)
+    this.scale.copy(other.scale)
+    this.world.copy(other.world)
+
+    return this
+  }
+
+  clone() {
+    return new Transform2D().copy(this)
+  }
+}
 
 export class Transform3D {
   constructor() {

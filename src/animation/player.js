@@ -219,6 +219,10 @@ export class AnimationPlayer extends Object3D {
     const targetsByName = /** @type {Map<string, Object3D[]>} */ (new Map())
     const targetRoot = this.parent ?? this
     targetRoot.traverseDFS((object) => {
+      if (!(object instanceof Object3D)) {
+        return true
+      }
+
       if (object.name.length > 0) {
         const matches = targetsByName.get(object.name)
 
