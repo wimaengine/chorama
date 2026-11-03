@@ -12,7 +12,7 @@ import { MeshMaterialBindGroups, MorphTargetTextures } from "../../meshmaterial/
 const MATERIAL_BIND_GROUP_INDEX = 1
 const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
-export class CameraPrePassNode {
+export class CameraPrePass3DNode {
   subgraph() {
     return undefined
   }
@@ -75,7 +75,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
   const sourceDepthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
   const viewBindGroupState = viewBindGroups.getOrSet(device, camera)
   const meshInstanceEntry = meshInstanceBindGroups.getOrSet(camera)
-  const phaseState = meshInstanceEntry.opaque
+  const phaseState = meshInstanceEntry.opaque3D
   const meshItems = opaqueStage.getMeshItems(view)
 
   if (

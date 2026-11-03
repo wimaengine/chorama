@@ -80,9 +80,12 @@ export class PrepareMeshInstanceBindGroupsNode {
 
       const entry = meshInstanceBindGroups.getOrSet(object)
 
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque, view.opaque3D, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask, view.alphaMask3D, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent, view.transparent3D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque3D, view.opaque3D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask3D, view.alphaMask3D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent3D, view.transparent3D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque2D, view.opaque2D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask2D, view.alphaMask2D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent2D, view.transparent2D, view)
     }
   }
 }

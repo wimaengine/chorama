@@ -6,8 +6,8 @@ import { MeshInstanceUniform } from "./meshinstanceuniform.js"
 /**
  * Shared per-view mesh-instance bind-group cache.
  *
- * Each view entry owns independent opaque, alphaMask, and transparent phase
- * buffers so render stages can reuse a cached bind group for their mesh data.
+ * Each view entry owns independent 3D and 2D phase buffers so render stages
+ * can reuse a cached bind group for their mesh data.
  */
 export class MeshInstanceBindGroups {
   /**
@@ -95,25 +95,43 @@ export class MeshInstanceBindGroupEntry {
   /**
    * @type {MeshInstancePhaseBindGroup}
    */
-  opaque
+  opaque3D
 
   /**
    * @type {MeshInstancePhaseBindGroup}
    */
-  alphaMask
+  alphaMask3D
 
   /**
    * @type {MeshInstancePhaseBindGroup}
    */
-  transparent
+  transparent3D
+
+  /**
+   * @type {MeshInstancePhaseBindGroup}
+   */
+  opaque2D
+
+  /**
+   * @type {MeshInstancePhaseBindGroup}
+   */
+  alphaMask2D
+
+  /**
+   * @type {MeshInstancePhaseBindGroup}
+   */
+  transparent2D
 
   /**
    * @param {number} stride
    */
   constructor(stride) {
-    this.opaque = new MeshInstancePhaseBindGroup(stride)
-    this.alphaMask = new MeshInstancePhaseBindGroup(stride)
-    this.transparent = new MeshInstancePhaseBindGroup(stride)
+    this.opaque3D = new MeshInstancePhaseBindGroup(stride)
+    this.alphaMask3D = new MeshInstancePhaseBindGroup(stride)
+    this.transparent3D = new MeshInstancePhaseBindGroup(stride)
+    this.opaque2D = new MeshInstancePhaseBindGroup(stride)
+    this.alphaMask2D = new MeshInstancePhaseBindGroup(stride)
+    this.transparent2D = new MeshInstancePhaseBindGroup(stride)
   }
 
 }

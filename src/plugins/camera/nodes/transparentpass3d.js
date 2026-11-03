@@ -23,11 +23,12 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   }
 
   const camera = view.object
-  const opaqueStage = view.opaque3D
-  const alphaMaskStage = view.alphaMask3D
+  const transparentStage = view.transparent3D
 
-  const context = device.context
-  const caches = renderer.caches
+  if (transparentStage.meshItems.length === 0 && transparentStage.nonMeshItems.length === 0) {
+    return
+  }
+
   const renderTarget = view.renderTarget
   const cameraColorTarget = colorTargets.get(camera)
 
@@ -35,16 +36,12 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   if (!cameraColorTarget) {
     return
   }
-  const object = camera
 
   const colorTarget = cameraColorTarget.readTarget
 
-  renderTarget.changed()
-
+  const caches = renderer.caches
   const width = colorTarget.width
   const height = colorTarget.height
-  const clearColor = camera.clearColor
-  const clearValue = clearColor ? /** @type {const} */ ([clearColor.r, clearColor.g, clearColor.b, clearColor.a]) : undefined
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
   const pass = device.createCommandEncoder().beginRenderPass({
@@ -54,34 +51,30 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
       texture: caches.getTexture(device, colorTarget),
       mipLevel: view.colorMipmapLevel,
       layer: view.colorLayer,
-      loadOp: clearValue ? "clear" : "load",
-      storeOp: "store",
-      clearValue
+      loadOp: "load",
+      storeOp: "store"
     }],
     depthStencilAttachment: depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
       texture: depthTexture,
       mipLevel: view.depthMipmapLevel,
       layer: view.depthLayer,
-      depthLoadOp: camera.clearDepth !== undefined ? "clear" : "load",
+      depthLoadOp: "load",
       depthStoreOp: "store",
-      depthClearValue: camera.clearDepth
+      depthReadOnly: true
     }) : undefined,
     depthRange: view.depthRange
   })
-
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
 
-  pass.setBindGroup(0, viewBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
+  pass.setBindGroup(0, viewBindGroups.getOrSet(device, camera).createBindGroup(device, caches), [dynamicOffset])
 
-  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
-  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
-
-  alphaMaskStage.renderItems(pass, context, caches, meshInstanceEntry.alphaMask, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
+  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(camera)
+  transparentStage.renderItems(pass, device.context, caches, meshInstanceEntry.transparent3D, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
   pass.end()
 }
 
-export class CameraOpaquePassNode {
+export class CameraTransparentPass3DNode {
   subgraph() {
     return undefined
   }
@@ -107,7 +100,6 @@ export class CameraOpaquePassNode {
 
     for (let i = 0; i < viewsItems.length; i++) {
       const view = /**@type {View}*/(viewsItems[i])
-
       renderItems(view, i, renderDevice, renderer, colorTargets, viewBindGroups, meshInstanceBindGroups, materialBindGroups)
     }
   }

@@ -1,5 +1,5 @@
 import { Plugin, SortViewsNode, PrepareMeshInstanceBindGroupsNode, WebGLRenderer } from "../../renderer/index.js";
-import { BloomNode, CameraOpaquePassNode, CameraPrePassNode, CameraTransparentPassNode, CameraViewNode, CanvasBlitNode, FogNode, TonemappingNode } from "./nodes/index.js";
+import { BloomNode, CameraOpaquePass2DNode, CameraOpaquePass3DNode, CameraPrePass3DNode, CameraTransparentPass2DNode, CameraTransparentPass3DNode, CameraViewNode, CanvasBlitNode, FogNode, TonemappingNode } from "./nodes/index.js";
 import { Texture2DPool } from "./RenderTarget2DPool.js";
 import { BloomPipeline, BloomUniform, CameraColorTargets, CanvasBlitPipeline, FogPipeline, FogUniform, GaussianBlurPipeline, PrePassPipeline, PrePassTextures, TonemappingPipeline, TonemappingUniform } from "./resources/index.js";
 
@@ -24,20 +24,24 @@ export class CameraPlugin extends Plugin {
     renderer.setResource(new GaussianBlurPipeline(renderer, renderDevice))
     renderer.renderGraph.addNode(CameraViewNode.name, new CameraViewNode())
     renderer.renderGraph.addNode(CanvasBlitNode.name, new CanvasBlitNode())
-    renderer.renderGraph.addNode(CameraPrePassNode.name, new CameraPrePassNode())
-    renderer.renderGraph.addNode(CameraOpaquePassNode.name, new CameraOpaquePassNode())
-    renderer.renderGraph.addNode(CameraTransparentPassNode.name, new CameraTransparentPassNode())
+    renderer.renderGraph.addNode(CameraPrePass3DNode.name, new CameraPrePass3DNode())
+    renderer.renderGraph.addNode(CameraOpaquePass3DNode.name, new CameraOpaquePass3DNode())
+    renderer.renderGraph.addNode(CameraTransparentPass3DNode.name, new CameraTransparentPass3DNode())
+    renderer.renderGraph.addNode(CameraOpaquePass2DNode.name, new CameraOpaquePass2DNode())
+    renderer.renderGraph.addNode(CameraTransparentPass2DNode.name, new CameraTransparentPass2DNode())
     renderer.renderGraph.addNode(FogNode.name, new FogNode())
     renderer.renderGraph.addNode(BloomNode.name, new BloomNode())
     renderer.renderGraph.addNode(TonemappingNode.name, new TonemappingNode())
     renderer.renderGraph.addDependency(CameraViewNode.name, SortViewsNode.name)
     renderer.renderGraph.addDependency(SortViewsNode.name, PrepareMeshInstanceBindGroupsNode.name)
-    renderer.renderGraph.addDependency(PrepareMeshInstanceBindGroupsNode.name, CameraPrePassNode.name)
-    renderer.renderGraph.addDependency(CameraPrePassNode.name, CameraOpaquePassNode.name)
-    renderer.renderGraph.addDependency(CameraOpaquePassNode.name, CameraTransparentPassNode.name)
-    renderer.renderGraph.addDependency(CameraTransparentPassNode.name, FogNode.name)
+    renderer.renderGraph.addDependency(PrepareMeshInstanceBindGroupsNode.name, CameraPrePass3DNode.name)
+    renderer.renderGraph.addDependency(CameraPrePass3DNode.name, CameraOpaquePass3DNode.name)
+    renderer.renderGraph.addDependency(CameraOpaquePass3DNode.name, CameraTransparentPass3DNode.name)
+    renderer.renderGraph.addDependency(CameraTransparentPass3DNode.name, CameraOpaquePass2DNode.name)
+    renderer.renderGraph.addDependency(CameraOpaquePass2DNode.name, CameraTransparentPass2DNode.name)
+    renderer.renderGraph.addDependency(CameraTransparentPass2DNode.name, FogNode.name)
     renderer.renderGraph.addDependency(FogNode.name, BloomNode.name)
-    renderer.renderGraph.addDependency(CameraTransparentPassNode.name, BloomNode.name)
+    renderer.renderGraph.addDependency(CameraTransparentPass3DNode.name, BloomNode.name)
     renderer.renderGraph.addDependency(BloomNode.name, TonemappingNode.name)
     renderer.renderGraph.addDependency(TonemappingNode.name, CanvasBlitNode.name)
   }

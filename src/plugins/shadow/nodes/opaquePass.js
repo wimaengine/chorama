@@ -51,7 +51,7 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInst
   pass.setBindGroup(0, viewBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
   const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
-  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
+  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque3D, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
   pass.end()
 }
 

@@ -5,7 +5,7 @@ import {
   ShadowPipelines
 } from "./resources/index.js";
 import { ShadowOccluderNode, ShadowOpaquePassNode, ShadowViewNode } from "./nodes/index.js";
-import { CameraOpaquePassNode } from "../camera/index.js";
+import { CameraOpaquePass3DNode } from "../camera/index.js";
 import { BoneTextureResource } from "../meshmaterial/resources/index.js";
 
 export class ShadowPlugin extends Plugin {
@@ -32,7 +32,7 @@ export class ShadowPlugin extends Plugin {
     renderer.renderGraph.addDependency(ShadowOccluderNode.name, SortViewsNode.name)
     renderer.renderGraph.addDependency(SortViewsNode.name, PrepareMeshInstanceBindGroupsNode.name)
     renderer.renderGraph.addDependency(PrepareMeshInstanceBindGroupsNode.name, ShadowOpaquePassNode.name)
-    renderer.renderGraph.addDependency(ShadowOpaquePassNode.name, CameraOpaquePassNode.name)
+    renderer.renderGraph.addDependency(ShadowOpaquePassNode.name, CameraOpaquePass3DNode.name)
     
   }
 }
