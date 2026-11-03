@@ -47,7 +47,7 @@ const texture = textureLoader.load({
   flipY: true
 })
 const box = new MeshMaterial3D(
-  new CuboidMeshBuilder().build(),
+  new CuboidMeshBuilder().build3d(),
   new LambertMaterial({
     mainTexture: texture
   })

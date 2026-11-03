@@ -21,7 +21,7 @@ export class CylinderMeshBuilder {
     bottom: false
   }
 
-  build() {
+  build3d() {
     const halfHeight = this.height / 2
     const capBuilder = new Circle3DMeshBuilder()
     const transform = new Affine3()
@@ -39,7 +39,7 @@ export class CylinderMeshBuilder {
         new Vector3(1, 1, 1)
       )
       capBuilder.radius = this.radiusTop
-      meshes.push(capBuilder.build().transform(transform))
+      meshes.push(capBuilder.build3d().transform(transform))
     }
     if (!this.openEnds.bottom) {
       transform.compose(
@@ -48,7 +48,7 @@ export class CylinderMeshBuilder {
         new Vector3(1, 1, 1)
       )
       capBuilder.radius = this.radiusBottom
-      meshes.push(capBuilder.build().transform(transform))
+      meshes.push(capBuilder.build3d().transform(transform))
     }
     return mergeMeshes(meshes) || torso
   }

@@ -132,9 +132,9 @@ const light = new SpotLight()
 const skyBox = new SkyBox({
   day: environmentTexture
 })
-const ground = new MeshMaterial3D(meshBuilder.build(), materials[0])
+const ground = new MeshMaterial3D(meshBuilder.build3d(), materials[0])
 const objects = createObjects()
-const lightHelper = new MeshMaterial3D(lightMeshBuilder.build(), new BasicMaterial({
+const lightHelper = new MeshMaterial3D(lightMeshBuilder.build3d(), new BasicMaterial({
   color: new Color(1, 0, 0)
 }))
 
@@ -164,7 +164,7 @@ function createObjects() {
   const results = []
   const meshBuilder2 = new UVSphereMeshBuilder()
   meshBuilder2.radius = 0.25
-  const sphereMesh = meshBuilder2.build()
+  const sphereMesh = meshBuilder2.build3d()
 
   for (let x = -5; x < 5; x++) {
     for (let y = -5; y < 5; y++) {

@@ -36,13 +36,13 @@ const meshBuilder = new PlaneMeshBuilder()
 const material = new BasicMaterial()
 /**@type {[Mesh, Mesh, Mesh, Mesh, Mesh, Mesh, Mesh]} */
 const meshes = [
-  meshBuilder.build(),
-  meshBuilder.build(),
-  meshBuilder.build(),
-  meshBuilder.build(),
-  meshBuilder.build(),
-  meshBuilder.build(),
-  meshBuilder.build()
+  meshBuilder.build3d(),
+  meshBuilder.build3d(),
+  meshBuilder.build3d(),
+  meshBuilder.build3d(),
+  meshBuilder.build3d(),
+  meshBuilder.build3d(),
+  meshBuilder.build3d()
 ]
 meshes[0].topology = PrimitiveTopology.Points
 meshes[1].topology = PrimitiveTopology.Lines
@@ -120,7 +120,7 @@ function updateView() {
 
 function buildMeshes() {
   for (let i = 0; i < meshes.length; i++) {
-    const mesh = meshBuilder.build()
+    const mesh = meshBuilder.build3d()
     switch (i) {
       case 0:
         mesh.topology = PrimitiveTopology.Points

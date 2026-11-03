@@ -10,7 +10,7 @@ export class TorusMeshBuilder extends MeshBuilder {
   tubularSegments = 16
 
   /** @override */
-  build() {
+  build3d() {
     const positions = []
     const normals = []
     const uvs = []

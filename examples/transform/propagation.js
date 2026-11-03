@@ -40,7 +40,7 @@ meshBuilder.width = 0.5
 meshBuilder.height = 0.5 
 meshBuilder.depth = 0.5
 
-const mesh = meshBuilder.build()
+const mesh = meshBuilder.build3d()
 const material = new BasicMaterial({
   mainTexture: texture
 })

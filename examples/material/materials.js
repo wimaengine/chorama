@@ -50,8 +50,8 @@ const texture = textureLoader.load({
   paths: ["/images/uv.jpg"],
   flipY: true
 })
-const mesh1 = new CuboidMeshBuilder().build()
-const mesh2 = new UVSphereMeshBuilder().build()
+const mesh1 = new CuboidMeshBuilder().build3d()
+const mesh2 = new UVSphereMeshBuilder().build3d()
 const materials = [
   new BasicMaterial({
     mainTexture: texture

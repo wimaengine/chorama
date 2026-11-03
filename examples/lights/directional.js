@@ -126,13 +126,13 @@ const shadowFilterSettings = {
 }
 const camera = new Camera(renderTarget)
 const cameraControls = new OrbitCameraControls(camera, canvas)
-const lightHelper = new MeshMaterial3D(arrowBuilder.build(), new BasicMaterial({
+const lightHelper = new MeshMaterial3D(arrowBuilder.build3d(), new BasicMaterial({
   color: Color.RED.clone()
 }))
 const skyBox = new SkyBox({
   day: skyboxTexture
 })
-const ground = new MeshMaterial3D(meshBuilder.build(), materials[0])
+const ground = new MeshMaterial3D(meshBuilder.build3d(), materials[0])
 const objects = createObjects()
 
 ambientLight.intensity = 0.15
@@ -170,7 +170,7 @@ function createObjects() {
   const results = []
   const meshBuilder2 = new UVSphereMeshBuilder()
   meshBuilder2.radius = 0.25
-  const sphereMesh = meshBuilder2.build()
+  const sphereMesh = meshBuilder2.build3d()
 
   for (let x = -5; x < 5; x++) {
     for (let y = -5; y < 5; y++) {

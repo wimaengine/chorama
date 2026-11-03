@@ -26,12 +26,12 @@ export class TetrahedronMeshBuilder extends MeshBuilder {
   excludeFaces = new Set()
 
   /** @override */
-  build() {
+  build3d() {
     const builder = new PolyhedronMeshBuilder()
     builder.vertices = tetrahedronVertices
     builder.faces = tetrahedronFaces
     builder.excludeFaces = this.excludeFaces
     builder.radius = this.radius
-    return builder.build()
+    return builder.build3d()
   }
 }

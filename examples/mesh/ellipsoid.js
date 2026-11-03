@@ -46,7 +46,7 @@ meshBuilder.radiusY = 0.75
 meshBuilder.radiusZ = 0.42
 meshBuilder.longitudeSegments = 24
 meshBuilder.latitudeSegments = 16
-const object = new MeshMaterial3D(meshBuilder.build(), material)
+const object = new MeshMaterial3D(meshBuilder.build3d(), material)
 const settings = {
   wireframe: false
 }
@@ -112,9 +112,9 @@ function updateView() {
 }
 
 function buildMesh() {
-  const mesh = meshBuilder.build()
+  const mesh = meshBuilder.build3d()
   if (settings.wireframe) {
-    object.mesh = new WireframeBuilder(mesh).build()
+    object.mesh = new WireframeBuilder(mesh).build3d()
     return
   }
 

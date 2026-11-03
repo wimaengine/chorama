@@ -29,7 +29,7 @@ export class PolyhedronMeshBuilder extends MeshBuilder {
   radius = 0.5
 
   /** @override */
-  build() {
+  build3d() {
     const scaledVertices = this.vertices.map((vertex) =>
       vertex.clone().normalize().multiplyScalar(this.radius)
     )

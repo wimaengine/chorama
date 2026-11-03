@@ -9,7 +9,7 @@ export class WedgeMeshBuilder extends MeshBuilder {
   depth = 1
 
   /** @override */
-  build() {
+  build3d() {
     const builder = new ExtrudeMeshBuilder()
     builder.contour = [
       new Vector2(-this.width * 0.5, -this.height * 0.5),
@@ -17,6 +17,6 @@ export class WedgeMeshBuilder extends MeshBuilder {
       new Vector2(-this.width * 0.5, this.height * 0.5)
     ]
     builder.depth = this.depth
-    return builder.build()
+    return builder.build3d()
   }
 }

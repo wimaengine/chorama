@@ -12,7 +12,7 @@ export class FrustumMeshBuilder extends MeshBuilder {
   arcLength = Math.PI * 2
 
   /** @override */
-  build() {
+  build3d() {
     const builder = new CylinderMeshBuilder()
     builder.radiusTop = this.radiusTop
     builder.radiusBottom = this.radiusBottom
@@ -21,6 +21,6 @@ export class FrustumMeshBuilder extends MeshBuilder {
     builder.heightSegments = this.heightSegments
     builder.arcStart = this.arcStart
     builder.arcLength = this.arcLength
-    return builder.build()
+    return builder.build3d()
   }
 }

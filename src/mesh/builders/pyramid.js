@@ -12,7 +12,7 @@ export class PyramidMeshBuilder extends MeshBuilder {
   rotation = 0
 
   /** @override */
-  build() {
+  build3d() {
     const contour = regularPolygonPoints(this.sides, this.radius, this.rotation)
     if (contour.length < 3) {
       return createMeshFromArrays({ positions: [] })

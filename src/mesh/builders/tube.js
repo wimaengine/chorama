@@ -15,7 +15,7 @@ export class TubeMeshBuilder extends MeshBuilder {
   closed = false
 
   /** @override */
-  build() {
+  build3d() {
     const points = this.points
 
     if (points.length < 2) {

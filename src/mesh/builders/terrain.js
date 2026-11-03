@@ -15,7 +15,7 @@ export class TerrainMeshBuilder extends MeshBuilder {
   sampleHeight = () => 0
 
   /** @override */
-  build() {
+  build3d() {
     const positions = []
     const normals = []
     const uvs = []

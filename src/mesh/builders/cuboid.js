@@ -38,7 +38,7 @@ export class CuboidMeshBuilder extends MeshBuilder {
   /**
    * @override
    */
-  build() {
+  build3d() {
     const halfWidth = this.width / 2
     const halfHeight = this.height / 2
     const halfDepth = this.depth / 2
@@ -59,7 +59,7 @@ export class CuboidMeshBuilder extends MeshBuilder {
         new Vector3(1, 1, 1)
       )
 
-      meshes.push(sideBuilder.build().transform(affine))
+      meshes.push(sideBuilder.build3d().transform(affine))
     }
 
     if (!this.openFaces.back) {
@@ -69,7 +69,7 @@ export class CuboidMeshBuilder extends MeshBuilder {
         new Vector3(1, 1, 1)
       )
 
-      meshes.push(sideBuilder.build().transform(affine))
+      meshes.push(sideBuilder.build3d().transform(affine))
     }
 
     sideBuilder.width = this.depth
@@ -84,7 +84,7 @@ export class CuboidMeshBuilder extends MeshBuilder {
         new Vector3(1, 1, 1)
       )
 
-      meshes.push(sideBuilder.build().transform(affine))
+      meshes.push(sideBuilder.build3d().transform(affine))
     }
 
     if (!this.openFaces.right) {
@@ -94,7 +94,7 @@ export class CuboidMeshBuilder extends MeshBuilder {
         new Vector3(1, 1, 1)
       )
 
-      meshes.push(sideBuilder.build().transform(affine))
+      meshes.push(sideBuilder.build3d().transform(affine))
     }
 
     sideBuilder.width = this.width
@@ -109,7 +109,7 @@ export class CuboidMeshBuilder extends MeshBuilder {
         new Vector3(1, 1, 1)
       )
 
-      meshes.push(sideBuilder.build().transform(affine))
+      meshes.push(sideBuilder.build3d().transform(affine))
     }
 
     if (!this.openFaces.bottom) {
@@ -119,7 +119,7 @@ export class CuboidMeshBuilder extends MeshBuilder {
         new Vector3(1, 1, 1)
       )
 
-      meshes.push(sideBuilder.build().transform(affine))
+      meshes.push(sideBuilder.build3d().transform(affine))
     }
     return mergeMeshes(meshes) || new Mesh(new SeparateAttributeData())
   }

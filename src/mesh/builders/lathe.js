@@ -15,7 +15,7 @@ export class LatheMeshBuilder extends MeshBuilder {
   phiLength = Math.PI * 2
 
   /** @override */
-  build() {
+  build3d() {
     const profile = this.profile
 
     if (profile.length < 2) {

@@ -65,7 +65,7 @@ const day = textureLoader.load({
   ],
   type: TextureType.TextureCubeMap
 })
-const mesh = new CuboidMeshBuilder().build()
+const mesh = new CuboidMeshBuilder().build3d()
 const object1 = new MeshMaterial3D(mesh, new BasicMaterial({
   mainTexture: texture
 }))

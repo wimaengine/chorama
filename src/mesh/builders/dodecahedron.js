@@ -119,12 +119,12 @@ export class DodecahedronMeshBuilder extends MeshBuilder {
   excludeFaces = new Set()
 
   /** @override */
-  build() {
+  build3d() {
     const builder = new PolyhedronMeshBuilder()
     builder.vertices = dodecahedronVertices
     builder.faces = dodecahedronFaces
     builder.excludeFaces = this.excludeFaces
     builder.radius = this.radius
-    return builder.build()
+    return builder.build3d()
   }
 }

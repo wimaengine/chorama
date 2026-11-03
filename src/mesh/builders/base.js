@@ -13,8 +13,8 @@ export class MeshBuilder {
   /**
    * @returns {Mesh}
    */
-  build() {
-    abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build.name)
+  build3d() {
+    abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build3d.name)
   }
 }
 

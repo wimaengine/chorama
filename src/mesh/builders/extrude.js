@@ -14,7 +14,7 @@ export class ExtrudeMeshBuilder extends MeshBuilder {
   depth = 1
 
   /** @override */
-  build() {
+  build3d() {
     let contour = this.contour.slice()
     if (contour.length < 3) {
       return createMeshFromArrays({ positions: [] })

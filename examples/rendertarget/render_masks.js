@@ -47,15 +47,15 @@ const planeBuilder = new PlaneMeshBuilder()
 planeBuilder.width = 8
 planeBuilder.height = 8
 
-const plane = new MeshMaterial3D(planeBuilder.build(), new BasicMaterial({
+const plane = new MeshMaterial3D(planeBuilder.build3d(), new BasicMaterial({
   color: new Color(0.75, 0.78, 0.82)
 }))
-const box = new MeshMaterial3D(new CuboidMeshBuilder().build(), new BasicMaterial({
+const box = new MeshMaterial3D(new CuboidMeshBuilder().build3d(), new BasicMaterial({
   color: new Color(0.9, 0.35, 0.2)
 }))
 const sphereBuilder = new UVSphereMeshBuilder()
 sphereBuilder.radius = 0.6
-const sphere = new MeshMaterial3D(sphereBuilder.build(), new BasicMaterial({
+const sphere = new MeshMaterial3D(sphereBuilder.build3d(), new BasicMaterial({
   color: new Color(0.2, 0.55, 0.95)
 }))
 

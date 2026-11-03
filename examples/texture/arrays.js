@@ -102,7 +102,7 @@ const texture = textureLoader.load({
   type:TextureType.Texture2DArray
 })
 
-const mesh = new PlaneMeshBuilder().build()
+const mesh = new PlaneMeshBuilder().build3d()
 const material = new TextureArrayMaterial(texture)
 
 const object1 = new MeshMaterial3D(mesh, material)

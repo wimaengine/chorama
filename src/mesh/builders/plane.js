@@ -12,7 +12,7 @@ export class PlaneMeshBuilder extends MeshBuilder {
   /**
    * @override
    */
-  build() {
+  build3d() {
     const positions = []
     const normals = []
     const uvs = []

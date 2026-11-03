@@ -19,7 +19,7 @@ export class UVSphereMeshBuilder extends MeshBuilder {
   /**
    * @override
    */
-  build() {
+  build3d() {
     const vertices = [];
     const normals = [];
     const uvs = [];

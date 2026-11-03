@@ -45,7 +45,7 @@ const sampler3 = new Sampler({
   wrapT: TextureWrap.MirrorRepeat
 })
 
-const mesh = new PlaneMeshBuilder().build()
+const mesh = new PlaneMeshBuilder().build3d()
 const buffer = mesh.attributes.get('uv')
 
 if(buffer){

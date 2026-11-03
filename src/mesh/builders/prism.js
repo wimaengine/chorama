@@ -10,10 +10,10 @@ export class PrismMeshBuilder extends MeshBuilder {
   rotation = 0
 
   /** @override */
-  build() {
+  build3d() {
     const builder = new ExtrudeMeshBuilder()
     builder.contour = regularPolygonPoints(this.sides, this.radius, this.rotation)
     builder.depth = this.depth
-    return builder.build()
+    return builder.build3d()
   }
 }

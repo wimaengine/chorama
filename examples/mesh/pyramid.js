@@ -44,7 +44,7 @@ const meshBuilder = new PyramidMeshBuilder()
 meshBuilder.sides = 4
 meshBuilder.radius = 0.52
 meshBuilder.height = 1.1
-const object = new MeshMaterial3D(meshBuilder.build(), material)
+const object = new MeshMaterial3D(meshBuilder.build3d(), material)
 
 camera.transform.position.set(0, 0.35, 8)
 if (camera.projection instanceof PerspectiveProjection) {
@@ -106,9 +106,9 @@ function updateView() {
 }
 
 function buildMesh() {
-  const mesh = meshBuilder.build()
+  const mesh = meshBuilder.build3d()
   if (settings.wireframe) {
-    object.mesh = new WireframeBuilder(mesh).build()
+    object.mesh = new WireframeBuilder(mesh).build3d()
   } else {
     object.mesh = mesh
   }

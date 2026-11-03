@@ -11,7 +11,7 @@ export class WireframeBuilder {
   constructor(mesh) {
     this.mesh = mesh
   }
-  build() {
+  build3d() {
     const { indices, attributes } = this.mesh
     const edges = new Set()
     /**@type {number[]} */

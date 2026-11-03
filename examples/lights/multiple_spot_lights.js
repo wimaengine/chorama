@@ -91,7 +91,7 @@ const cameraControls = new OrbitCameraControls(camera, canvas)
 const skyBox = new SkyBox({
   day: skyboxTexture
 })
-const ground = new MeshMaterial3D(meshBuilder.build(), material)
+const ground = new MeshMaterial3D(meshBuilder.build3d(), material)
 const objects = createObjects()
 
 ambientLight.intensity = 0.15
@@ -121,7 +121,7 @@ function createObjects() {
 
 
   meshBuilder2.radius = 0.25
-  const sphereMesh = meshBuilder2.build()
+  const sphereMesh = meshBuilder2.build3d()
 
   for (let x = -5; x < 5; x++) {
     for (let y = -5; y < 5; y++) {
@@ -149,7 +149,7 @@ function createLights() {
   builder.height = 0.1
   builder.depth = 1
 
-  const mesh = builder.build()
+  const mesh = builder.build3d()
   for (let x = -width / 2; x <= width / 2; x += width) {
     for (let y = -height / 2; y <= height / 2; y += height) {
       const light = new SpotLight()

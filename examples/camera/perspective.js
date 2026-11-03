@@ -66,7 +66,7 @@ const skyBox = new SkyBox({
   day
 })
 skyBox.transform.orientation.rotateY(Math.PI)
-const ground = new MeshMaterial3D(meshBuilder.build(), material)
+const ground = new MeshMaterial3D(meshBuilder.build3d(), material)
 const objects = createObjects()
 
 ground.transform.orientation.rotateX(-Math.PI / 2)
@@ -84,7 +84,7 @@ function createObjects() {
   const results = []
   const meshBuilder2 = new UVSphereMeshBuilder()
   meshBuilder2.radius = 0.25
-  const sphereMesh = meshBuilder2.build()
+  const sphereMesh = meshBuilder2.build3d()
 
   for (let x = -5; x < 5; x++) {
     for (let y = -5; y < 5; y++) {

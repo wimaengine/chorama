@@ -11,7 +11,7 @@ export class RingMeshBuilder extends MeshBuilder {
   radialSegments = 32
 
   /** @override */
-  build() {
+  build3d() {
     /** @type {number[]} */
     const positions = []
     /** @type {number[]} */

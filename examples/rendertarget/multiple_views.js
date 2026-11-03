@@ -57,7 +57,7 @@ const day = textureLoader.load({
   ],
   type: TextureType.TextureCubeMap
 })
-const object = new MeshMaterial3D(new CuboidMeshBuilder().build(), new BasicMaterial({
+const object = new MeshMaterial3D(new CuboidMeshBuilder().build3d(), new BasicMaterial({
   mainTexture: texture
 }))
 const skyBox = new SkyBox({

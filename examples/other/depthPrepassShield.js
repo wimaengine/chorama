@@ -151,7 +151,7 @@ const shieldMeshBuilder = new UVSphereMeshBuilder()
 shieldMeshBuilder.longitudeSegments = 64
 shieldMeshBuilder.latitudeSegments = 32
 const shield = new MeshMaterial3D(
-  shieldMeshBuilder.build(),
+  shieldMeshBuilder.build3d(),
   new ShieldMaterial(),
 )
 // The orbit target is (0, 0.5, 0), so this places the shield directly in
@@ -162,7 +162,7 @@ shield.transform.scale.set(0.65, 0.65, 0.65)
 // Keep the cuboid close enough to the shield's surface that it passes through
 // the shell instead of only orbiting outside it.
 const cuboid = new MeshMaterial3D(
-  new CuboidMeshBuilder().build(),
+  new CuboidMeshBuilder().build3d(),
   new BasicMaterial({
     color: new Color(1, 0.22, 0.04),
   }),

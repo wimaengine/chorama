@@ -53,14 +53,14 @@ const camera1 = new Camera(renderTarget)
 const camera2 = new Camera(canvasTarget)
 const OFFSCREEN_VIEW = 0
 const MAIN_VIEW = 1
-const mesh = new CuboidMeshBuilder().build()
+const mesh = new CuboidMeshBuilder().build3d()
 const quad = new PlaneMeshBuilder()
 const depthMaterial = new DepthMaterial({
   depth: depthTexture
 })
 
 const object1 = new MeshMaterial3D(mesh, new BasicMaterial())
-const object2 = new MeshMaterial3D(quad.build(), depthMaterial)
+const object2 = new MeshMaterial3D(quad.build3d(), depthMaterial)
 
 object1.renderMask.clear().on(OFFSCREEN_VIEW)
 object2.renderMask.clear().on(MAIN_VIEW)

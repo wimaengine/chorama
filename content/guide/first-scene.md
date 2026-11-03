@@ -99,7 +99,7 @@ The initial `aspect` is a temporary placeholder; resize will set the real value.
 ### Step 6: Create a cube object
 
 ```js
-const cubeMesh = new CuboidMeshBuilder().build();
+const cubeMesh = new CuboidMeshBuilder().build3d();
 const cubeMaterial = new BasicMaterial();
 const cube = new MeshMaterial3D(cubeMesh, cubeMaterial);
 ```

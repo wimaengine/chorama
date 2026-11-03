@@ -69,8 +69,8 @@ const day = textureLoader.load({
 const material = new StandardMaterial({
   mainTexture: texture
 })
-const object1 = new MeshMaterial3D(new CuboidMeshBuilder().build(), material)
-const object2 = new MeshMaterial3D(new UVSphereMeshBuilder().build(), material)
+const object1 = new MeshMaterial3D(new CuboidMeshBuilder().build3d(), material)
+const object2 = new MeshMaterial3D(new UVSphereMeshBuilder().build3d(), material)
 const skyBox = new SkyBox({
   day
 })

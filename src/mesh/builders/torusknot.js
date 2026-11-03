@@ -13,7 +13,7 @@ export class TorusKnotMeshBuilder extends MeshBuilder {
   pathSegments = 256
 
   /** @override */
-  build() {
+  build3d() {
     /** @type {Vector3[]} */
     const points = []
     for (let i = 0; i < this.pathSegments; i++) {
@@ -31,6 +31,6 @@ export class TorusKnotMeshBuilder extends MeshBuilder {
     builder.radius = this.tubeRadius
     builder.radialSegments = this.radialSegments
     builder.closed = true
-    return builder.build()
+    return builder.build3d()
   }
 }

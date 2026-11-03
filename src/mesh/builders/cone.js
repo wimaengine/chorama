@@ -11,7 +11,7 @@ export class ConeMeshBuilder extends MeshBuilder {
   arcLength = Math.PI * 2
 
   /** @override */
-  build() {
+  build3d() {
     const builder = new CylinderMeshBuilder()
     builder.radiusTop = 0
     builder.radiusBottom = this.radiusBottom
@@ -24,6 +24,6 @@ export class ConeMeshBuilder extends MeshBuilder {
       top: true,
       bottom: false
     }
-    return builder.build()
+    return builder.build3d()
   }
 }

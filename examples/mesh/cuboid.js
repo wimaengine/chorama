@@ -41,7 +41,7 @@ const texture = textureLoader.load({
 const meshBuilder = new CuboidMeshBuilder()
 
 //create objects
-const object = new MeshMaterial3D(meshBuilder.build(), new BasicMaterial({
+const object = new MeshMaterial3D(meshBuilder.build3d(), new BasicMaterial({
   mainTexture: texture
 }))
 object.material.cullFace = CullFace.None
@@ -137,9 +137,9 @@ facesFolder
   .onChange(buildMesh)
 
 function buildMesh() {
-  const mesh = meshBuilder.build()
+  const mesh = meshBuilder.build3d()
   if (settings.wireframe) {
-    object.mesh = new WireframeBuilder(mesh).build()
+    object.mesh = new WireframeBuilder(mesh).build3d()
   } else {
     object.mesh = mesh
   }

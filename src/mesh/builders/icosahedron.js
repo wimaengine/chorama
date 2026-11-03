@@ -50,12 +50,12 @@ export class IcosahedronMeshBuilder extends MeshBuilder {
   excludeFaces = new Set()
 
   /** @override */
-  build() {
+  build3d() {
     const builder = new PolyhedronMeshBuilder()
     builder.vertices = icosahedronVertices
     builder.faces = icosahedronFaces
     builder.excludeFaces = this.excludeFaces
     builder.radius = this.radius
-    return builder.build()
+    return builder.build3d()
   }
 }

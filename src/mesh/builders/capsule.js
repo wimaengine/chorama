@@ -10,7 +10,7 @@ export class CapsuleMeshBuilder extends MeshBuilder {
   profileSegments = 8
 
   /** @override */
-  build() {
+  build3d() {
     const capSegments = Math.max(1, this.profileSegments)
     const halfHeight = this.height * 0.5
     const body = Math.max(0, halfHeight - this.radius)
@@ -42,6 +42,6 @@ export class CapsuleMeshBuilder extends MeshBuilder {
     builder.segments = this.segments
     builder.phiStart = 0
     builder.phiLength = Math.PI * 2
-    return builder.build()
+    return builder.build3d()
   }
 }

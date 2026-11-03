@@ -11,7 +11,7 @@ export class Circle3DMeshBuilder extends MeshBuilder {
   /**
    * @override
    */
-  build() {
+  build3d() {
     const { radius, arcStart: arcstart, arcLength: arclength, segments} = this
     const vertices = [0, 0, 0]
     const normals = [0, 0, 1]

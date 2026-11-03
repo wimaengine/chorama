@@ -10,7 +10,7 @@ export class EllipsoidMeshBuilder extends MeshBuilder {
   latitudeSegments = 32
 
   /** @override */
-  build() {
+  build3d() {
     const positions = []
     const normals = []
     const uvs = []

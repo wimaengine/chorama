@@ -47,7 +47,7 @@ export class IcosphereMeshBuilder extends MeshBuilder {
   subdivisions = 1
 
   /** @override */
-  build() {
+  build3d() {
     let vertices = icosahedronVertices.map((vertex) => vertex.clone().normalize())
     let faces = icosahedronFaces.map((face) => face.slice())
 

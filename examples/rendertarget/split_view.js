@@ -63,7 +63,7 @@ const material = new BasicMaterial({
 })
 
 //create objects
-const object = new MeshMaterial3D(new CuboidMeshBuilder().build(), material) 
+const object = new MeshMaterial3D(new CuboidMeshBuilder().build3d(), material)
 const skyBox = new SkyBox({
   day,
 })

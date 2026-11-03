@@ -54,7 +54,7 @@ if (camera.projection instanceof PerspectiveProjection) {
 }
 
 const sphere = new MeshMaterial3D(
-  new UVSphereMeshBuilder().build(),
+  new UVSphereMeshBuilder().build3d(),
   new LambertMaterial({
     mainTexture: texture,
   })

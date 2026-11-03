@@ -33,7 +33,7 @@ const textureLoader = new TextureLoader()
 const texture = textureLoader.load({
   paths: ["/images/uv.jpg"]
 })
-const mesh = new PlaneMeshBuilder().build()
+const mesh = new PlaneMeshBuilder().build3d()
 
 /**@type {[BasicMaterial,BasicMaterial,BasicMaterial,BasicMaterial]} */
 const materials = [
