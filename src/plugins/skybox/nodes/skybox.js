@@ -27,7 +27,7 @@ export class SkyBoxNode {
         continue
       }
 
-      const opaqueStage = view.opaque
+      const opaqueStage = view.opaque3D
 
       for (let i = 0; i < objects.length; i++) {
         // SAFETY: Asssume the list is dense

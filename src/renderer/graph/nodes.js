@@ -80,9 +80,9 @@ export class PrepareMeshInstanceBindGroupsNode {
 
       const entry = meshInstanceBindGroups.getOrSet(object)
 
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque, view.opaque, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask, view.alphaMask, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent, view.transparent, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque, view.opaque3D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask, view.alphaMask3D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent, view.transparent3D, view)
     }
   }
 }
@@ -95,7 +95,7 @@ export class PrepareMeshInstanceBindGroupsNode {
  * @param {import("../../caches/index.js").Caches} caches
  * @param {MeshInstanceBindGroups} meshInstanceBindGroups
  * @param {MeshInstancePhaseBindGroup} phaseState
- * @param {import("../core/index.js").RenderStage} stage
+ * @param {import("../core/index.js").RenderStage<import("../core/index.js").MeshRenderItem>} stage
  * @param {View} view
  * @returns {boolean}
  */

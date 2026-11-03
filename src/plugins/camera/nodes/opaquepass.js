@@ -23,8 +23,8 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   }
 
   const camera = view.object
-  const opaqueStage = view.opaque
-  const alphaMaskStage = view.alphaMask
+  const opaqueStage = view.opaque3D
+  const alphaMaskStage = view.alphaMask3D
 
   const context = device.context
   const caches = renderer.caches

@@ -10,17 +10,29 @@ import { Range, ViewRectangle } from "../../utils/index.js"
 
 export class View {
   /**
-   * @type {RenderStage}
+   * @type {RenderStage<MeshRenderItem>}
    */
-  opaque = new RenderStage()
+  opaque3D = new RenderStage()
   /**
-   * @type {RenderStage}
+   * @type {RenderStage<MeshRenderItem>}
    */
-  alphaMask = new RenderStage()
+  alphaMask3D = new RenderStage()
   /**
-   * @type {SortedRenderStage}
+   * @type {SortedRenderStage<MeshRenderItem>}
    */
-  transparent = new SortedRenderStage()
+  transparent3D = new SortedRenderStage()
+  /**
+   * @type {RenderStage<MeshRenderItem>}
+   */
+  opaque2D = new RenderStage()
+  /**
+   * @type {RenderStage<MeshRenderItem>}
+   */
+  alphaMask2D = new RenderStage()
+  /**
+   * @type {SortedRenderStage<MeshRenderItem>}
+   */
+  transparent2D = new SortedRenderStage()
   /**
    * @type {number}
    */
@@ -223,9 +235,14 @@ export class View {
 
 }
 
+/**
+ * Per-view render stage for one material phase.
+ *
+ * @template {MeshRenderItem} T
+ */
 export class RenderStage {
   /**
-   * @type {MeshRenderItem[]}
+   * @type {T[]}
    */
   meshItems = []
 
@@ -235,7 +252,7 @@ export class RenderStage {
   nonMeshItems = []
 
   /**
-   * @param {MeshRenderItem | NonMeshRenderItem} item
+   * @param {T | NonMeshRenderItem} item
    */
   add(item) {
     if (item instanceof NonMeshRenderItem) {
@@ -297,12 +314,16 @@ export class RenderStage {
   }
 }
 
+/**
+ * @template {MeshRenderItem} T
+ * @extends {RenderStage<T>}
+ */
 export class SortedRenderStage extends RenderStage {
   /**
    * Returns mesh items back-to-front using the supplied view as the sorting reference.
    * @override
    * @param {View} view
-   * @returns {MeshRenderItem[]}
+   * @returns {T[]}
    */
   getMeshItems(view) {
     return this.meshItems

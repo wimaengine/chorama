@@ -23,7 +23,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   }
 
   const camera = view.object
-  const transparentStage = view.transparent
+  const transparentStage = view.transparent3D
 
   if (transparentStage.meshItems.length === 0 && transparentStage.nonMeshItems.length === 0) {
     return

@@ -66,7 +66,7 @@ export class ShadowOccluderNode {
       }
 
       const camera = view.object
-      const opaqueStage = view.opaque
+      const opaqueStage = view.opaque3D
 
       for (let i = 0; i < objects.length; i++) {
         const object = /** @type {Object3D} */ (objects[i])

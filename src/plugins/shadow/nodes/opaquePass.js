@@ -23,7 +23,7 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInst
   }
 
   const object = view.object
-  const { opaque: opaqueStage } = view
+  const { opaque3D: opaqueStage } = view
   const context = device.context
   const caches = renderer.caches
   const depthTexture = caches.getTexture(device, shadowMap.shadowAtlas)

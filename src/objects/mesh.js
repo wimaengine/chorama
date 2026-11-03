@@ -1,7 +1,7 @@
-import { Mesh } from "../mesh/index.js"
+import { Attribute, Mesh } from "../mesh/index.js"
+import { RawMaterial } from "../material/index.js"
 import { Object3D } from "./object3d.js"
 import { Affine3 } from "../math/index.js"
-import { RawMaterial } from "../material/index.js"
 import { Bone3D } from "./bone.js";
 
 export class Skin {
@@ -75,6 +75,13 @@ export class MeshMaterial3D extends Object3D {
    */
   constructor(mesh, material) {
     super()
+
+    const hasPosition3D = mesh.attributes.has(Attribute.Position3D.name)
+    const hasPosition2D = mesh.attributes.has(Attribute.Position2D.name)
+    if (!hasPosition3D || hasPosition2D) {
+      throw new Error("MeshMaterial3D requires a mesh with only a position3d attribute")
+    }
+
     this.mesh = mesh
     this.material = material
   }
@@ -84,7 +91,8 @@ export class MeshMaterial3D extends Object3D {
    * @param {Map<Object3D, Object3D>} [entityMap]
    */
   clone(entityMap) {
-    const newMesh = super.clone(entityMap)
+    const newMesh = /** @type {this} */ (new MeshMaterial3D(this.mesh, this.material))
+    newMesh.copy(this, entityMap)
 
     newMesh.mesh = this.mesh
     newMesh.material = this.material

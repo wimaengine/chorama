@@ -103,11 +103,11 @@ export class MeshMaterialNode {
             const alphaBlendMode = child.material.alphaBlendMode()
 
             if (alphaBlendMode instanceof AlphaMaskMode) {
-              view.alphaMask.add(item)
+              view.alphaMask3D.add(item)
             } else if (alphaBlendMode instanceof TransparentMode) {
-              view.transparent.add(item)
+              view.transparent3D.add(item)
             } else {
-              view.opaque.add(item)
+              view.opaque3D.add(item)
             }
           }
           return true

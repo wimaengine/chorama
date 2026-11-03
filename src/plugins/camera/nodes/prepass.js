@@ -65,7 +65,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
     return
   }
 
-  const { object: camera, opaque: opaqueStage } = view
+  const { object: camera, opaque3D: opaqueStage } = view
   const { caches } = renderer
 
   const renderNormals = (camera.prepasses & CameraPrepasses.Normal) !== 0
