@@ -2,7 +2,7 @@
 import { Quaternion, Vector3 } from "../../math/index.js"
 import { assert } from "../../utils/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays } from "./geometry.js"
+import { createMesh3dFromArrays } from "./geometry.js"
 
 export class TubeMeshBuilder extends MeshBuilder {
   /**
@@ -19,7 +19,7 @@ export class TubeMeshBuilder extends MeshBuilder {
     const points = this.points
 
     if (points.length < 2) {
-      return createMeshFromArrays({ positions: [] })
+      return createMesh3dFromArrays({ positions: [] })
     }
 
     const { normals: frameNormals, binormals } = buildTubeFrames(points, this.closed)
@@ -68,7 +68,7 @@ export class TubeMeshBuilder extends MeshBuilder {
       }
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

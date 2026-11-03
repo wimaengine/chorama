@@ -1,7 +1,7 @@
 // @ts-check
 import { Vector2, Vector3 } from "../../math/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays } from "./geometry.js"
+import { createMesh3dFromArrays } from "./geometry.js"
 
 export class TorusMeshBuilder extends MeshBuilder {
   radius = 0.75
@@ -59,7 +59,7 @@ export class TorusMeshBuilder extends MeshBuilder {
       }
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

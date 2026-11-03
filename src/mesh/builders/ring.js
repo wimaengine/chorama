@@ -1,7 +1,7 @@
 // @ts-check
 import { Vector2, Vector3 } from "../../math/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays } from "./geometry.js"
+import { createMesh3dFromArrays, createMesh2dFromArrays } from "./geometry.js"
 import { pushVertex } from "./utils.js"
 
 export class RingMeshBuilder extends MeshBuilder {
@@ -99,9 +99,74 @@ export class RingMeshBuilder extends MeshBuilder {
       pushVertex(positions, normals, uvs, indices, inner1Bottom, innerNormal1, new Vector2(outerUv1, 0))
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
+      uvs,
+      indices
+    })
+  }
+
+  /**
+   * Builds the flat annulus represented by the ring's inner and outer radii.
+   * The 3D-only thickness property is ignored.
+   *
+   * @override
+   */
+  build2d() {
+    /** @type {number[]} */
+    const positions = []
+    /** @type {number[]} */
+    const uvs = []
+    /** @type {number[]} */
+    const indices = []
+    const innerRadius = Math.min(this.innerRadius, this.outerRadius)
+    const outerRadius = Math.max(this.innerRadius, this.outerRadius)
+    const step = (Math.PI * 2) / this.radialSegments
+
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @returns {Vector2}
+     */
+    const uv = (x, y) => new Vector2(
+      (x + outerRadius) / (outerRadius * 2),
+      (y + outerRadius) / (outerRadius * 2)
+    )
+
+    for (let segment = 0; segment < this.radialSegments; segment++) {
+      const angle0 = segment * step
+      const angle1 = (segment + 1) * step
+      const cos0 = Math.cos(angle0)
+      const sin0 = Math.sin(angle0)
+      const cos1 = Math.cos(angle1)
+      const sin1 = Math.sin(angle1)
+      const outer0 = new Vector2(outerRadius * cos0, outerRadius * sin0)
+      const outer1 = new Vector2(outerRadius * cos1, outerRadius * sin1)
+      const inner0 = new Vector2(innerRadius * cos0, innerRadius * sin0)
+      const inner1 = new Vector2(innerRadius * cos1, innerRadius * sin1)
+      const base = positions.length / 2
+
+      positions.push(
+        outer0.x, outer0.y,
+        inner0.x, inner0.y,
+        outer1.x, outer1.y,
+        inner1.x, inner1.y
+      )
+
+      for (const point of [outer0, inner0, outer1, inner1]) {
+        const pointUv = uv(point.x, point.y)
+        uvs.push(pointUv.x, pointUv.y)
+      }
+
+      indices.push(
+        base, base + 2, base + 1,
+        base + 2, base + 3, base + 1
+      )
+    }
+
+    return createMesh2dFromArrays({
+      positions,
       uvs,
       indices
     })

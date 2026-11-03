@@ -2,7 +2,7 @@
 import { Vector2, Vector3 } from "../../math/index.js"
 import { assert } from "../../utils/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays } from "./geometry.js"
+import { createMesh3dFromArrays } from "./geometry.js"
 
 export class LatheMeshBuilder extends MeshBuilder {
   /**
@@ -19,7 +19,7 @@ export class LatheMeshBuilder extends MeshBuilder {
     const profile = this.profile
 
     if (profile.length < 2) {
-      return createMeshFromArrays({ positions: [] })
+      return createMesh3dFromArrays({ positions: [] })
     }
 
     const positions = []
@@ -75,7 +75,7 @@ export class LatheMeshBuilder extends MeshBuilder {
       }
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

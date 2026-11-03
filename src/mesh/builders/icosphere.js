@@ -2,7 +2,7 @@
 import { Vector3 } from "../../math/index.js"
 import { assert } from "../../utils/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays, sphericalUV } from "./geometry.js"
+import { createMesh3dFromArrays, sphericalUV } from "./geometry.js"
 
 const icosahedronVertices = [
   new Vector3(-1, 1.618033988749895, 0),
@@ -131,7 +131,7 @@ export class IcosphereMeshBuilder extends MeshBuilder {
       )
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

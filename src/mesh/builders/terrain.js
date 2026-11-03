@@ -1,7 +1,7 @@
 // @ts-check
 import { Vector2, Vector3 } from "../../math/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays } from "./geometry.js"
+import { createMesh3dFromArrays } from "./geometry.js"
 
 export class TerrainMeshBuilder extends MeshBuilder {
   width = 1
@@ -70,7 +70,7 @@ export class TerrainMeshBuilder extends MeshBuilder {
       }
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

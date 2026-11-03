@@ -2,6 +2,7 @@ import { Attribute } from "../attribute/index.js"
 import { SeparateAttributeData } from "../attributedata/index.js"
 import { Mesh } from "../mesh.js"
 import { MeshBuilder } from "./base.js"
+import { createMesh2dFromArrays } from "./geometry.js"
 
 export class Circle3DMeshBuilder extends MeshBuilder {
   radius = 0.5
@@ -59,5 +60,41 @@ export class Circle3DMeshBuilder extends MeshBuilder {
     mesh.indices = new Uint16Array(indices)
 
     return mesh
+  }
+
+  /**
+   * @override
+   */
+  build2d() {
+    const { radius, arcStart: arcstart, arcLength: arclength, segments } = this
+    const positions = [0, 0]
+    const uvs = [0.5, 0.5]
+    const indices = []
+    const angleIncrement = arclength / segments
+    const epsilon = Math.pow(2, -31)
+
+    for (let angle = arcstart; angle < arcstart + arclength + epsilon; angle += angleIncrement) {
+      const cos = Math.cos(angle)
+      const sin = Math.sin(angle)
+
+      positions.push(
+        radius * cos,
+        radius * sin
+      )
+      uvs.push(
+        (cos + 1) * 0.5,
+        (sin + 1) * 0.5
+      )
+    }
+
+    for (let i = 2; i < positions.length / 2; i++) {
+      indices.push(i - 1, i, 0)
+    }
+
+    return createMesh2dFromArrays({
+      positions,
+      uvs,
+      indices
+    })
   }
 }

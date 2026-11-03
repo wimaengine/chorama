@@ -19,4 +19,17 @@ export class WedgeMeshBuilder extends MeshBuilder {
     builder.depth = this.depth
     return builder.build3d()
   }
+
+  /**
+   * @override
+   */
+  build2d() {
+    const builder = new ExtrudeMeshBuilder()
+    builder.contour = [
+      new Vector2(-this.width * 0.5, -this.height * 0.5),
+      new Vector2(this.width * 0.5, -this.height * 0.5),
+      new Vector2(-this.width * 0.5, this.height * 0.5)
+    ]
+    return builder.build2d()
+  }
 }

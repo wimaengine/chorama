@@ -16,6 +16,13 @@ export class MeshBuilder {
   build3d() {
     abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build3d.name)
   }
+
+  /**
+   * @returns {Mesh}
+   */
+  build2d() {
+    abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build2d.name)
+  }
 }
 
 export class MeshBuilderVertexAttributes {

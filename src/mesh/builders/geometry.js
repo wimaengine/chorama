@@ -15,18 +15,73 @@ import { assert } from "../../utils/index.js"
  * @param {number[]} [options.indices]
  * @returns {Mesh}
  */
-export function createMeshFromArrays({
+export function createMesh3dFromArrays({
   positions,
   normals = [],
   uvs = [],
   colors = [],
   indices
 }) {
+  return createMeshFromArraysWithPosition(Attribute.Position3D, 3, {
+    positions,
+    normals,
+    uvs,
+    colors,
+    indices
+  })
+}
+
+/**
+ * Creates a 2D mesh from flat attribute arrays.
+ *
+ * @param {object} options
+ * @param {number[]} options.positions
+ * @param {number[]} [options.uvs]
+ * @param {number[]} [options.colors]
+ * @param {number[]} [options.indices]
+ * @returns {Mesh}
+ */
+export function createMesh2dFromArrays({
+  positions,
+  uvs = [],
+  colors = [],
+  indices
+}) {
+  return createMeshFromArraysWithPosition(Attribute.Position2D, 2, {
+    positions,
+    uvs,
+    colors,
+    indices
+  })
+}
+
+/**
+ * @param {Attribute} positionAttribute
+ * @param {number} positionComponents
+ * @param {object} options
+ * @param {number[]} options.positions
+ * @param {number[]} [options.normals]
+ * @param {number[]} [options.uvs]
+ * @param {number[]} [options.colors]
+ * @param {number[]} [options.indices]
+ * @returns {Mesh}
+ */
+function createMeshFromArraysWithPosition(
+  positionAttribute,
+  positionComponents,
+  {
+    positions,
+    normals = [],
+    uvs = [],
+    colors = [],
+    indices
+  }
+) {
   const attributes = new SeparateAttributeData()
 
   if (positions.length > 0) {
     attributes.set(
-      Attribute.Position3D.name,
+      positionAttribute.name,
       new DataView(new Float32Array(positions).buffer)
     )
   }
@@ -54,7 +109,7 @@ export function createMeshFromArrays({
 
   const mesh = new Mesh(attributes)
   if (indices && indices.length > 0) {
-    mesh.indices = createIndexArray(indices, positions.length / 3)
+    mesh.indices = createIndexArray(indices, positions.length / positionComponents)
   }
 
   return mesh

@@ -1,6 +1,6 @@
 // @ts-check
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays } from "./geometry.js"
+import { createMesh3dFromArrays } from "./geometry.js"
 
 export class EllipsoidMeshBuilder extends MeshBuilder {
   radiusX = 0.5
@@ -55,7 +55,7 @@ export class EllipsoidMeshBuilder extends MeshBuilder {
       }
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

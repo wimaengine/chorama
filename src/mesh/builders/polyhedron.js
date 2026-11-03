@@ -2,7 +2,7 @@
 import { Vector3 } from "../../math/index.js"
 import { assert } from "../../utils/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays } from "./geometry.js"
+import { createMesh3dFromArrays } from "./geometry.js"
 import { faceNormal, projectFaceUVs, pushTriangle } from "./utils.js"
 
 /**
@@ -111,7 +111,7 @@ export class PolyhedronMeshBuilder extends MeshBuilder {
       }
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

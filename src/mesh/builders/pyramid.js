@@ -1,7 +1,7 @@
 // @ts-check
 import { Vector2, Vector3 } from "../../math/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays, regularPolygonPoints, signedArea2D } from "./geometry.js"
+import { createMesh3dFromArrays, regularPolygonPoints, signedArea2D } from "./geometry.js"
 import { assert } from "../../utils/index.js"
 import { faceNormal, getBounds, projectUV, pushTriangle } from "./utils.js"
 
@@ -15,7 +15,7 @@ export class PyramidMeshBuilder extends MeshBuilder {
   build3d() {
     const contour = regularPolygonPoints(this.sides, this.radius, this.rotation)
     if (contour.length < 3) {
-      return createMeshFromArrays({ positions: [] })
+      return createMesh3dFromArrays({ positions: [] })
     }
 
     if (signedArea2D(contour) < 0) {
@@ -80,7 +80,7 @@ export class PyramidMeshBuilder extends MeshBuilder {
       )
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
       uvs,

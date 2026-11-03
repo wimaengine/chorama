@@ -16,4 +16,13 @@ export class PrismMeshBuilder extends MeshBuilder {
     builder.depth = this.depth
     return builder.build3d()
   }
+
+  /**
+   * @override
+   */
+  build2d() {
+    const builder = new ExtrudeMeshBuilder()
+    builder.contour = regularPolygonPoints(this.sides, this.radius, this.rotation)
+    return builder.build2d()
+  }
 }

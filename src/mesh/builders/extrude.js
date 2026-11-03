@@ -1,7 +1,7 @@
 // @ts-check
 import { Vector2, Vector3 } from "../../math/index.js"
 import { MeshBuilder } from "./base.js"
-import { createMeshFromArrays, signedArea2D } from "./geometry.js"
+import { createMesh3dFromArrays, createMesh2dFromArrays, signedArea2D } from "./geometry.js"
 import { assert } from "../../utils/index.js"
 import { getBounds, projectUV, pushTriangle } from "./utils.js"
 
@@ -17,7 +17,7 @@ export class ExtrudeMeshBuilder extends MeshBuilder {
   build3d() {
     let contour = this.contour.slice()
     if (contour.length < 3) {
-      return createMeshFromArrays({ positions: [] })
+      return createMesh3dFromArrays({ positions: [] })
     }
 
     const firstPoint = contour[0]
@@ -30,7 +30,7 @@ export class ExtrudeMeshBuilder extends MeshBuilder {
     }
 
     if (contour.length < 3) {
-      return createMeshFromArrays({ positions: [] })
+      return createMesh3dFromArrays({ positions: [] })
     }
 
     if (signedArea2D(contour) < 0) {
@@ -126,9 +126,81 @@ export class ExtrudeMeshBuilder extends MeshBuilder {
       )
     }
 
-    return createMeshFromArrays({
+    return createMesh3dFromArrays({
       positions,
       normals,
+      uvs,
+      indices
+    })
+  }
+
+  /**
+   * Builds the filled contour without extruding it along Z.
+   *
+   * @override
+   */
+  build2d() {
+    let contour = this.contour.slice()
+    if (contour.length < 3) {
+      return createMesh2dFromArrays({ positions: [] })
+    }
+
+    const firstPoint = contour[0]
+    const lastPoint = contour[contour.length - 1]
+    assert(firstPoint, "Extrude contour requires at least three points")
+    assert(lastPoint, "Extrude contour requires at least three points")
+
+    if (firstPoint.equals(lastPoint)) {
+      contour = contour.slice(0, -1)
+    }
+
+    if (contour.length < 3) {
+      return createMesh2dFromArrays({ positions: [] })
+    }
+
+    if (signedArea2D(contour) < 0) {
+      contour = contour.reverse()
+    }
+
+    const bounds = getBounds(contour)
+    const center = new Vector2()
+    for (const point of contour) {
+      center.add(point)
+    }
+    center.divideScalar(contour.length)
+
+    /** @type {number[]} */
+    const positions = []
+    /** @type {number[]} */
+    const uvs = []
+    /** @type {number[]} */
+    const indices = []
+
+    for (let i = 0; i < contour.length; i++) {
+      const current = contour[i]
+      assert(current, `Missing extrude contour point at index ${i}`)
+      const next = contour[(i + 1) % contour.length]
+      assert(next, `Missing extrude contour point at index ${(i + 1) % contour.length}`)
+
+      const currentUv = projectUV(current, bounds)
+      const nextUv = projectUV(next, bounds)
+      const base = i * 3
+
+      positions.push(
+        center.x, center.y,
+        current.x, current.y,
+        next.x, next.y
+      )
+      uvs.push(
+        0.5, 0.5,
+        currentUv.x, currentUv.y,
+        nextUv.x, nextUv.y
+      )
+      indices.push(base, base + 1, base + 2)
+    }
+
+    return createMesh2dFromArrays({
+      positions,
       uvs,
       indices
     })
