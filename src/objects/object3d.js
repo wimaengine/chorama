@@ -1,184 +1,47 @@
 import { Transform3D } from "../math/index.js"
+import { ObjectBase, RenderMask } from "./objectbase.js"
 
-export class Object3D {
-  /**
-   * @type {string}
-   */
-  name = ''
-
-  transform = new Transform3D()
+export class Object3D extends ObjectBase {
 
   /**
-   * @type {Object3D | undefined}
-   */
-  parent
-  /**
+   * @override
    * @type {Object3D[]}
    */
   children = []
 
-  renderMask = new RenderMask()
+  transform = new Transform3D()
+
   update() {
-    this.transform.updateMatrix(this.parent?.transform)
+    const parentTransform = this.parent instanceof Object3D ? this.parent?.transform : undefined
+    this.transform.updateMatrix(parentTransform)
   }
 
   /**
-   * @param {Object3D[]} children
-   */
-  add(...children) {
-    this.children.push(...children)
-    children.forEach(child => child.parent = this)
-  }
-
-  /**
-   * @param {Object3D[]} children
-   */
-  remove(...children) {
-    for (let i = 0; i < children.length; i++) {
-      const child = /**@type {Object3D}*/(children[i]);
-
-      const index = this.children.indexOf(child)
-      if (index === -1) continue
-
-      child.parent = undefined
-      this.children.splice(index, 1)
-    }
-  }
-  /**
-   * @param {Traverser} func
+   * @override
+   * @param {(object: Object3D) => boolean} func
    */
   traverseBFS(func) {
-    /**@type {Object3D[]} */
-    const queue = [this]
-
-    while (queue.length) {
-      const object = /**@type {Object3D}*/ (queue.shift())
-      const visible = func(object)
-
-      if (!visible) continue
-      queue.push(...object.children)
-    }
+    super.traverseBFS(/** @type {(object: ObjectBase) => boolean} */(func))
   }
 
   /**
-   * @param {Traverser} func
+   * @override
+   * @param {(object: Object3D) => boolean} func
    */
   traverseDFS(func) {
-    const visible = func(this)
-
-    if (!visible) return
-    for (let i = 0; i < this.children.length; i++) {
-      const child = /**@type {Object3D}*/ (this.children[i])
-
-      child.traverseDFS(func);
-    }
+    super.traverseDFS(/** @type {(object: ObjectBase) => boolean} */(func))
   }
 
   /**
+   * @override
    * @param {this} object
-   * @param {Map<Object3D,Object3D>} [entityMap] 
+   * @param {Map<ObjectBase, ObjectBase>} [entityMap]
    */
   copy(object, entityMap) {
+    super.copy(object, entityMap)
     this.transform.copy(object.transform)
-    this.name = object.name
-    this.renderMask.copy(object.renderMask)
-    this.children.length = 0
-    this.merge(object, entityMap)
-
-    if (entityMap) {
-      entityMap.set(object, this)
-    }
-    return this
-  }
-
-  /**
-   * Merges clones of the source children into this object.
-   *
-   * The local transform, name, and render mask are left untouched so callers can
-   * use the object as a wrapper while still inheriting the loaded hierarchy.
-   *
-   * @param {this} object
-   * @param {Map<Object3D,Object3D>} [entityMap]
-   * @returns {this}
-   */
-  merge(object, entityMap) {
-    this.add(...object.children.map(child => {
-      const childClone = child.clone(entityMap)
-
-      if (entityMap) {
-        entityMap.set(child, childClone)
-      }
-
-      return childClone
-    }))
-
-    return this
-  }
-
-  /**
-   * @param {Map<Object3D, Object3D>} [entityMap]
-   */
-  clone(entityMap) {
-    return new /**@type {new (...arg:any) => this}*/(this.constructor)().copy(this, entityMap)
-  }
-}
-
-/**
- * @callback Traverser
- * @param {Object3D} object
- * @returns {boolean}
- */
-
-
-export class RenderMask {
-  inner = -1
-
-  /**
-   * Test against a mask (any overlap).
-   * @param {RenderMask} mask
-   */
-  test(mask) {
-    return (this.inner & mask.inner) !== 0
-  }
-
-  /**
-   * Copy another render mask.
-   * @param {RenderMask} mask
-   */
-  copy(mask) {
-    this.inner = mask.inner
-    return this
-  }
-
-  clear() {
-    this.inner = 0
-    return this
-  }
-
-  /**
-   * Enable a bit by index.
-   * @param {number} index
-   */
-  on(index) {
-    this.inner |= (1 << index)
-    return this
-  }
-
-  /**
-   * Disable a bit by index.
-   * @param {number} index
-   */
-  off(index) {
-    this.inner &= ~(1 << index)
-    return this
-  }
-
-  /**
-   * Toggle a bit by index.
-   * @param {number} index
-   */
-  toggle(index) {
-    this.inner ^= (1 << index)
     return this
   }
 }
+
+export { ObjectBase, RenderMask }
