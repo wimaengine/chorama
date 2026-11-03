@@ -48,7 +48,7 @@ export class FrustumMeshBuilder extends MeshBuilder {
     if (!this.openEnds.bottom) {
       transform.compose(
         new Vector3(0, -halfHeight, 0),
-        Quaternion.fromEuler(-Math.PI / 2, 0, -Math.PI * 0.5),
+        Quaternion.fromEuler(Math.PI / 2, 0, -Math.PI * 0.5),
         new Vector3(1, 1, 1)
       )
       capBuilder.radius = this.radiusBottom
