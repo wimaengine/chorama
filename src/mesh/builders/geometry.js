@@ -26,7 +26,7 @@ export function createMeshFromArrays({
 
   if (positions.length > 0) {
     attributes.set(
-      Attribute.Position.name,
+      Attribute.Position3D.name,
       new DataView(new Float32Array(positions).buffer)
     )
   }

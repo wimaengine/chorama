@@ -119,11 +119,11 @@ export class SeparateAttributeData {
   }
 
   /**
-   * Transforms attribute data using an affine transformation.
+   * Transforms 3D attribute data using an affine transformation.
    * @param {Affine3} affine
    */
-  transform(affine) {
-    const positions = this.get(Attribute.Position.name)
+  transform3d(affine) {
+    const positions = this.get(Attribute.Position3D.name)
     const normals = this.get(Attribute.Normal.name)
     const tangents = this.get(Attribute.Tangent.name)
 

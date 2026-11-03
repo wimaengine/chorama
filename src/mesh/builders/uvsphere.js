@@ -61,7 +61,7 @@ export class UVSphereMeshBuilder extends MeshBuilder {
 
     attributes
       .set(
-        Attribute.Position.name,
+        Attribute.Position3D.name,
         new DataView(new Float32Array(vertices).buffer)
       )
       .set(

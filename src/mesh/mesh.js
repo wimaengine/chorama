@@ -82,7 +82,7 @@ export class Mesh {
    * Calculates an axis-aligned bounding box from the mesh positions.
    */
   calculateAABBBounds() {
-    const positions = this.attributes.get(Attribute.Position.name)
+    const positions = this.attributes.get(Attribute.Position3D.name)
     if (!positions || positions.byteLength < 12) return
     const values = new Float32Array(positions.buffer, positions.byteOffset, Math.floor(positions.byteLength / 4))
     const min = new Vector3(Infinity, Infinity, Infinity)
@@ -104,7 +104,7 @@ export class Mesh {
    * Calculates a bounding sphere from the mesh positions.
    */
   calculateBoundingSphere() {
-    const positions = this.attributes.get(Attribute.Position.name)
+    const positions = this.attributes.get(Attribute.Position3D.name)
     if (!positions || positions.byteLength < 12) return
     const values = new Float32Array(positions.buffer, positions.byteOffset, Math.floor(positions.byteLength / 4))
     this.calculateAABBBounds()
@@ -147,7 +147,7 @@ export class Mesh {
    * @param {Affine3} affine
    */
   transform(affine) {
-    this.attributes.transform(affine)
+    this.attributes.transform3d(affine)
 
     for (const target of this.morphTargets) {
       transformMorphTargetAttribute(target.position, affine)
@@ -170,8 +170,8 @@ export class Mesh {
     const newMesh = new Mesh(newAttributes)
 
     if (this.indices && other.indices) {
-      const positions = this.attributes.get(Attribute.Position.name)
-      const otherPositions = other.attributes.get(Attribute.Position.name)
+      const positions = this.attributes.get(Attribute.Position3D.name)
+      const otherPositions = other.attributes.get(Attribute.Position3D.name)
 
       if (!positions) {
         return newMesh

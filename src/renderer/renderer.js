@@ -1,5 +1,5 @@
 import { WebGLRenderDevice } from "../core/index.js"
-import { Object3D } from "../objects/index.js"
+import { Object2D, Object3D } from "../objects/index.js"
 import { colorShaderLib, commonShaderLib, lightShaderLib, mathShaderLib, meshShaderLib, tonemapShaderLib } from "../shader/index.js"
 import { Sampler, Texture } from "../texture/index.js"
 import { TextureFilter, TextureType } from "../constants/index.js"
@@ -65,7 +65,8 @@ export class WebGLRenderer {
   constructor({ plugins = [], renderDevice }) {
     this.plugins = plugins
     this.attributes = new Map()
-      .set(Attribute.Position.name, Attribute.Position)
+      .set(Attribute.Position3D.name, Attribute.Position3D)
+      .set(Attribute.Position2D.name, Attribute.Position2D)
       .set(Attribute.UV.name, Attribute.UV)
       .set(Attribute.UVB.name, Attribute.UVB)
       .set(Attribute.Normal.name, Attribute.Normal)
@@ -129,7 +130,9 @@ export class WebGLRenderer {
       const object = /**@type {Object3D} */ (objects[i])
 
       object.traverseDFS((object) => {
-        object.update()
+        if (object instanceof Object2D || object instanceof Object3D) {
+          object.update()
+        }
         return true
       })
     }

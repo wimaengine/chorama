@@ -31,8 +31,8 @@ export class Attribute {
     this.format = format
   }
 
-  static Position = new Attribute(
-    'position',
+  static Position3D = new Attribute(
+    'position3d',
     0,
     VertexFormat.Float32x3
   )

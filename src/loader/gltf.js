@@ -2966,7 +2966,7 @@ function mapAccessorTypeToAttribute(name, accessor, buffer) {
     case GLTFAttributeName.Position:
       if (accessor.type !== GLTFAccessorType.Vec3 || accessor.componentType !== GLTFComponentType.Float || accessor.normalized)
         throw "Attribute types do not match"
-      return [Attribute.Position.name, convertAccessorToFloat32(accessor, buffer, 3)]
+      return [Attribute.Position3D.name, convertAccessorToFloat32(accessor, buffer, 3)]
     case GLTFAttributeName.TexCoord0:
       if (
         accessor.type !== GLTFAccessorType.Vec2 ||

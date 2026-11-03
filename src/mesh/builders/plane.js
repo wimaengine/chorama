@@ -54,7 +54,7 @@ export class PlaneMeshBuilder extends MeshBuilder {
 
     attributes
       .set(
-        Attribute.Position.name,
+        Attribute.Position3D.name,
         new DataView(new Float32Array(positions).buffer)
       )
       .set(

@@ -37,12 +37,12 @@ export class OBJLoader extends Loader {
     const raw = arrayBufferToText(buffer)
     const obj = await loadOBJ(raw)
     const attributes = new SeparateAttributeData()
-    const position = obj.attributes.get(Attribute.Position.name)
+    const position = obj.attributes.get(Attribute.Position3D.name)
     const normals = obj.attributes.get(Attribute.Normal.name)
     const uvs = obj.attributes.get(Attribute.UV.name)
 
     if (position) {
-      attributes.set(Attribute.Position.name, position)
+      attributes.set(Attribute.Position3D.name, position)
     }
 
     if (normals) {
@@ -174,7 +174,7 @@ function buildBuffers(data) {
   }
 
   const attributes = new Map([
-    [Attribute.Position.name, new DataView(new Float32Array(positions).buffer)]
+    [Attribute.Position3D.name, new DataView(new Float32Array(positions).buffer)]
   ])
 
   if (data.includeUVs && uvs.length > 0) {

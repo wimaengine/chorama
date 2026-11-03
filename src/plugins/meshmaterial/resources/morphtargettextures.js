@@ -99,7 +99,7 @@ export class MorphTargetTextures {
       return existing
     }
 
-    const positions = mesh.attributes.get(Attribute.Position.name)
+    const positions = mesh.attributes.get(Attribute.Position3D.name)
     assert(positions, "Morph target meshes require vertex positions")
 
     const vertexCount = positions.byteLength / (Float32Array.BYTES_PER_ELEMENT * 3)
