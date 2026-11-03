@@ -12,6 +12,7 @@ Here, we only focus on camera setup and controls.
 - one camera bound to a render target
 - a perspective projection setup
 - orbit controls for mouse/touch navigation
+- a free camera controller for keyboard and mouse navigation
 
 ## Step 1: Import Camera APIs
 
@@ -20,7 +21,8 @@ import {
   Camera,
   PerspectiveProjection,
   OrthographicProjection,
-  OrbitCameraControls
+  OrbitCameraControls,
+  FreeCameraController
 } from "chorama";
 ```
 
@@ -71,6 +73,29 @@ requestAnimationFrame(frame);
 
 Call `controls.update()` every frame before rendering.
 If you skip it, input changes will not be applied.
+
+## Use a Free Camera
+
+`FreeCameraController` provides first-person-style movement. Hold the left
+pointer button and drag to look around, use `WASD` or the arrow keys to move,
+and use `E`/`Space` and `Q`/`Ctrl` to move up and down. Hold `Shift` to move
+faster.
+
+```js
+const controls = new FreeCameraController(camera, canvas);
+controls.movementSpeed = 4;
+
+function frame() {
+  controls.update();
+  renderer.render([object, camera], device);
+  requestAnimationFrame(frame);
+}
+
+requestAnimationFrame(frame);
+```
+
+Pass a frame delta in seconds when you want movement to be independent of the
+render rate, for example `controls.update(deltaTime)`.
 
 ## Switch to Orthographic Projection
 

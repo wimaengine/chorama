@@ -60,7 +60,9 @@ import {
 
 - `PerspectiveProjection`
 - `OrthographicProjection`
+- `CameraController`
 - `OrbitCameraControls`
+- `FreeCameraController`
 
 ## Assets and Textures
 
