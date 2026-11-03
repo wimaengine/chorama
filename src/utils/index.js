@@ -106,14 +106,14 @@ export function formatString(string, ...args) {
 /**
  * @param {object} item
  * @param {object} baseConstructor
- * @param {string} methodName
+ * @param {Function} method
  * @returns {never}
  */
-export function abstractMethod(item, baseConstructor, methodName) {
+export function abstractMethod(item, baseConstructor, method) {
   if (item.constructor === baseConstructor) {
-    throw formatString(AbstractClassError.MethodUncallable, item.constructor.name, methodName)
+    throw formatString(AbstractClassError.MethodUncallable, item.constructor.name, method.name)
   }
-  throw formatString(AbstractClassError.MethodUnimplemented, item.constructor.name, methodName)
+  throw formatString(AbstractClassError.MethodUnimplemented, item.constructor.name, method.name)
 }
 
 /**

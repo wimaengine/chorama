@@ -31,7 +31,7 @@ export class Material extends RawMaterial {
    * @returns {import("./alphablend.js").AlphaBlend}
    */
   alphaBlendMode() {
-    abstractMethod(this, Material, "alphaBlendMode")
+    abstractMethod(this, Material, Material.prototype.alphaBlendMode)
   }
 
   constructor(){
@@ -43,7 +43,7 @@ export class Material extends RawMaterial {
    * @returns {string}
    */
   vertex() {
-    abstractMethod(this, Material, Material.prototype.vertex.name)
+    abstractMethod(this, Material, Material.prototype.vertex)
   }
 
   /**
@@ -51,7 +51,7 @@ export class Material extends RawMaterial {
    * @returns {string}
    */
   fragment() {
-    abstractMethod(this, Material, Material.prototype.fragment.name)
+    abstractMethod(this, Material, Material.prototype.fragment)
   }
 
   /**

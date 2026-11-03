@@ -14,14 +14,14 @@ export class MeshBuilder {
    * @returns {Mesh}
    */
   build3d() {
-    abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build3d.name)
+    abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build3d)
   }
 
   /**
    * @returns {Mesh}
    */
   build2d() {
-    abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build2d.name)
+    abstractMethod(this, MeshBuilder, MeshBuilder.prototype.build2d)
   }
 }
 

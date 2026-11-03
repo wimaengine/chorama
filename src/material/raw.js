@@ -31,7 +31,7 @@ export class RawMaterial {
    * @returns {string}
    */
   fragment() {
-    abstractMethod(this, RawMaterial, RawMaterial.prototype.fragment.name)
+    abstractMethod(this, RawMaterial, RawMaterial.prototype.fragment)
   }
 
   /**
@@ -49,21 +49,21 @@ export class RawMaterial {
    * @returns {string}
    */
   prepassFragment() {
-    abstractMethod(this, RawMaterial, RawMaterial.prototype.prepassFragment.name)
+    abstractMethod(this, RawMaterial, RawMaterial.prototype.prepassFragment)
   }
 
   /**
    * @returns {import("./alphablend.js").AlphaBlend}
    */
   alphaBlendMode() {
-    abstractMethod(this, RawMaterial, "alphaBlendMode")
+    abstractMethod(this, RawMaterial, RawMaterial.prototype.alphaBlendMode)
   }
 
   /**
    * @param {DataView} _data
    */
   getData(_data) {
-    abstractMethod(this, RawMaterial, RawMaterial.prototype.getData.name)
+    abstractMethod(this, RawMaterial, RawMaterial.prototype.getData)
   }
 
   /**
