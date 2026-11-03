@@ -11,8 +11,9 @@ export class SkyboxPlugin extends Plugin {
   init(renderer) {
     renderer.setResource(new SkyboxPipeline())
     renderer.setResource(new SkyBoxUniforms())
-    renderer.renderGraph.addNode(SkyBoxNode.name, new SkyBoxNode())
-    renderer.renderGraph.addDependency(CameraViewNode.name, SkyBoxNode.name)
-    renderer.renderGraph.addDependency(SkyBoxNode.name, SortViewsNode.name)
+    renderer.renderGraph
+      .addNode(SkyBoxNode.name, new SkyBoxNode())
+      .addDependency(CameraViewNode.name, SkyBoxNode.name)
+      .addDependency(SkyBoxNode.name, SortViewsNode.name)
   }
 }

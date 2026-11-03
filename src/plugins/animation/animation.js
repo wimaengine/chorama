@@ -8,8 +8,9 @@ export class AnimationPlugin extends Plugin {
    * @param {WebGLRenderer} renderer
    */
   init(renderer) {
-    renderer.renderGraph.addNode(AnimationAdvanceNode.name, new AnimationAdvanceNode())
-    renderer.renderGraph.addDependency(AnimationAdvanceNode.name, CameraViewNode.name)
+    renderer.renderGraph
+      .addNode(AnimationAdvanceNode.name, new AnimationAdvanceNode())
+      .addDependency(AnimationAdvanceNode.name, CameraViewNode.name)
   }
 }
 

@@ -198,7 +198,7 @@ const builderOptions = [
     builder.widthSegments = 24
     builder.depthSegments = 24
     builder.heightScale = 0.35
-    builder.sampleHeight = terrainHeightModes.Hills
+    builder.sampleHeight = terrainHeightModes["Hills"] ?? sampleTerrainHeight
     return builder
   } },
   { name: "Tetrahedron", create: () => new TetrahedronMeshBuilder() },
@@ -286,7 +286,7 @@ function addBuilderProperties(folder) {
         const sampleHeight = terrainHeightModes[name]
         if (!sampleHeight) return
 
-        builder.sampleHeight = sampleHeight
+        builder["sampleHeight"] = sampleHeight
         rebuildMesh()
       })
   }

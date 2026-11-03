@@ -35,7 +35,7 @@ export class RenderGraph {
   /**
    * @param {string} name
    * @param {RenderGraphNode} node
-   * @returns {number}
+   * @returns {RenderGraph}
    */
   addNode(name, node) {
     const current = this.nodes.get(name)
@@ -47,7 +47,7 @@ export class RenderGraph {
     const id = this.graph.addNode(node)
 
     this.nodes.set(name, id)
-    return id
+    return this
   }
 
   /**
@@ -71,9 +71,11 @@ export class RenderGraph {
   /**
    * @param {string} from
    * @param {string} to
+   * @returns {RenderGraph}
    */
   addDependency(from, to) {
     this.queuedEdges.push([from, to])
+    return this
   }
 
   /**

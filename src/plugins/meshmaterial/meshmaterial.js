@@ -20,16 +20,17 @@ export class MeshMaterialPlugin extends Plugin {
       renderer.setResource(new BoneTextureResource(renderDevice.limits))
     }
     renderer.setResource(new MorphTargetTextures(renderDevice.limits))
-    renderer.renderGraph.addNode(MeshMaterial3DNode.name, new MeshMaterial3DNode())
-    renderer.renderGraph.addNode(MeshMaterial2DNode.name, new MeshMaterial2DNode())
-    renderer.renderGraph.addNode(PrepareMaterialBindGroupsNode.name, new PrepareMaterialBindGroupsNode())
-    renderer.renderGraph.addDependency(CameraViewNode.name, MeshMaterial3DNode.name)
-    renderer.renderGraph.addDependency(MeshMaterial3DNode.name, MeshMaterial2DNode.name)
-    renderer.renderGraph.addDependency(CameraViewNode.name, MeshMaterial2DNode.name)
-    renderer.renderGraph.addDependency(MeshMaterial3DNode.name, PrepareMaterialBindGroupsNode.name)
-    renderer.renderGraph.addDependency(MeshMaterial2DNode.name, PrepareMaterialBindGroupsNode.name)
-    renderer.renderGraph.addDependency(PrepareMaterialBindGroupsNode.name, SortViewsNode.name)
-    renderer.renderGraph.addDependency(MeshMaterial3DNode.name, SortViewsNode.name)
-    renderer.renderGraph.addDependency(MeshMaterial2DNode.name, SortViewsNode.name)
+    renderer.renderGraph
+      .addNode(MeshMaterial3DNode.name, new MeshMaterial3DNode())
+      .addNode(MeshMaterial2DNode.name, new MeshMaterial2DNode())
+      .addNode(PrepareMaterialBindGroupsNode.name, new PrepareMaterialBindGroupsNode())
+      .addDependency(CameraViewNode.name, MeshMaterial3DNode.name)
+      .addDependency(MeshMaterial3DNode.name, MeshMaterial2DNode.name)
+      .addDependency(CameraViewNode.name, MeshMaterial2DNode.name)
+      .addDependency(MeshMaterial3DNode.name, PrepareMaterialBindGroupsNode.name)
+      .addDependency(MeshMaterial2DNode.name, PrepareMaterialBindGroupsNode.name)
+      .addDependency(PrepareMaterialBindGroupsNode.name, SortViewsNode.name)
+      .addDependency(MeshMaterial3DNode.name, SortViewsNode.name)
+      .addDependency(MeshMaterial2DNode.name, SortViewsNode.name)
   }
 }

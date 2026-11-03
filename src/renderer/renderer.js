@@ -80,9 +80,10 @@ export class WebGLRenderer {
     this.setResource(new MeshInstanceBindGroups(renderDevice))
 
     this.renderGraph = new RenderGraph()
-    this.renderGraph.addNode(SortViewsNode.name, new SortViewsNode())
-    this.renderGraph.addNode(PrepareMeshInstanceBindGroupsNode.name, new PrepareMeshInstanceBindGroupsNode())
-    this.renderGraph.addDependency(SortViewsNode.name, PrepareMeshInstanceBindGroupsNode.name)
+    this.renderGraph
+      .addNode(SortViewsNode.name, new SortViewsNode())
+      .addNode(PrepareMeshInstanceBindGroupsNode.name, new PrepareMeshInstanceBindGroupsNode())
+      .addDependency(SortViewsNode.name, PrepareMeshInstanceBindGroupsNode.name)
 
     this.includes
       .set("common", commonShaderLib)

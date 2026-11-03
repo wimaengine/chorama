@@ -27,7 +27,8 @@ export class LightPlugin extends Plugin {
     renderer.setResource(new PointLightUniformBuffer())
     renderer.setResource(new SpotLightUniformBuffer())
 
-    renderer.renderGraph.addNode(LightNode.name, new LightNode())
-    renderer.renderGraph.addDependency(LightNode.name, SortViewsNode.name)
+    renderer.renderGraph
+      .addNode(LightNode.name, new LightNode())
+      .addDependency(LightNode.name, SortViewsNode.name)
   }
 }

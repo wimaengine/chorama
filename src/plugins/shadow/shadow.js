@@ -25,14 +25,15 @@ export class ShadowPlugin extends Plugin {
     }
     renderer.defines.set('MAX_SHADOW_CASTERS', shadowCasterUniform.capacity.toString())
 
-    renderer.renderGraph.addNode(ShadowViewNode.name, new ShadowViewNode())
-    renderer.renderGraph.addNode(ShadowOccluderNode.name, new ShadowOccluderNode())
-    renderer.renderGraph.addNode(ShadowOpaquePassNode.name, new ShadowOpaquePassNode())
-    renderer.renderGraph.addDependency(ShadowViewNode.name, ShadowOccluderNode.name)
-    renderer.renderGraph.addDependency(ShadowOccluderNode.name, SortViewsNode.name)
-    renderer.renderGraph.addDependency(SortViewsNode.name, PrepareMeshInstanceBindGroupsNode.name)
-    renderer.renderGraph.addDependency(PrepareMeshInstanceBindGroupsNode.name, ShadowOpaquePassNode.name)
-    renderer.renderGraph.addDependency(ShadowOpaquePassNode.name, CameraOpaquePass3DNode.name)
+    renderer.renderGraph
+      .addNode(ShadowViewNode.name, new ShadowViewNode())
+      .addNode(ShadowOccluderNode.name, new ShadowOccluderNode())
+      .addNode(ShadowOpaquePassNode.name, new ShadowOpaquePassNode())
+      .addDependency(ShadowViewNode.name, ShadowOccluderNode.name)
+      .addDependency(ShadowOccluderNode.name, SortViewsNode.name)
+      .addDependency(SortViewsNode.name, PrepareMeshInstanceBindGroupsNode.name)
+      .addDependency(PrepareMeshInstanceBindGroupsNode.name, ShadowOpaquePassNode.name)
+      .addDependency(ShadowOpaquePassNode.name, CameraOpaquePass3DNode.name)
     
   }
 }
