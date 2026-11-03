@@ -13,7 +13,11 @@ uniform sampler2DArray bone_transforms;
 uniform sampler2DArray morph_targets;
 #endif
 
-in vec3 position3d;
+#ifdef DIMENSION_2D
+  in vec2 position2d;
+#else
+  in vec3 position3d;
+#endif
 in vec2 uv;
 in vec3 normal;
 #ifdef VERTEX_COLORS
@@ -43,7 +47,11 @@ out vec4 v_tangent;
 out vec3 cam_direction;
 
 void main(){
-  vec3 morphed_position = position3d;
+  #ifdef DIMENSION_2D
+    vec3 morphed_position = vec3(position2d, 0.0);
+  #else
+    vec3 morphed_position = position3d;
+  #endif
   vec3 morphed_normal = normal;
   #ifdef VERTEX_TANGENTS
     vec3 morphed_tangent = tangent.xyz;

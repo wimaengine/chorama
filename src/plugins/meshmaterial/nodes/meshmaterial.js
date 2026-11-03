@@ -1,7 +1,7 @@
 import { Shader, WebGLRenderDevice } from "../../../core/index.js"
 import { Attribute } from "../../../mesh/index.js"
 import { assert } from "../../../utils/index.js"
-import { Camera, MeshMaterial3D, Object3D } from "../../../objects/index.js"
+import { Camera, MeshMaterial2D, MeshMaterial3D, Object3D } from "../../../objects/index.js"
 import { AlphaMaskMode, TransparentMode } from "../../../material/index.js"
 import { MeshInstanceBindGroups, MeshInstanceUniform, MeshRenderItem, ViewBindGroups, Views, WebGLRenderer } from "../../../renderer/index.js"
 import { PrimitiveTopology, TextureFormat } from "../../../constants/index.js"
@@ -128,7 +128,8 @@ export const MeshKey = /** @type {const} */ ({
   TriangleStrip: 1n << 5n,
   TriangleFan: 1n << 6n,
   Skinned: 1n << 7n,
-  MorphTargets: 1n << 8n
+  MorphTargets: 1n << 8n,
+  Dimension2D: 1n << 9n
 })
 
 /**
@@ -147,12 +148,22 @@ function keyFromTopology(mesh) {
 
 /**
  * @param {import("../../../index.js").Mesh} mesh
- * @param {MeshMaterial3D} object
+ * @param {MeshMaterial2D | MeshMaterial3D} object
  */
 function createPipelineBitsFromMesh(mesh, object) {
+  const is2D = object instanceof MeshMaterial2D
   let key = keyFromTopology(mesh)
-  if (mesh.attributes.has(Attribute.JointIndex.name) && mesh.attributes.has(Attribute.JointWeight.name) && object.skin && object.skin.bones.length > 0) key |= MeshKey.Skinned
-  if (mesh.morphTargets.length > 0) key |= MeshKey.MorphTargets
+  if (is2D) key |= MeshKey.Dimension2D
+  if (
+    object instanceof MeshMaterial3D &&
+    mesh.attributes.has(Attribute.JointIndex.name) &&
+    mesh.attributes.has(Attribute.JointWeight.name) &&
+    object.skin &&
+    object.skin.bones.length > 0
+  ) {
+    key |= MeshKey.Skinned
+  }
+  if (!is2D && mesh.morphTargets.length > 0) key |= MeshKey.MorphTargets
   return key
 }
 
@@ -165,6 +176,7 @@ function createPipelineBitsFromMesh(mesh, object) {
 function getShaderDefs(meshLayout, meshBits, globalDefines) {
   /**@type {[string, string][]} */
   const shaderdefs = []
+  if (meshBits & MeshKey.Dimension2D) shaderdefs.push(["DIMENSION_2D", ""])
   if (meshBits & MeshKey.Skinned) shaderdefs.push(["SKINNED", ""])
   if (meshLayout.hasAttribute(Attribute.UV)) shaderdefs.push(["VERTEX_UVS", ""])
   if (meshLayout.hasAttribute(Attribute.Color)) shaderdefs.push(["VERTEX_COLORS", ""])
@@ -194,7 +206,7 @@ function createPipelineKey(layoutHash, meshBits, materialBits) {
 
 /**
  * @param {{
- *   object: Object3D,
+ *   object: MeshMaterial2D | MeshMaterial3D,
  *   device: WebGLRenderDevice,
  *   renderer: WebGLRenderer,
  *   pipelines: MeshMaterialPipelines,
@@ -221,20 +233,21 @@ export function createMeshMaterialRenderItem({
   morphTargetTextures,
   viewBindGroups
 }) {
-  if (!(object instanceof MeshMaterial3D)) return
+  if (!(object instanceof MeshMaterial2D) && !(object instanceof MeshMaterial3D)) return
 
   const { caches, attributes } = renderer
-  const { material, mesh, transform } = object
-  if (!mesh.attributes.has(Attribute.Position3D.name)) {
-    console.warn("MeshMaterial3D requires a mesh with a position3d attribute; skipping render item")
+  const { material, mesh } = object
+  const positionAttribute = object instanceof MeshMaterial2D ? Attribute.Position2D : Attribute.Position3D
+  if (!mesh.attributes.has(positionAttribute.name)) {
+    console.warn(`${object.constructor.name} requires a mesh with a ${positionAttribute.name} attribute; skipping render item`)
     return
   }
   let skinTextureState
-  if (object.skin) {
+  if (object instanceof MeshMaterial3D && object.skin) {
     skinTextureState = { resource: boneTexture, slot: boneTexture.getOrAllocate(object.skin) }
   }
   let morphTextureState
-  if (mesh.morphTargets.length > 0) {
+  if (object instanceof MeshMaterial3D && mesh.morphTargets.length > 0) {
     morphTextureState = morphTargetTextures.getOrAllocate(mesh)
   }
   materials.add(material)
@@ -287,21 +300,23 @@ export function createMeshMaterialRenderItem({
   })
 
   if (!caches.getRenderPipeline(pipelineId)) return
-  const meshInstance = new MeshInstanceUniform({
-    transform: transform.world,
-    skinIndex: skinTextureState ? skinTextureState.slot.index : 0,
-    boneCount: object.skin?.bones.length ?? 0,
-    morphTargetCount: morphTextureState?.targetCount ?? 0,
-    morphWeights: object.morphWeights
-  })
+  const meshInstance = object instanceof MeshMaterial2D
+    ? MeshInstanceUniform.from2D(object.transform.world, object.zIndex)
+    : new MeshInstanceUniform({
+      transform: object.transform.world,
+      skinIndex: skinTextureState ? skinTextureState.slot.index : 0,
+      boneCount: object.skin?.bones.length ?? 0,
+      morphTargetCount: morphTextureState?.targetCount ?? 0,
+      morphWeights: object.morphWeights
+    })
   return new MeshRenderItem({
     material,
     morphBindGroup: morphTextureState && morphTargetTextures ? morphTargetTextures.getBindGroup(device, renderer, mesh) : undefined,
     mesh: gpuMesh,
     pipelineId,
     meshInstance,
-    tag: MeshMaterial3D.name,
-    transform: transform.world
+    tag: object.constructor.name,
+    transform: meshInstance.transform
   })
 }
 

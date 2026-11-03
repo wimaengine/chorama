@@ -94,6 +94,6 @@ export class RawMaterial {
  * @property {boolean} [depthWrite]
  * @property {{
  *   source?: import("../core/shader.js").Shader,
- *   targets?: Array<{ blend?: unknown }>
+ *   targets?: Array<{ format?: import("../constants/index.js").TextureFormat, blend?: unknown }>
  * }} [fragment]
  */
