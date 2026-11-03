@@ -1,6 +1,6 @@
 // @ts-check
 import { MeshBuilder } from "./base.js"
-import { CylinderMeshBuilder } from "./cylinder.js"
+import { FrustumMeshBuilder } from "./frustum.js"
 
 export class ConeMeshBuilder extends MeshBuilder {
   radiusBottom = 0.5
@@ -12,7 +12,7 @@ export class ConeMeshBuilder extends MeshBuilder {
 
   /** @override */
   build3d() {
-    const builder = new CylinderMeshBuilder()
+    const builder = new FrustumMeshBuilder()
     builder.radiusTop = 0
     builder.radiusBottom = this.radiusBottom
     builder.height = this.height
@@ -20,10 +20,7 @@ export class ConeMeshBuilder extends MeshBuilder {
     builder.heightSegments = this.heightSegments
     builder.arcStart = this.arcStart
     builder.arcLength = this.arcLength
-    builder.openEnds = {
-      top: true,
-      bottom: false
-    }
+    builder.openEnds.top = true
     return builder.build3d()
   }
 }
