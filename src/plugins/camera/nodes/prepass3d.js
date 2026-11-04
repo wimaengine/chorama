@@ -8,6 +8,7 @@ import { snapUp } from "../../../math/index.js"
 import { Attribute } from "../../../mesh/index.js"
 import { PrePassPipeline, PrePassTextures } from "../resources/index.js"
 import { MeshMaterialBindGroups, MorphTargetTextures } from "../../meshmaterial/resources/index.js"
+import { getMipLevelSize } from "../../../core/webgl/utils.js"
 
 const MATERIAL_BIND_GROUP_INDEX = 1
 const MESH_INSTANCE_BIND_GROUP_INDEX = 2
@@ -111,9 +112,17 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
       depthLoadOp: "clear",
       depthStoreOp: "store",
       depthClearValue: camera.clearDepth ?? 1
-    },
-    depthRange: view.depthRange
+    }
   })
+
+  const { width, height } = getMipLevelSize(
+    sourceDepthTexture.type,
+    sourceDepthTexture.width,
+    sourceDepthTexture.height,
+    sourceDepthTexture.depth,
+    view.depthMipmapLevel
+  )
+  pass.setViewport(0, 0, width, height, view.depthRange.start, view.depthRange.end)
 
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)

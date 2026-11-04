@@ -4,6 +4,7 @@ import { assert } from "../../../utils/index.js"
 import { snapUp } from "../../../math/index.js"
 import { ShadowMap } from "../resources/index.js"
 import { MeshMaterialBindGroups } from "../../meshmaterial/resources/index.js"
+import { getMipLevelSize } from "../../../core/webgl/utils.js"
 
 const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
@@ -38,10 +39,28 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInst
 
   const pass = device.createCommandEncoder().beginRenderPass({
     colorAttachments: [],
-    depthStencilAttachment,
-    viewport: view.viewport,
-    scissor: view.scissor || view.viewport
+    depthStencilAttachment
   })
+
+  const { width, height } = getMipLevelSize(
+    depthTexture.type,
+    depthTexture.width,
+    depthTexture.height,
+    depthTexture.depth,
+    view.depthMipmapLevel
+  )
+  pass.setViewport(
+    view.viewport.offset.x * width,
+    view.viewport.offset.y * height,
+    view.viewport.size.x * width,
+    view.viewport.size.y * height
+  )
+  pass.setScissorRect(
+    (view.scissor || view.viewport).offset.x * width,
+    (view.scissor || view.viewport).offset.y * height,
+    (view.scissor || view.viewport).size.x * width,
+    (view.scissor || view.viewport).size.y * height
+  )
 
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)

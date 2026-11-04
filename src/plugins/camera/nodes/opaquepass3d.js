@@ -4,6 +4,7 @@ import { MeshMaterialBindGroups } from "../../meshmaterial/resources/index.js"
 import { assert } from "../../../utils/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 import { snapUp } from "../../../math/index.js"
+import { getMipLevelSize } from "../../../core/webgl/utils.js"
 
 const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
@@ -43,11 +44,12 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
 
   const clearColor = camera.clearColor
   const clearValue = clearColor ? /** @type {const} */ ([clearColor.r, clearColor.g, clearColor.b, clearColor.a]) : undefined
+  const colorTexture = caches.getTexture(device, colorTarget)
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
   const pass = device.createCommandEncoder().beginRenderPass({
     colorAttachments: [{
-      texture: caches.getTexture(device, colorTarget),
+      texture: colorTexture,
       mipLevel: view.colorMipmapLevel,
       layer: view.colorLayer,
       loadOp: clearValue ? "clear" : "load",
@@ -61,9 +63,17 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
       depthLoadOp: camera.clearDepth !== undefined ? "clear" : "load",
       depthStoreOp: "store",
       depthClearValue: camera.clearDepth
-    }) : undefined,
-    depthRange: view.depthRange
+    }) : undefined
   })
+
+  const { width, height } = getMipLevelSize(
+    colorTexture.type,
+    colorTexture.width,
+    colorTexture.height,
+    colorTexture.depth,
+    view.colorMipmapLevel
+  )
+  pass.setViewport(0, 0, width, height, view.depthRange.start, view.depthRange.end)
 
   const alignment = device.limits.minUniformBufferOffsetAlignment
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)

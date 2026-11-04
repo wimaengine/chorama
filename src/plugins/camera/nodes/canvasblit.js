@@ -3,6 +3,7 @@ import { Camera } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
 import { CanvasTarget, ImageRenderTarget } from "../../../rendertarget/index.js"
 import { CompareFunction, MeshVertexLayout, Shader } from "../../../core/index.js"
+import { getMipLevelSize } from "../../../core/webgl/utils.js"
 import { CullFace, PrimitiveTopology, TextureFormat } from "../../../constants/index.js"
 import { assert } from "../../../utils/index.js"
 import { Texture2DPool } from "../RenderTarget2DPool.js"
@@ -65,11 +66,30 @@ export class CanvasBlitNode {
             texture: currentTexture,
             loadOp: "load",
             storeOp: "store"
-          }],
-          viewport: view.viewport,
-          scissor: view.scissor || view.viewport,
-          depthRange: view.depthRange
+          }]
         })
+
+        const { width, height } = getMipLevelSize(
+          currentTexture.type,
+          currentTexture.width,
+          currentTexture.height,
+          currentTexture.depth,
+          0
+        )
+        pass.setViewport(
+          view.viewport.offset.x * width,
+          view.viewport.offset.y * height,
+          view.viewport.size.x * width,
+          view.viewport.size.y * height,
+          view.depthRange.start,
+          view.depthRange.end
+        )
+        pass.setScissorRect(
+          (view.scissor || view.viewport).offset.x * width,
+          (view.scissor || view.viewport).offset.y * height,
+          (view.scissor || view.viewport).size.x * width,
+          (view.scissor || view.viewport).size.y * height
+        )
 
         pass.setPipeline(pipeline)
         pass.setBindGroup(0, bindGroup)
@@ -88,11 +108,30 @@ export class CanvasBlitNode {
             layer: view.colorLayer,
             loadOp: "load",
             storeOp: "store"
-          }],
-          viewport: view.viewport,
-          scissor: view.scissor || view.viewport,
-          depthRange: view.depthRange
+          }]
         })
+
+        const { width, height } = getMipLevelSize(
+          imageTexture.type,
+          imageTexture.width,
+          imageTexture.height,
+          imageTexture.depth,
+          view.colorMipmapLevel
+        )
+        pass.setViewport(
+          view.viewport.offset.x * width,
+          view.viewport.offset.y * height,
+          view.viewport.size.x * width,
+          view.viewport.size.y * height,
+          view.depthRange.start,
+          view.depthRange.end
+        )
+        pass.setScissorRect(
+          (view.scissor || view.viewport).offset.x * width,
+          (view.scissor || view.viewport).offset.y * height,
+          (view.scissor || view.viewport).size.x * width,
+          (view.scissor || view.viewport).size.y * height
+        )
 
         pass.setPipeline(pipeline)
         pass.setBindGroup(0, bindGroup)

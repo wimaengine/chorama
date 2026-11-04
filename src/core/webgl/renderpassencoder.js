@@ -365,7 +365,7 @@ function beginRenderPass(context, drawBuffer, descriptor, discardAttachments, li
   }
 
   context.drawBuffers(drawBuffers)
-  setInitialViewportAndScissor(context, descriptor, renderExtent)
+  setDefaultViewport(context, renderExtent)
   configureDepthStencilState(context, descriptor, useDefaultFramebuffer)
   clearRenderPassAttachments(context, descriptor, useDefaultFramebuffer)
   collectDiscardAttachments(context, descriptor, drawBuffers, useDefaultFramebuffer, discardAttachments)
@@ -559,61 +559,17 @@ function attachTextureToFramebuffer(context, attachment, texture, mipLevel, laye
 
 /**
  * @param {WebGL2RenderingContext} context
- * @param {WebGLRenderPassDescriptor} descriptor
  * @param {{ width: number, height: number }} renderExtent
  */
-function setInitialViewportAndScissor(context, descriptor, renderExtent) {
-  const { viewport, scissor, depthRange } = descriptor
-  const viewportPixels = rectangleToPixels(renderExtent, viewport)
-  const minDepth = depthRange?.start ?? 0
-  const maxDepth = depthRange?.end ?? 1
-
+function setDefaultViewport(context, renderExtent) {
   context.viewport(
-    viewportPixels.x,
-    viewportPixels.y,
-    viewportPixels.width,
-    viewportPixels.height
+    0,
+    0,
+    renderExtent.width,
+    renderExtent.height
   )
-  context.depthRange(minDepth, maxDepth)
-
-  const scissorRectangle = scissor || viewport
-
-  if (!scissorRectangle) {
-    context.disable(context.SCISSOR_TEST)
-    return
-  }
-
-  const scissorPixels = rectangleToPixels(renderExtent, scissorRectangle)
-
-  context.enable(context.SCISSOR_TEST)
-  context.scissor(
-    scissorPixels.x,
-    scissorPixels.y,
-    scissorPixels.width,
-    scissorPixels.height
-  )
-}
-
-/**
- * @param {{ width: number, height: number }} target
- * @param {import("../../utils/index.js").ViewRectangle | undefined} rectangle
- */
-function rectangleToPixels(target, rectangle) {
-  if (!rectangle) {
-    return {
-      x: 0,
-      y: 0,
-      width: target.width,
-      height: target.height
-    }
-  }
-
-  return {
-    x: rectangle.offset.x * target.width,
-    y: rectangle.offset.y * target.height,
-    width: rectangle.size.x * target.width,
-    height: rectangle.size.y * target.height
-  }
+  context.depthRange(0, 1)
+  context.disable(context.SCISSOR_TEST)
 }
 
 /**

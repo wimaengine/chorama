@@ -7,6 +7,7 @@ import { Plugin, Views, WebGLRenderer } from "../../renderer/index.js";
 import { ImageRenderTarget } from "../../rendertarget/index.js";
 import { skeletonFragment, skeletonVertex } from "../../shader/index.js";
 import { BoneTextureResource } from "../meshmaterial/resources/index.js";
+import { getMipLevelSize } from "../../core/webgl/utils.js";
 
 export class SkeletonHelperPlugin extends Plugin {
 
@@ -70,6 +71,9 @@ export class SkeletonHelperPlugin extends Plugin {
 
     const renderTarget = view.renderTarget
     const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
+    const colorTarget = renderTarget.color.find((texture) => texture !== null)
+    const colorTexture = colorTarget ? caches.getTexture(device, colorTarget) : undefined
+    const renderTexture = depthTexture ?? colorTexture
     const depthStencilAttachment = depthTexture ? /** @type {import("../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
       texture: depthTexture,
       layer: renderTarget.layer
@@ -94,10 +98,30 @@ export class SkeletonHelperPlugin extends Plugin {
         loadOp: /** @type {import("../../core/index.js").WebGLLoadOp} */ ("load"),
         storeOp: /** @type {import("../../core/index.js").WebGLStoreOp} */ ("store")
       } : null),
-      depthStencilAttachment,
-      viewport: view.viewport,
-      scissor: view.scissor || view.viewport
+      depthStencilAttachment
     })
+
+    if (renderTexture) {
+      const { width, height } = getMipLevelSize(
+        renderTexture.type,
+        renderTexture.width,
+        renderTexture.height,
+        renderTexture.depth,
+        0
+      )
+      pass.setViewport(
+        view.viewport.offset.x * width,
+        view.viewport.offset.y * height,
+        view.viewport.size.x * width,
+        view.viewport.size.y * height
+      )
+      pass.setScissorRect(
+        (view.scissor || view.viewport).offset.x * width,
+        (view.scissor || view.viewport).offset.y * height,
+        (view.scissor || view.viewport).size.x * width,
+        (view.scissor || view.viewport).size.y * height
+      )
+    }
 
     pass.setPipeline(pipeline)
     const transformsTexture = caches.getTexture(device, boneTextureResource.texture)
