@@ -61,8 +61,6 @@ export class CanvasBlitNode {
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, currentTexture.actualFormat)
 
         const pass = commandEncoder.beginRenderPass({
-          width: canvasTarget.width,
-          height: canvasTarget.height,
           colorAttachments: [{
             texture: currentTexture,
             loadOp: "load",
@@ -84,8 +82,6 @@ export class CanvasBlitNode {
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, imageTarget.image.format)
 
         const pass = commandEncoder.beginRenderPass({
-          width: imageTarget.width,
-          height: imageTarget.height,
           colorAttachments: [{
             texture: imageTexture,
             mipLevel: view.colorMipmapLevel,

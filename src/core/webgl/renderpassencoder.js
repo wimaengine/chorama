@@ -6,6 +6,7 @@ import { BufferType, TextureType, hasDepthComponent, hasStencilComponent } from 
 import { getFramebufferAttachment, mapVertexFormatToWebGL } from "../../function.js"
 import { assert } from "../../utils/index.js"
 import { assertTrue } from "../../utils/index.js"
+import { getMipLevelSize } from "./utils.js"
 
 /**
  * @typedef WebGLBoundBindGroup
@@ -355,6 +356,7 @@ function validateBindGroupCompatibility(pipeline, index, bindGroup) {
 function beginRenderPass(context, drawBuffer, descriptor, discardAttachments, limits) {
   const useDefaultFramebuffer = usesDefaultFramebuffer(descriptor)
   const drawBuffers = resolveDrawBuffers(context, descriptor, limits, useDefaultFramebuffer)
+  const renderExtent = getRenderExtent(descriptor)
 
   context.bindFramebuffer(context.FRAMEBUFFER, useDefaultFramebuffer ? null : drawBuffer)
 
@@ -363,10 +365,44 @@ function beginRenderPass(context, drawBuffer, descriptor, discardAttachments, li
   }
 
   context.drawBuffers(drawBuffers)
-  setInitialViewportAndScissor(context, descriptor)
+  setInitialViewportAndScissor(context, descriptor, renderExtent)
   configureDepthStencilState(context, descriptor, useDefaultFramebuffer)
   clearRenderPassAttachments(context, descriptor, useDefaultFramebuffer)
   collectDiscardAttachments(context, descriptor, drawBuffers, useDefaultFramebuffer, discardAttachments)
+}
+
+/**
+ * @param {WebGLRenderPassDescriptor} descriptor
+ * @returns {{ width: number, height: number }}
+ */
+function getRenderExtent(descriptor) {
+  let attachment
+  let mipLevel = 0
+
+  for (const colorAttachment of descriptor.colorAttachments) {
+    if (colorAttachment) {
+      attachment = colorAttachment.texture
+      mipLevel = colorAttachment.mipLevel ?? 0
+      break
+    }
+  }
+
+  if (!attachment) {
+    attachment = descriptor.depthStencilAttachment?.texture
+    mipLevel = descriptor.depthStencilAttachment?.mipLevel ?? 0
+  }
+
+  assert(attachment, "Render pass has no attachments")
+
+  const { width, height } = getMipLevelSize(
+    attachment.type,
+    attachment.width,
+    attachment.height,
+    attachment.depth,
+    mipLevel
+  )
+
+  return { width, height }
 }
 
 /**
@@ -524,10 +560,11 @@ function attachTextureToFramebuffer(context, attachment, texture, mipLevel, laye
 /**
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPassDescriptor} descriptor
+ * @param {{ width: number, height: number }} renderExtent
  */
-function setInitialViewportAndScissor(context, descriptor) {
+function setInitialViewportAndScissor(context, descriptor, renderExtent) {
   const { viewport, scissor, depthRange } = descriptor
-  const viewportPixels = rectangleToPixels(descriptor, viewport)
+  const viewportPixels = rectangleToPixels(renderExtent, viewport)
   const minDepth = depthRange?.start ?? 0
   const maxDepth = depthRange?.end ?? 1
 
@@ -546,7 +583,7 @@ function setInitialViewportAndScissor(context, descriptor) {
     return
   }
 
-  const scissorPixels = rectangleToPixels(descriptor, scissorRectangle)
+  const scissorPixels = rectangleToPixels(renderExtent, scissorRectangle)
 
   context.enable(context.SCISSOR_TEST)
   context.scissor(

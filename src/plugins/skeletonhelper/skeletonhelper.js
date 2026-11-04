@@ -88,8 +88,6 @@ export class SkeletonHelperPlugin extends Plugin {
     renderTarget.changed()
 
     const pass = device.createCommandEncoder().beginRenderPass({
-      width: renderTarget.width,
-      height: renderTarget.height,
       colorAttachments: renderTarget.color.map((texture) => texture ? {
         texture: caches.getTexture(device, texture),
         layer: renderTarget.layer,

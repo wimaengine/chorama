@@ -45,8 +45,6 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   renderTarget.changed()
 
   const pass = device.createCommandEncoder().beginRenderPass({
-    width: colorTarget.width,
-    height: colorTarget.height,
     colorAttachments: [{
       texture: caches.getTexture(device, colorTarget),
       mipLevel: view.colorMipmapLevel,

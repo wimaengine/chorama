@@ -79,8 +79,6 @@ export class TonemappingNode {
       const [, outputColor] = cameraColorTarget.getColorPair()
 
       const pass = commandEncoder.beginRenderPass({
-        width: outputColor.width,
-        height: outputColor.height,
         colorAttachments: [{
           texture: renderer.caches.getTexture(renderDevice, outputColor),
           layer: 0,

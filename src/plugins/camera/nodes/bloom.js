@@ -395,8 +395,6 @@ function createCompositeBindGroup(device, pipelineState, bloomBuffer, bloomBindi
  */
 function renderFullscreenPass(device, outputTexture, pipeline, bindGroup, dynamicOffsets) {
   const pass = device.createCommandEncoder().beginRenderPass({
-    width: outputTexture.width,
-    height: outputTexture.height,
     colorAttachments: [{
       texture: outputTexture,
       layer: 0,
@@ -418,8 +416,6 @@ function renderFullscreenPass(device, outputTexture, pipeline, bindGroup, dynami
  */
 function clearTexture(device, texture) {
   const pass = device.createCommandEncoder().beginRenderPass({
-    width: texture.width,
-    height: texture.height,
     colorAttachments: [{
       texture,
       layer: 0,

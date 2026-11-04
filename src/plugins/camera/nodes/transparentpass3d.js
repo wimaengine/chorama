@@ -40,13 +40,9 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   const colorTarget = cameraColorTarget.readTarget
 
   const caches = renderer.caches
-  const width = colorTarget.width
-  const height = colorTarget.height
   const depthTexture = view.depthTexture ? caches.getTexture(device, view.depthTexture) : undefined
 
   const pass = device.createCommandEncoder().beginRenderPass({
-    width,
-    height,
     colorAttachments: [{
       texture: caches.getTexture(device, colorTarget),
       mipLevel: view.colorMipmapLevel,

@@ -32,8 +32,6 @@ import { BlendParams, GPUTexture } from "../resources/index.js";
  * WebGPU-shaped render pass descriptor. Texture attachments are bound to the
  * render device's reusable draw framebuffer at pass begin.
  * @typedef WebGLRenderPassDescriptor
- * @property {number} width
- * @property {number} height
  * @property {readonly (WebGLRenderPassColorAttachment | null)[]} colorAttachments
  * @property {WebGLRenderPassDepthStencilAttachment} [depthStencilAttachment]
  * @property {ViewRectangle} [viewport]

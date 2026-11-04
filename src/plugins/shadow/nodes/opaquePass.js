@@ -37,8 +37,6 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInst
   }) : undefined
 
   const pass = device.createCommandEncoder().beginRenderPass({
-    width: shadowMap.shadowAtlas.width,
-    height: shadowMap.shadowAtlas.height,
     colorAttachments: [],
     depthStencilAttachment,
     viewport: view.viewport,
