@@ -14,7 +14,7 @@ export class GPUTexture {
 
   /**
    * @readonly
-   * @type {WebGLTexture}
+   * @type {WebGLTexture | null}
    */
   inner
 
@@ -68,7 +68,7 @@ export class GPUTexture {
 
   /**
    * @param {WebGL2RenderingContext} context
-   * @param {WebGLTexture} texture
+   * @param {WebGLTexture | null} texture
    * @param {TextureType} type
    * @param {WebGLTextureFormat} format
    * @param {TextureFormat} actualFormat

@@ -99,6 +99,7 @@ export class WebGLCommandEncoder {
   copyBufferToTexture(source, destination, copySize) {
     const { context } = this
     const texture = destination.texture
+    assertTextureBacked(texture, "write")
     const mipLevel = destination.mipLevel ?? 0
     const origin = normalizeOrigin(destination.origin)
     const extent = normalizeExtent(copySize)
@@ -181,6 +182,7 @@ export class WebGLCommandEncoder {
   copyTextureToBuffer(source, destination, copySize) {
     const { context } = this
     const texture = source.texture
+    assertTextureBacked(texture, "read")
     const mipLevel = source.mipLevel ?? 0
     const origin = normalizeOrigin(source.origin)
     const extent = normalizeExtent(copySize)
@@ -267,6 +269,8 @@ export class WebGLCommandEncoder {
     const { context } = this
     const sourceTexture = source.texture
     const destinationTexture = destination.texture
+    assertTextureBacked(sourceTexture, "read")
+    assertTextureBacked(destinationTexture, "write")
     const sourceMipLevel = source.mipLevel ?? 0
     const destinationMipLevel = destination.mipLevel ?? 0
     const sourceOrigin = normalizeOrigin(source.origin)
@@ -525,6 +529,8 @@ function resolveBufferLayout(buffer, extent, pixelSize) {
  * @param {GLenum} [cubeFace]
  */
 function attachTextureToFramebuffer(context, framebufferTarget, attachment, texture, mipLevel, layer, cubeFace) {
+  assertTextureBacked(texture, "attach")
+
   switch (texture.type) {
     case TextureType.Texture2D:
       context.framebufferTexture2D(
@@ -559,6 +565,14 @@ function attachTextureToFramebuffer(context, framebufferTarget, attachment, text
     default:
       throw new Error("Texture type is not supported by the command encoder")
   }
+}
+
+/**
+ * @param {GPUTexture} texture
+ * @param {string} operation
+ */
+function assertTextureBacked(texture, operation) {
+  assertTrue(texture.inner !== null, `Cannot ${operation} the default framebuffer texture`)
 }
 
 /**

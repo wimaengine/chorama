@@ -1,6 +1,7 @@
 /**@import { WebGLWriteTextureDescriptor } from './descriptors.js' */
 /** @import { GPUBuffer } from "../resources/index.js" */
 import { TextureType } from "../../constants/index.js"
+import { assertTrue } from "../../utils/index.js"
 import { updateTexture2D, updateCubeMap, updateTexture2DArray, updateTexture3D } from "./utils.js"
 
 /**
@@ -44,6 +45,7 @@ export class WebGLGPUQueue {
     const { texture } = descriptor
     const { context } = this
 
+    assertTrue(texture.inner !== null, "Cannot write to the default framebuffer texture")
     context.bindTexture(texture.type, texture.inner)
 
     switch (texture.type) {

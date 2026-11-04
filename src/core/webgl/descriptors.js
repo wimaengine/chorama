@@ -34,7 +34,6 @@ import { BlendParams, GPUTexture } from "../resources/index.js";
  * @typedef WebGLRenderPassDescriptor
  * @property {number} width
  * @property {number} height
- * @property {boolean} [defaultFramebuffer]
  * @property {readonly (WebGLRenderPassColorAttachment | null)[]} colorAttachments
  * @property {WebGLRenderPassDepthStencilAttachment} [depthStencilAttachment]
  * @property {ViewRectangle} [viewport]
@@ -44,7 +43,7 @@ import { BlendParams, GPUTexture } from "../resources/index.js";
 
 /**
  * @typedef WebGLRenderPassColorAttachment
- * @property {GPUTexture} [texture]
+ * @property {GPUTexture} texture
  * @property {number} [mipLevel]
  * @property {number} [layer]
  * @property {WebGLLoadOp} loadOp

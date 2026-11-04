@@ -56,14 +56,15 @@ export class CanvasBlitNode {
         const canvasTarget = /**@type {CanvasTarget} */ (camera.target)
 
         canvasTarget.changed()
+        const currentTexture = canvasTarget.getCurrentTexture(renderDevice)
 
-        const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, canvasSource.format)
+        const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, currentTexture.actualFormat)
 
         const pass = commandEncoder.beginRenderPass({
           width: canvasTarget.width,
           height: canvasTarget.height,
-          defaultFramebuffer: true,
           colorAttachments: [{
+            texture: currentTexture,
             loadOp: "load",
             storeOp: "store"
           }],

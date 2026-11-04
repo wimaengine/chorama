@@ -158,6 +158,9 @@ function validateBufferResource(resource, layoutEntry) {
  */
 function validateTextureResource(resource, layoutEntry) {
   const texture = resource.texture
+
+  assertTrue(texture.inner !== null, "The default framebuffer texture cannot be sampled")
+
   const expectedViewDimension = layoutEntry.texture?.viewDimension ?? "2d"
   const matches =
     (expectedViewDimension === "2d" && texture.type === TextureType.Texture2D) ||
@@ -230,6 +233,8 @@ function bindUniformBlock(context, pipeline, name, bindingPoint) {
  */
 function applyTextureBinding(context, pipeline, resource, layoutEntry) {
   const { texture } = resource
+
+  assertTrue(texture.inner !== null, "The default framebuffer texture cannot be sampled")
 
   if (!layoutEntry.name) {
     return

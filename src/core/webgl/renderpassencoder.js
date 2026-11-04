@@ -353,8 +353,8 @@ function validateBindGroupCompatibility(pipeline, index, bindGroup) {
  * @param {WebGLDeviceLimits} limits
  */
 function beginRenderPass(context, drawBuffer, descriptor, discardAttachments, limits) {
-  const useDefaultFramebuffer = descriptor.defaultFramebuffer ?? false
-  const drawBuffers = resolveDrawBuffers(context, descriptor, limits)
+  const useDefaultFramebuffer = usesDefaultFramebuffer(descriptor)
+  const drawBuffers = resolveDrawBuffers(context, descriptor, limits, useDefaultFramebuffer)
 
   context.bindFramebuffer(context.FRAMEBUFFER, useDefaultFramebuffer ? null : drawBuffer)
 
@@ -364,20 +364,65 @@ function beginRenderPass(context, drawBuffer, descriptor, discardAttachments, li
 
   context.drawBuffers(drawBuffers)
   setInitialViewportAndScissor(context, descriptor)
-  configureDepthStencilState(context, descriptor)
-  clearRenderPassAttachments(context, descriptor)
-  collectDiscardAttachments(context, descriptor, drawBuffers, discardAttachments)
+  configureDepthStencilState(context, descriptor, useDefaultFramebuffer)
+  clearRenderPassAttachments(context, descriptor, useDefaultFramebuffer)
+  collectDiscardAttachments(context, descriptor, drawBuffers, useDefaultFramebuffer, discardAttachments)
+}
+
+/**
+ * A null-backed GPUTexture represents the native canvas framebuffer. It is
+ * only valid as the single color attachment of a pass and cannot be combined
+ * with an offscreen color attachment or depth/stencil attachment.
+ *
+ * @param {WebGLRenderPassDescriptor} descriptor
+ * @returns {boolean}
+ */
+function usesDefaultFramebuffer(descriptor) {
+  const { colorAttachments, depthStencilAttachment } = descriptor
+  let defaultTexture
+
+  for (let index = 0; index < colorAttachments.length; index++) {
+    const attachment = colorAttachments[index]
+
+    if (!attachment) {
+      continue
+    }
+
+    assert(attachment.texture, `Render pass color attachment ${index} does not have a texture`)
+
+    if (attachment.texture.inner !== null) {
+      continue
+    }
+
+    assertTrue(index === 0, "The default framebuffer texture must be color attachment 0")
+    assertTrue(defaultTexture === undefined, "A render pass cannot use multiple default framebuffer textures")
+    assertTrue(attachment.texture.type === TextureType.Texture2D, "The default framebuffer texture must be 2D")
+    defaultTexture = attachment.texture
+  }
+
+  if (defaultTexture === undefined) {
+    return false
+  }
+
+  assertTrue(colorAttachments.length === 1, "The default framebuffer cannot use multiple color attachments")
+  assertTrue(depthStencilAttachment === undefined, "The default framebuffer cannot use a depth/stencil attachment")
+  return true
 }
 
 /**
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPassDescriptor} descriptor
  * @param {WebGLDeviceLimits} limits
+ * @param {boolean} useDefaultFramebuffer
  * @returns {GLenum[]}
  */
-function resolveDrawBuffers(context, descriptor, limits) {
-  const { colorAttachments, defaultFramebuffer = false } = descriptor
+function resolveDrawBuffers(context, descriptor, limits, useDefaultFramebuffer) {
+  const { colorAttachments } = descriptor
   const maxColorAttachments = limits.maxColorAttachments
+
+  if (useDefaultFramebuffer) {
+    return [context.BACK]
+  }
 
   if (colorAttachments.length === 0) {
     return [context.NONE]
@@ -388,11 +433,9 @@ function resolveDrawBuffers(context, descriptor, limits) {
       return context.NONE
     }
 
-    if (!defaultFramebuffer) {
-      assert(attachment.texture, `Render pass color attachment ${index} does not have a texture`)
-    }
+    assert(attachment.texture, `Render pass color attachment ${index} does not have a texture`)
 
-    return defaultFramebuffer ? context.BACK : context.COLOR_ATTACHMENT0 + index
+    return useDefaultFramebuffer ? context.BACK : context.COLOR_ATTACHMENT0 + index
   })
 }
 
@@ -539,9 +582,16 @@ function rectangleToPixels(target, rectangle) {
 /**
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPassDescriptor} descriptor
+ * @param {boolean} useDefaultFramebuffer
  */
-function configureDepthStencilState(context, descriptor) {
+function configureDepthStencilState(context, descriptor, useDefaultFramebuffer) {
   const { depthStencilAttachment } = descriptor
+
+  if (useDefaultFramebuffer) {
+    context.disable(context.DEPTH_TEST)
+    context.disable(context.STENCIL_TEST)
+    return
+  }
 
   if (!depthStencilAttachment) {
     context.disable(context.DEPTH_TEST)
@@ -579,12 +629,16 @@ function configureDepthStencilState(context, descriptor) {
 /**
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPassDescriptor} descriptor
+ * @param {boolean} useDefaultFramebuffer
  */
-function clearRenderPassAttachments(context, descriptor) {
+function clearRenderPassAttachments(context, descriptor, useDefaultFramebuffer) {
   const { colorAttachments, depthStencilAttachment } = descriptor
+  const colorAttachmentsToClear = useDefaultFramebuffer
+    ? [colorAttachments[0]]
+    : colorAttachments
 
-  for (let i = 0; i < colorAttachments.length; i++) {
-    const attachment = colorAttachments[i]
+  for (let i = 0; i < colorAttachmentsToClear.length; i++) {
+    const attachment = colorAttachmentsToClear[i]
 
     if (!attachment || attachment.loadOp !== "clear") {
       continue
@@ -594,6 +648,10 @@ function clearRenderPassAttachments(context, descriptor) {
 
     context.colorMask(true, true, true, true)
     context.clearBufferfv(context.COLOR, i, new Float32Array([r, g, b, a]))
+  }
+
+  if (useDefaultFramebuffer) {
+    return
   }
 
   if (!depthStencilAttachment) {
@@ -630,10 +688,18 @@ function clearRenderPassAttachments(context, descriptor) {
  * @param {WebGL2RenderingContext} context
  * @param {WebGLRenderPassDescriptor} descriptor
  * @param {GLenum[]} drawBuffers
+ * @param {boolean} useDefaultFramebuffer
  * @param {GLenum[]} discardAttachments
  */
-function collectDiscardAttachments(context, descriptor, drawBuffers, discardAttachments) {
-  const { colorAttachments, depthStencilAttachment, defaultFramebuffer = false } = descriptor
+function collectDiscardAttachments(context, descriptor, drawBuffers, useDefaultFramebuffer, discardAttachments) {
+  const { colorAttachments, depthStencilAttachment } = descriptor
+
+  if (useDefaultFramebuffer) {
+    if (colorAttachments[0]?.storeOp === "discard") {
+      discardAttachments.push(context.COLOR)
+    }
+    return
+  }
 
   for (let i = 0; i < colorAttachments.length; i++) {
     const attachment = colorAttachments[i]
@@ -645,7 +711,7 @@ function collectDiscardAttachments(context, descriptor, drawBuffers, discardAtta
     const drawBuffer = drawBuffers[i]
 
     assert(drawBuffer, `Framebuffer does not have color attachment ${i}`)
-    discardAttachments.push(defaultFramebuffer ? context.COLOR : drawBuffer)
+    discardAttachments.push(useDefaultFramebuffer ? context.COLOR : drawBuffer)
   }
 
   if (!depthStencilAttachment) {
@@ -653,11 +719,11 @@ function collectDiscardAttachments(context, descriptor, drawBuffers, discardAtta
   }
 
   if (depthStencilAttachment.depthStoreOp === "discard") {
-    discardAttachments.push(defaultFramebuffer ? context.DEPTH : context.DEPTH_ATTACHMENT)
+    discardAttachments.push(useDefaultFramebuffer ? context.DEPTH : context.DEPTH_ATTACHMENT)
   }
 
   if (depthStencilAttachment.stencilStoreOp === "discard") {
-    discardAttachments.push(defaultFramebuffer ? context.STENCIL : context.STENCIL_ATTACHMENT)
+    discardAttachments.push(useDefaultFramebuffer ? context.STENCIL : context.STENCIL_ATTACHMENT)
   }
 }
 

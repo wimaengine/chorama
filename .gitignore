@@ -1,6 +1,7 @@
 node_modules
 dist
 docs
+todo/
 
 *.txt
 *.code-workspace

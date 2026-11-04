@@ -232,6 +232,8 @@ export class WebGLRenderDevice {
    */
   copyRenderBufferToTexture(source, sourceFormat, destination) {
     const { context } = this
+
+    assertTrue(destination.inner !== null, "Cannot copy into the default framebuffer texture")
     const srcAttachment = getFramebufferAttachment(sourceFormat)
     const dstAttachment = getFramebufferAttachment(destination.actualFormat)
 

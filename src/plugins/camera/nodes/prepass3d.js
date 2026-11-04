@@ -98,7 +98,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
   const pass = commandEncoder.beginRenderPass({
     width: prePassTexture.depth.width,
     height: prePassTexture.depth.height,
-    colorAttachments: renderNormals ? [{
+    colorAttachments: normalTexture ? [{
       texture: normalTexture,
       mipLevel: 0,
       layer: 0,
