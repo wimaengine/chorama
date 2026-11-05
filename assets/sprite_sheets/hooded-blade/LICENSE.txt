@@ -1,0 +1,9 @@
+AutoSprite Free Asset Library
+CC0 1.0 Universal (public domain dedication)
+
+You can use this asset for anything, including commercial games, with no
+attribution and no permission needed. You may modify and redistribute it.
+CC0 places no conditions on you; we simply ask that you don't resell the
+asset on its own as a stock asset pack.
+
+Made with AutoSprite - https://www.autosprite.io
