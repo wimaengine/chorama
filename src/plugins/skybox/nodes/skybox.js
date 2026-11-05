@@ -94,11 +94,12 @@ function createSkyboxRenderItem(object, device, renderer, view) {
     object
   )
 
-  return new NonMeshRenderItem({
+  const item = new NonMeshRenderItem({
     pipelineId,
-    bindGroup,
     tag: SkyBox.name,
   })
+  item.bindings.set(1, bindGroup)
+  return item
 }
 
 /**

@@ -536,7 +536,6 @@ export class MeshRenderItem extends RenderItem {
  * @typedef NonMeshRenderItemOptions
  * @property {number} pipelineId
  * @property {string} tag
- * @property {import("../../core/index.js").WebGLBindGroup} [bindGroup]
  * @property {RenderBindingSet} [bindings]
  * @property {number} [vertexCount]
  * @property {number} [instanceCount]
@@ -548,11 +547,6 @@ export class MeshRenderItem extends RenderItem {
  * Render item for fullscreen or other vertex-stream-only draws.
  */
 export class NonMeshRenderItem extends RenderItem {
-  /**
-   * @type {import("../../core/index.js").WebGLBindGroup | undefined}
-   */
-  bindGroup
-
   /**
    * @type {number}
    */
@@ -579,7 +573,6 @@ export class NonMeshRenderItem extends RenderItem {
   constructor({
     pipelineId,
     tag,
-    bindGroup,
     bindings,
     vertexCount = 3,
     instanceCount = 1,
@@ -587,15 +580,10 @@ export class NonMeshRenderItem extends RenderItem {
     firstInstance = 0
   }) {
     super({ pipelineId, tag, bindings })
-    this.bindGroup = bindGroup
     this.vertexCount = vertexCount
     this.instanceCount = instanceCount
     this.firstVertex = firstVertex
     this.firstInstance = firstInstance
-
-    if (bindGroup) {
-      this.bindings.set(1, bindGroup)
-    }
   }
 }
 
