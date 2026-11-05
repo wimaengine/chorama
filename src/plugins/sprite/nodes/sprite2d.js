@@ -56,10 +56,18 @@ export class Sprite2dNode {
           const alphaCutoff = alphaBlendMode instanceof AlphaMaskMode
             ? alphaBlendMode.cutoff
             : 0.5
+          const uvRect = child.uvRect
+          const size = /** @type {[number, number]} */ (child.size === undefined
+            ? [
+              child.image.width * (uvRect[2] - uvRect[0]),
+              child.image.height * (uvRect[3] - uvRect[1])
+            ]
+            : [child.size.x, child.size.y])
           const spriteInstance = SpriteInstanceUniform.from2D(
             child.transform.world,
             child.zIndex,
-            child.uvRect,
+            uvRect,
+            size,
             child.tint,
             alphaCutoff
           )

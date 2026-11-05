@@ -3,6 +3,8 @@
 struct SpriteInstance {
   mat4 transform;
   vec4 uv_rect;
+  vec4 size;
+  vec4 tint;
   float alpha_cutoff;
 };
 
@@ -37,6 +39,7 @@ out vec2 v_uv;
 void main() {
   vec2 position = SPRITE_POSITIONS[gl_VertexID];
   vec2 uv = SPRITE_UVS[gl_VertexID];
+  position *= sprite_instance.size.xy;
 
   vec3 world_space_position = (sprite_instance.transform * vec4(position, 0.0, 1.0)).xyz;
   v_uv = sprite_instance.uv_rect.xy + uv * (sprite_instance.uv_rect.zw - sprite_instance.uv_rect.xy);

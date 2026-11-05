@@ -1,7 +1,7 @@
 /** @import { Texture } from "../texture/index.js" */
 /** @import { TextureAtlas } from "../texture/index.js" */
 import { AlphaMaskMode, OpaqueMode, TransparentMode } from "../material/index.js"
-import { Color } from "../math/index.js"
+import { Color, Vector2 } from "../math/index.js"
 import { Object2D } from "./object2d.js"
 
 /**
@@ -19,6 +19,13 @@ export class Sprite2D extends Object2D {
    * @type {TextureAtlas | undefined}
    */
   atlas
+
+  /**
+   * Optional size override in image-space units. When undefined, the sprite
+   * uses the dimensions of its selected image cutout.
+   * @type {Vector2 | undefined}
+   */
+  size
 
   /**
    * Color multiplied with the sampled image.
@@ -92,6 +99,7 @@ export class Sprite2D extends Object2D {
     this.image = object.image
     this.atlas = object.atlas
     this.slice = object.slice
+    this.size = object.size?.clone()
     this.tint.copy(object.tint)
     this.alphaBlend = cloneAlphaBlend(object.alphaBlend)
     return this

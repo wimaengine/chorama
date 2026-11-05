@@ -1,6 +1,7 @@
 struct SpriteInstance {
   mat4 transform;
   vec4 uv_rect;
+  vec4 size;
   vec4 tint;
   float alpha_cutoff;
 };
