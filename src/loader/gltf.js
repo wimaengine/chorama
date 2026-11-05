@@ -13,13 +13,13 @@ import { assert } from '../utils/index.js';
 import { CullFace, TextureFilter, TextureType, TextureWrap } from '../constants/index.js';
 import { AnimationClip } from '../animation/clip.js';
 import { AnimationPlayer } from '../animation/player.js';
+import { AnimationMode } from '../animation/track.js';
 import {
-  AnimationMode,
   MorphWeightsAnimationTrack,
   OrientationAnimationTrack,
   PositionAnimationTrack,
   ScaleAnimationTrack
-} from '../animation/track.js';
+} from '../animation/tracks/index.js';
 
 const defaultMaterial = new StandardMaterial()
 const GLB_MAGIC = 0x46546C67
