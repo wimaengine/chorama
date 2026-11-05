@@ -2,7 +2,11 @@
 import { assert } from "../../utils/index.js"
 import { View } from "../core/index.js"
 import { Views } from "../views.js"
-import { MeshInstanceBindGroups, MeshInstancePhaseBindGroup, ViewUniformBuffer } from "../resources/index.js"
+import {
+  MeshInstanceBindGroups,
+  MeshInstancePhaseBindGroup,
+  ViewUniformBuffer
+} from "../resources/index.js"
 import { snapUp } from "../../math/index.js"
 
 export class SortViewsNode {
@@ -80,12 +84,12 @@ export class PrepareMeshInstanceBindGroupsNode {
 
       const entry = meshInstanceBindGroups.getOrSet(object)
 
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque3D, view.opaque3D, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask3D, view.alphaMask3D, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent3D, view.transparent3D, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque2D, view.opaque2D, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask2D, view.alphaMask2D, view)
-      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent2D, view.transparent2D, view)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque3D)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask3D)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent3D)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.opaque2D)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.alphaMask2D)
+      prepareMeshInstancePhaseBindGroupState(renderDevice, caches, meshInstanceBindGroups, entry.transparent2D)
     }
   }
 }
@@ -98,13 +102,10 @@ export class PrepareMeshInstanceBindGroupsNode {
  * @param {import("../../caches/index.js").Caches} caches
  * @param {MeshInstanceBindGroups} meshInstanceBindGroups
  * @param {MeshInstancePhaseBindGroup} phaseState
- * @param {import("../core/index.js").RenderStage<import("../core/index.js").MeshRenderItem>} stage
- * @param {View} view
  * @returns {boolean}
  */
-export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInstanceBindGroups, phaseState, stage, view) {
-  const meshItems = stage.getMeshItems(view)
-  const instanceCount = meshItems.length
+export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInstanceBindGroups, phaseState) {
+  const instanceCount = phaseState.instances.length
 
   if (instanceCount === 0) {
     return false
@@ -113,13 +114,14 @@ export function prepareMeshInstancePhaseBindGroupState(device, caches, meshInsta
   phaseState.reserve(instanceCount)
   const bindGroupLayout = meshInstanceBindGroups.getBindGroupLayout(device)
 
-  for (let i = 0; i < meshItems.length; i++) {
-    const item = /** @type {import("../core/index.js").MeshRenderItem} */ (meshItems[i])
-    const meshInstance = /** @type {import("../resources/meshinstanceuniform.js").MeshInstanceUniform} */ (item.meshInstance)
+  for (let i = 0; i < instanceCount; i++) {
+    const meshInstance = phaseState.instances[i]
 
+    assert(meshInstance, "Mesh instance uniform missing")
     phaseState.setData(i, meshInstance)
   }
 
   phaseState.getBindGroup(device, caches, bindGroupLayout)
+
   return true
 }

@@ -1,12 +1,14 @@
 /** @import { Texture } from "../../texture/index.js" */
-/** @import { MeshInstanceUniform } from "../resources/meshinstanceuniform.js" */
-/** @import { MeshInstancePhaseBindGroup } from "../resources/meshinstancebindgroups.js" */
 import { GPUMesh } from "../../core/index.js"
 import { Affine3, Frustum, Matrix4, Vector3 } from "../../math/index.js"
 import { Object3D, RenderMask } from "../../objects/index.js"
 import { RenderTarget } from "../../rendertarget/index.js"
 import { assert } from "../../utils/index.js"
 import { Range, ViewRectangle } from "../../utils/index.js"
+
+/**
+ * @typedef {(renderer: import("../renderer.js").WebGLRenderer, view: View) => import("../../core/index.js").WebGLBindGroup} RenderBindingResolver
+ */
 
 export class View {
   /**
@@ -236,6 +238,80 @@ export class View {
 }
 
 /**
+ * A collection of bindings owned by one render item.
+ */
+export class RenderBindingSet {
+  /**
+   * @type {Map<number, { resolver: RenderBindingResolver | import("../../core/index.js").WebGLBindGroup, dynamicOffsets: number[] }>}
+   */
+  #bindings = new Map()
+
+  /**
+   * Sets a binding resolver.
+   *
+   * @param {number} group
+   * @param {RenderBindingResolver | import("../../core/index.js").WebGLBindGroup} resolver
+   * @param {number[]} [dynamicOffsets]
+   * @returns {this}
+   */
+  set(group, resolver, dynamicOffsets = []) {
+    this.#bindings.set(group, { resolver, dynamicOffsets })
+    return this
+  }
+
+  /**
+   * Removes one binding from the set.
+   *
+   * @param {number} group
+   * @returns {boolean}
+   */
+  delete(group) {
+    return this.#bindings.delete(group)
+  }
+
+  /**
+   * Applies every available binding to a render pass.
+   *
+   * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
+   * @param {import("../renderer.js").WebGLRenderer} renderer
+   * @param {View} view
+   */
+  apply(pass, renderer, view) {
+    const bindings = [...this.#bindings.entries()].sort(([a], [b]) => a - b)
+
+    for (const [group, binding] of bindings) {
+      const bindGroup = typeof binding.resolver === "function"
+        ? binding.resolver(renderer, view)
+        : binding.resolver
+      pass.setBindGroup(group, bindGroup, binding.dynamicOffsets)
+    }
+  }
+}
+
+/**
+ * Common state shared by all render item kinds.
+ */
+export class RenderItem {
+  /** @type {number} */
+  pipelineId
+
+  /** @type {string} */
+  tag
+
+  /** @type {RenderBindingSet} */
+  bindings
+
+  /**
+   * @param {{ pipelineId: number, tag: string, bindings?: RenderBindingSet }} options
+   */
+  constructor({ pipelineId, tag, bindings = new RenderBindingSet() }) {
+    this.pipelineId = pipelineId
+    this.tag = tag
+    this.bindings = bindings
+  }
+}
+
+/**
  * Per-view render stage for one material phase.
  *
  * @template {MeshRenderItem} T
@@ -289,27 +365,23 @@ export class RenderStage {
 
   /**
    * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
-   * @param {WebGL2RenderingContext} context
-   * @param {import("../../caches/cache.js").Caches} caches
-   * @param {MeshInstancePhaseBindGroup} phaseState
-   * @param {number} bindGroupIndex
+   * @param {import("../renderer.js").WebGLRenderer} renderer
    * @param {View} view
-   * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} materialBindGroups
    */
-  renderItems(pass, context, caches, phaseState, bindGroupIndex, view, materialBindGroups) {
+  renderItems(pass, renderer, view) {
     const meshItems = this.getMeshItems(view)
     const nonMeshItems = this.getNonMeshItems(view)
 
     for (let i = 0; i < meshItems.length; i++) {
       const meshItem = /** @type {MeshRenderItem} */ (meshItems[i])
 
-      drawMeshRenderItem(pass, context, caches, meshItem, materialBindGroups, phaseState, bindGroupIndex, i)
+      drawMeshRenderItem(pass, renderer, view, meshItem)
     }
 
     for (let i = 0; i < nonMeshItems.length; i++) {
       const nonMeshItem = /** @type {NonMeshRenderItem} */ (nonMeshItems[i])
 
-      drawNonMeshRenderItem(pass, context, caches, nonMeshItem)
+      drawNonMeshRenderItem(pass, renderer, view, nonMeshItem)
     }
   }
 }
@@ -354,18 +426,15 @@ function getViewSpaceDepth(view, item) {
 }
 
 /**
- * Draws a render item using its explicit bind-group list.
+ * Draws a mesh render item using its own binding set.
  *
  * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
- * @param {WebGL2RenderingContext} _context
- * @param {import("../../caches/cache.js").Caches} caches
+ * @param {import("../renderer.js").WebGLRenderer} renderer
+ * @param {View} view
  * @param {MeshRenderItem} item
- * @param {import("../../plugins/meshmaterial/resources/index.js").MeshMaterialBindGroups} materialBindGroups
- * @param {MeshInstancePhaseBindGroup} [phaseState]
- * @param {number} [bindGroupIndex=0]
- * @param {number} [meshIndex=0]
  */
-export function drawMeshRenderItem(pass, _context, caches, item, materialBindGroups, phaseState, bindGroupIndex = 0, meshIndex = 0) {
+export function drawMeshRenderItem(pass, renderer, view, item) {
+  const { caches } = renderer
   const { pipelineId, mesh } = item
   const pipeline = caches.getRenderPipeline(pipelineId)
 
@@ -374,22 +443,7 @@ export function drawMeshRenderItem(pass, _context, caches, item, materialBindGro
   }
 
   pass.setPipeline(pipeline)
-
-  if (item.meshInstance) {
-    assert(phaseState, "Mesh instance phase state missing")
-    assert(phaseState.bindGroup, "Mesh instance phase bind group missing")
-    pass.setBindGroup(bindGroupIndex, phaseState.bindGroup, [phaseState.getOffset(meshIndex)])
-  }
-
-  const materialBindGroup = materialBindGroups?.get(item.material)
-
-  if (materialBindGroup) {
-    pass.setBindGroup(1, materialBindGroup)
-  }
-
-  if (item.morphBindGroup) {
-    pass.setBindGroup(3, item.morphBindGroup)
-  }
+  item.bindings.apply(pass, renderer, view)
 
   for (let slot = 0; slot < mesh.vertexBuffers.length; slot++) {
     const binding = mesh.vertexBuffers[slot]
@@ -414,11 +468,12 @@ export function drawMeshRenderItem(pass, _context, caches, item, materialBindGro
  * Draws a non-mesh render item using its vertex-count parameters.
  *
  * @param {import("../../core/index.js").WebGLRenderPassEncoder} pass
- * @param {WebGL2RenderingContext} _context
- * @param {import("../../caches/cache.js").Caches} caches
+ * @param {import("../renderer.js").WebGLRenderer} renderer
+ * @param {View} view
  * @param {NonMeshRenderItem} item
  */
-export function drawNonMeshRenderItem(pass, _context, caches, item) {
+export function drawNonMeshRenderItem(pass, renderer, view, item) {
+  const { caches } = renderer
   const pipeline = caches.getRenderPipeline(item.pipelineId)
 
   if (!pipeline) {
@@ -426,29 +481,15 @@ export function drawNonMeshRenderItem(pass, _context, caches, item) {
   }
 
   pass.setPipeline(pipeline)
-
-  if (item.bindGroup) {
-    pass.setBindGroup(1, item.bindGroup)
-  }
+  item.bindings.apply(pass, renderer, view)
 
   pass.draw(item.vertexCount, item.instanceCount, item.firstVertex, item.firstInstance)
 }
-export class MeshRenderItem {
-
-  /**
-   * @type {number}
-   */
-  pipelineId
-
+export class MeshRenderItem extends RenderItem {
   /**
    * @type {GPUMesh}
    */
   mesh
-
-  /**
-   * @type {MeshInstanceUniform | undefined}
-   */
-  meshInstance
 
   /**
    * @type {import("../../material/index.js").RawMaterial}
@@ -461,17 +502,12 @@ export class MeshRenderItem {
   morphBindGroup
 
   /**
-   * @type {string}
-   */
-  tag
-
-  /**
    * @type {Affine3}
    */
   transform
 
   /**
-   * @param {MeshRenderItemOptions} options 
+   * @param {MeshRenderItemOptions} options
    */
   constructor({
     pipelineId,
@@ -479,16 +515,18 @@ export class MeshRenderItem {
     tag,
     material,
     morphBindGroup,
-    meshInstance,
-    transform
+    transform,
+    bindings
   }) {
-    this.pipelineId = pipelineId
+    super({ pipelineId, tag, bindings })
     this.transform = transform
     this.mesh = mesh
-    this.tag = tag
     this.material = material
     this.morphBindGroup = morphBindGroup
-    this.meshInstance = meshInstance
+
+    if (morphBindGroup) {
+      this.bindings.set(3, morphBindGroup)
+    }
   }
 }
 
@@ -499,6 +537,7 @@ export class MeshRenderItem {
  * @property {number} pipelineId
  * @property {string} tag
  * @property {import("../../core/index.js").WebGLBindGroup} [bindGroup]
+ * @property {RenderBindingSet} [bindings]
  * @property {number} [vertexCount]
  * @property {number} [instanceCount]
  * @property {number} [firstVertex]
@@ -508,26 +547,11 @@ export class MeshRenderItem {
 /**
  * Render item for fullscreen or other vertex-stream-only draws.
  */
-export class NonMeshRenderItem {
-  /**
-   * @type {number}
-   */
-  pipelineId
-
+export class NonMeshRenderItem extends RenderItem {
   /**
    * @type {import("../../core/index.js").WebGLBindGroup | undefined}
    */
   bindGroup
-
-  /**
-   * @type {string}
-   */
-  tag
-
-  /**
-   * @type {undefined}
-   */
-  meshInstance = undefined
 
   /**
    * @type {number}
@@ -556,18 +580,22 @@ export class NonMeshRenderItem {
     pipelineId,
     tag,
     bindGroup,
+    bindings,
     vertexCount = 3,
     instanceCount = 1,
     firstVertex = 0,
     firstInstance = 0
   }) {
-    this.pipelineId = pipelineId
-    this.tag = tag
+    super({ pipelineId, tag, bindings })
     this.bindGroup = bindGroup
     this.vertexCount = vertexCount
     this.instanceCount = instanceCount
     this.firstVertex = firstVertex
     this.firstInstance = firstInstance
+
+    if (bindGroup) {
+      this.bindings.set(1, bindGroup)
+    }
   }
 }
 
@@ -599,6 +627,6 @@ export class NonMeshRenderItem {
  * @property {number} pipelineId
  * @property {import("../../material/index.js").RawMaterial} material
  * @property {import("../../core/index.js").WebGLBindGroup} [morphBindGroup]
- * @property {MeshInstanceUniform} [meshInstance]
+ * @property {RenderBindingSet} [bindings]
  * @property {string} tag
  */

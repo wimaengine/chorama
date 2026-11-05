@@ -2,7 +2,7 @@ import { Shader, WebGLRenderDevice } from "../../../core/index.js"
 import { Attribute } from "../../../mesh/index.js"
 import { assert } from "../../../utils/index.js"
 import { Camera, MeshMaterial2D, MeshMaterial3D } from "../../../objects/index.js"
-import { MeshInstanceUniform, MeshRenderItem, WebGLRenderer } from "../../../renderer/index.js"
+import { MeshInstanceUniform, MeshRenderItem, RenderBindingSet, WebGLRenderer } from "../../../renderer/index.js"
 import { PrimitiveTopology, TextureFormat } from "../../../constants/index.js"
 import { BoneTextureResource, MeshMaterialBindGroups, MeshMaterialPipelines, MeshMaterials, MorphTargetTextures } from "../resources/index.js"
 
@@ -107,7 +107,7 @@ function createPipelineKey(layoutHash, meshBits, materialBits) {
  *   morphTargetTextures: MorphTargetTextures,
  *   viewBindGroups: import("../../../renderer/index.js").ViewBindGroups
  * }} options
- * @returns {MeshRenderItem | undefined}
+ * @returns {{ item: MeshRenderItem, meshInstance: MeshInstanceUniform } | undefined}
  */
 export function createMeshMaterialRenderItem({
   object,
@@ -143,7 +143,8 @@ export function createMeshMaterialRenderItem({
 
   const viewBindGroup = viewBindGroups.getOrSet(device, camera)
   const materialBindGroupLayout = materialBindGroups.getLayout(material)
-  if (!materialBindGroupLayout || !viewBindGroup.layout) return
+  const materialBindGroup = materialBindGroups.get(material)
+  if (!materialBindGroup || !materialBindGroupLayout || !viewBindGroup.layout) return
 
   const viewBindGroupLayout = viewBindGroup.layout
   const gpuMesh = caches.getMesh(device, mesh, attributes)
@@ -198,13 +199,19 @@ export function createMeshMaterialRenderItem({
       morphTargetCount: morphTextureState?.targetCount ?? 0,
       morphWeights: object.morphWeights
     })
-  return new MeshRenderItem({
-    material,
-    morphBindGroup: morphTextureState && morphTargetTextures ? morphTargetTextures.getBindGroup(device, renderer, mesh) : undefined,
-    mesh: gpuMesh,
-    pipelineId,
-    meshInstance,
-    tag: object.constructor.name,
-    transform: meshInstance.transform
-  })
+  const bindings = new RenderBindingSet()
+  bindings.set(1, materialBindGroup)
+
+  return {
+    item: new MeshRenderItem({
+      material,
+      morphBindGroup: morphTextureState && morphTargetTextures ? morphTargetTextures.getBindGroup(device, renderer, mesh) : undefined,
+      mesh: gpuMesh,
+      pipelineId,
+      tag: object.constructor.name,
+      transform: meshInstance.transform,
+      bindings
+    }),
+    meshInstance
+  }
 }

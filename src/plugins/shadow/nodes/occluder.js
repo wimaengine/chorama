@@ -3,7 +3,15 @@ import { PrimitiveTopology } from "../../../constants/index.js"
 import { WebGLRenderDevice, GPUMesh, Shader } from "../../../core/index.js"
 import { DirectionalLight, PointLight, SpotLight, MeshMaterial3D, Object3D } from "../../../objects/index.js"
 import { Attribute } from "../../../mesh/index.js"
-import { MeshRenderItem, ViewBindGroups, Views, MeshInstanceBindGroups, MeshInstanceUniform } from "../../../renderer/index.js"
+import {
+  MeshRenderItem,
+  RenderBindingSet,
+  ViewBindGroups,
+  Views,
+  MeshInstanceBindGroups,
+  MeshInstanceUniform,
+  resolveOpaque3DBindGroup
+} from "../../../renderer/index.js"
 import { WebGLRenderer } from "../../../renderer/index.js"
 import { ShadowPipelines } from "../resources/index.js"
 import { BoneTextureResource, MeshMaterialBindGroups, MorphTargetTextures } from "../../meshmaterial/resources/index.js"
@@ -67,6 +75,8 @@ export class ShadowOccluderNode {
 
       const camera = view.object
       const opaqueStage = view.opaque3D
+      const meshInstancePhase = meshInstanceBindGroups.getOrSet(camera).opaque3D
+      meshInstancePhase.clear()
 
       for (let i = 0; i < objects.length; i++) {
         const object = /** @type {Object3D} */ (objects[i])
@@ -84,9 +94,10 @@ export class ShadowOccluderNode {
           const skinned = isSkinned(child)
           const morphed = child.mesh.morphTargets.length > 0
           const materialBindGroupLayout = materialBindGroups.getLayout(child.material)
+          const materialBindGroup = materialBindGroups.get(child.material)
           const morphTextureState = morphed ? morphTargetTextures.getOrAllocate(child.mesh) : undefined
           
-          if(!materialBindGroupLayout){
+          if (!materialBindGroupLayout || !materialBindGroup) {
             return true
           }
           const pipelineId = getRenderPipelineId(
@@ -117,18 +128,23 @@ export class ShadowOccluderNode {
             morphTargetCount: morphTextureState?.targetCount ?? 0,
             morphWeights: child.morphWeights
           })
+          const bindings = new RenderBindingSet()
+          bindings.set(1, materialBindGroup)
+
           const item = new MeshRenderItem({
             material: child.material,
             pipelineId,
-            meshInstance,
             morphBindGroup: morphTextureState
               ? morphTargetTextures.getBindGroup(renderDevice, renderer, child.mesh)
               : undefined,
             transform: child.transform.world,
             mesh: gpuMesh,
-            tag: ""
+            tag: "",
+            bindings
           })
 
+          const i = meshInstancePhase.add(meshInstance)
+          item.bindings.set(2, resolveOpaque3DBindGroup, [meshInstancePhase.getOffset(i)])
           opaqueStage.add(item)
           return true
         })

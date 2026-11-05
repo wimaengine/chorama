@@ -1,12 +1,9 @@
 import { Camera } from "../../../objects/index.js"
-import { View, ViewBindGroups, Views, MeshInstanceBindGroups } from "../../../renderer/index.js"
-import { MeshMaterialBindGroups } from "../../meshmaterial/resources/index.js"
+import { View, ViewBindGroups, Views } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { CameraColorTargets } from "../resources/index.js"
 import { snapUp } from "../../../math/index.js"
 import { getMipLevelSize } from "../../../core/webgl/utils.js"
-
-const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
 /**
  * @param {import("../../../renderer/index.js").View} view
@@ -15,18 +12,14 @@ const MESH_INSTANCE_BIND_GROUP_INDEX = 2
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  * @param {CameraColorTargets} colorTargets
  * @param {ViewBindGroups} viewBindGroups
- * @param {MeshInstanceBindGroups} meshInstanceBindGroups
- * @param {MeshMaterialBindGroups} materialBindGroups
  */
-function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGroups, meshInstanceBindGroups, materialBindGroups) {
+function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGroups) {
   if (!(view.object instanceof Camera)) {
     return
   }
 
   const camera = view.object
   const transparentStage = view.transparent2D
-  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(camera)
-
   if (transparentStage.meshItems.length === 0 && transparentStage.nonMeshItems.length === 0) {
     return
   }
@@ -76,7 +69,7 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   const dynamicOffset = viewIndex * snapUp(View.BlockSize, alignment)
 
   pass.setBindGroup(0, viewBindGroups.getOrSet(device, camera).createBindGroup(device, caches), [dynamicOffset])
-  transparentStage.renderItems(pass, device.context, caches, meshInstanceEntry.transparent2D, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
+  transparentStage.renderItems(pass, renderer, view)
   pass.end()
 }
 
@@ -93,21 +86,17 @@ export class CameraTransparentPass2DNode {
     const views = renderer.getResource(Views)
     const colorTargets = renderer.getResource(CameraColorTargets)
     const viewBindGroups = renderer.getResource(ViewBindGroups)
-    const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
-    const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
     assert(views, "Views resource missing")
     assert(colorTargets, "Camera color targets resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
-    assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
-    assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
 
     const viewsItems = views.items()
 
     for (let i = 0; i < viewsItems.length; i++) {
       const view = /** @type {View} */ (viewsItems[i])
 
-      renderItems(view, i, renderDevice, renderer, colorTargets, viewBindGroups, meshInstanceBindGroups, materialBindGroups)
+      renderItems(view, i, renderDevice, renderer, colorTargets, viewBindGroups)
     }
   }
 }

@@ -10,9 +10,6 @@ import { PrePassPipeline, PrePassTextures } from "../resources/index.js"
 import { MeshMaterialBindGroups, MorphTargetTextures } from "../../meshmaterial/resources/index.js"
 import { getMipLevelSize } from "../../../core/webgl/utils.js"
 
-const MATERIAL_BIND_GROUP_INDEX = 1
-const MESH_INSTANCE_BIND_GROUP_INDEX = 2
-
 export class CameraPrePass3DNode {
   subgraph() {
     return undefined
@@ -141,7 +138,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
       continue
     }
 
-    const skinned = isSkinned(sourcePipeline, item)
+    const skinned = isSkinned(sourcePipeline, phaseState.instances[i])
     const morphed = Boolean(item.morphBindGroup)
     const pipelineKey = createPrePassPipelineKey(pipelineKind, sourcePipeline, item.material, skinned, morphed)
     const viewBindGroupLayout = /** @type {import("../../../core/layouts/bindgroup.js").WebGLBindGroupLayout} */ (viewBindGroupState.layout)
@@ -172,11 +169,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
     }
 
     pass.setPipeline(pipeline)
-    pass.setBindGroup(MATERIAL_BIND_GROUP_INDEX, materialBindGroup)
-    pass.setBindGroup(MESH_INSTANCE_BIND_GROUP_INDEX, phaseState.bindGroup, [phaseState.getOffset(i)])
-    if (item.morphBindGroup) {
-      pass.setBindGroup(3, item.morphBindGroup)
-    }
+    item.bindings.apply(pass, renderer, view)
 
     const mesh = item.mesh
     for (let slot = 0; slot < mesh.vertexBuffers.length; slot++) {
@@ -346,15 +339,15 @@ function createPrePassPipeline(
 
 /**
  * @param {import("../../../core/index.js").WebGLRenderPipeline} sourcePipeline
- * @param {import("../../../renderer/index.js").MeshRenderItem} item
+ * @param {import("../../../renderer/index.js").MeshInstanceUniform | undefined} meshInstance
  * @returns {boolean}
  */
-function isSkinned(sourcePipeline, item) {
+function isSkinned(sourcePipeline, meshInstance) {
   const meshLayout = sourcePipeline.vertexLayout
 
   return Boolean(
-    item.meshInstance &&
-    item.meshInstance.boneCount > 0 &&
+    meshInstance &&
+    meshInstance.boneCount > 0 &&
     meshLayout.hasAttribute(Attribute.JointIndex) &&
     meshLayout.hasAttribute(Attribute.JointWeight)
   )

@@ -3,6 +3,66 @@ import { snapUp } from "../../math/index.js"
 import { assert, assertTrue } from "../../utils/index.js"
 import { MeshInstanceUniform } from "./meshinstanceuniform.js"
 
+/** @param {import("../../renderer/renderer.js").WebGLRenderer} renderer @param {import("../core/index.js").View} view */
+export function resolveOpaque3DBindGroup(renderer, view) {
+  const object = view.object
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  return /** @type {import("../../core/index.js").WebGLBindGroup} */ (
+    object ? meshInstanceBindGroups.getOrSet(object).opaque3D.bindGroup : undefined
+  )
+}
+
+/** @param {import("../../renderer/renderer.js").WebGLRenderer} renderer @param {import("../core/index.js").View} view */
+export function resolveAlphaMask3DBindGroup(renderer, view) {
+  const object = view.object
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  return /** @type {import("../../core/index.js").WebGLBindGroup} */ (
+    object ? meshInstanceBindGroups.getOrSet(object).alphaMask3D.bindGroup : undefined
+  )
+}
+
+/** @param {import("../../renderer/renderer.js").WebGLRenderer} renderer @param {import("../core/index.js").View} view */
+export function resolveTransparent3DBindGroup(renderer, view) {
+  const object = view.object
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  return /** @type {import("../../core/index.js").WebGLBindGroup} */ (
+    object ? meshInstanceBindGroups.getOrSet(object).transparent3D.bindGroup : undefined
+  )
+}
+
+/** @param {import("../../renderer/renderer.js").WebGLRenderer} renderer @param {import("../core/index.js").View} view */
+export function resolveOpaque2DBindGroup(renderer, view) {
+  const object = view.object
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  return /** @type {import("../../core/index.js").WebGLBindGroup} */ (
+    object ? meshInstanceBindGroups.getOrSet(object).opaque2D.bindGroup : undefined
+  )
+}
+
+/** @param {import("../../renderer/renderer.js").WebGLRenderer} renderer @param {import("../core/index.js").View} view */
+export function resolveAlphaMask2DBindGroup(renderer, view) {
+  const object = view.object
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  return /** @type {import("../../core/index.js").WebGLBindGroup} */ (
+    object ? meshInstanceBindGroups.getOrSet(object).alphaMask2D.bindGroup : undefined
+  )
+}
+
+/** @param {import("../../renderer/renderer.js").WebGLRenderer} renderer @param {import("../core/index.js").View} view */
+export function resolveTransparent2DBindGroup(renderer, view) {
+  const object = view.object
+  const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
+  assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
+  return /** @type {import("../../core/index.js").WebGLBindGroup} */ (
+    object ? meshInstanceBindGroups.getOrSet(object).transparent2D.bindGroup : undefined
+  )
+}
+
 /**
  * Shared per-view mesh-instance bind-group cache.
  *
@@ -134,6 +194,15 @@ export class MeshInstanceBindGroupEntry {
     this.transparent2D = new MeshInstancePhaseBindGroup(stride)
   }
 
+  clear() {
+    this.opaque3D.clear()
+    this.alphaMask3D.clear()
+    this.transparent3D.clear()
+    this.opaque2D.clear()
+    this.alphaMask2D.clear()
+    this.transparent2D.clear()
+  }
+
 }
 
 /**
@@ -162,10 +231,35 @@ export class MeshInstancePhaseBindGroup {
   bindGroup
 
   /**
+   * Mesh-instance uniforms in this phase.
+   * @type {MeshInstanceUniform[]}
+   */
+  instances = []
+
+  /**
    * @param {number} stride
    */
   constructor(stride) {
     this.#stride = stride
+  }
+
+  /**
+   * Adds a mesh-instance uniform to this phase.
+   *
+   * @param {MeshInstanceUniform} meshInstance
+   * @returns {number}
+   */
+  add(meshInstance) {
+    const index = this.instances.length
+    this.instances.push(meshInstance)
+    return index
+  }
+
+  /**
+   * Removes all mesh-instance uniforms registered for this phase.
+   */
+  clear() {
+    this.instances.length = 0
   }
 
   /**

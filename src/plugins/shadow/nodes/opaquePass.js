@@ -1,12 +1,9 @@
 import { Camera } from "../../../objects/index.js"
-import { View, Views, ViewBindGroups, MeshInstanceBindGroups } from "../../../renderer/index.js"
+import { View, Views, ViewBindGroups } from "../../../renderer/index.js"
 import { assert } from "../../../utils/index.js"
 import { snapUp } from "../../../math/index.js"
 import { ShadowMap } from "../resources/index.js"
-import { MeshMaterialBindGroups } from "../../meshmaterial/resources/index.js"
 import { getMipLevelSize } from "../../../core/webgl/utils.js"
-
-const MESH_INSTANCE_BIND_GROUP_INDEX = 2
 
 /**
  * @param {import("../../../renderer/index.js").View} view
@@ -14,18 +11,15 @@ const MESH_INSTANCE_BIND_GROUP_INDEX = 2
  * @param {import("../../../core/index.js").WebGLRenderDevice} device
  * @param {import("../../../renderer/renderer.js").WebGLRenderer} renderer
  * @param {ViewBindGroups} viewBindGroups
- * @param {MeshInstanceBindGroups} meshInstanceBindGroups
  * @param {ShadowMap} shadowMap
- * @param {MeshMaterialBindGroups} materialBindGroups
  */
-function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap, materialBindGroups) {
+function renderItems(view, viewIndex, device, renderer, viewBindGroups, shadowMap) {
   if (!view.object || view.object instanceof Camera) {
     return
   }
 
   const object = view.object
   const { opaque3D: opaqueStage } = view
-  const context = device.context
   const caches = renderer.caches
   const depthTexture = caches.getTexture(device, shadowMap.shadowAtlas)
   const depthStencilAttachment = depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
@@ -67,8 +61,7 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, meshInst
 
   pass.setBindGroup(0, viewBindGroups.getOrSet(device, object).createBindGroup(device, caches), [dynamicOffset])
 
-  const meshInstanceEntry = meshInstanceBindGroups.getOrSet(object)
-  opaqueStage.renderItems(pass, context, caches, meshInstanceEntry.opaque3D, MESH_INSTANCE_BIND_GROUP_INDEX, view, materialBindGroups)
+  opaqueStage.renderItems(pass, renderer, view)
   pass.end()
 }
 
@@ -84,15 +77,11 @@ export class ShadowOpaquePassNode {
     const { renderer, renderDevice } = context
     const views = renderer.getResource(Views)
     const viewBindGroups = renderer.getResource(ViewBindGroups)
-    const meshInstanceBindGroups = renderer.getResource(MeshInstanceBindGroups)
     const shadowMap = renderer.getResource(ShadowMap)
-    const materialBindGroups = renderer.getResource(MeshMaterialBindGroups)
 
     assert(views, "Views resource missing")
     assert(viewBindGroups, "ViewBindGroups resource missing")
-    assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
     assert(shadowMap, "Shadow map resource missing")
-    assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
 
     const viewsItems = views.items()
 
@@ -101,7 +90,7 @@ export class ShadowOpaquePassNode {
 
 
 
-      renderItems(view, i, renderDevice, renderer, viewBindGroups, meshInstanceBindGroups, shadowMap, materialBindGroups)
+      renderItems(view, i, renderDevice, renderer, viewBindGroups, shadowMap)
     }
   }
 }

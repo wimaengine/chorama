@@ -1,7 +1,14 @@
 import { assert } from "../../../utils/index.js"
 import { Camera, MeshMaterial3D, Object3D } from "../../../objects/index.js"
 import { AlphaMaskMode, TransparentMode } from "../../../material/index.js"
-import { MeshInstanceBindGroups, ViewBindGroups, Views } from "../../../renderer/index.js"
+import {
+  MeshInstanceBindGroups,
+  ViewBindGroups,
+  Views,
+  resolveAlphaMask3DBindGroup,
+  resolveTransparent3DBindGroup,
+  resolveOpaque3DBindGroup
+} from "../../../renderer/index.js"
 import { BoneTextureResource, MeshMaterialBindGroups, MeshMaterialPipelines, MeshMaterials, MorphTargetTextures } from "../resources/index.js"
 import { containsFrustum } from "../../../math/index.js"
 import { createMeshMaterialRenderItem } from "./utils.js"
@@ -67,6 +74,8 @@ export class MeshMaterial3DNode {
       const camera = view.object
 
       viewBindGroups.getOrSet(renderDevice, camera)
+      const meshInstanceEntry = meshInstanceBindGroups.getOrSet(camera)
+      meshInstanceEntry.clear()
 
       for (let i = 0; i < objects.length; i++) {
         // SAFETY: Asssume the list is dense
@@ -85,7 +94,7 @@ export class MeshMaterial3DNode {
             return true
           }
 
-          const item = createMeshMaterialRenderItem({
+          const renderItem = createMeshMaterialRenderItem({
             object: child,
             device: renderDevice,
             renderer,
@@ -99,14 +108,21 @@ export class MeshMaterial3DNode {
             viewBindGroups
           })
 
-          if (item) {
+          if (renderItem) {
+            const { item, meshInstance } = renderItem
             const alphaBlendMode = child.material.alphaBlendMode()
 
             if (alphaBlendMode instanceof AlphaMaskMode) {
+              const i = meshInstanceEntry.alphaMask3D.add(meshInstance)
+              item.bindings.set(2, resolveAlphaMask3DBindGroup, [meshInstanceEntry.alphaMask3D.getOffset(i)])
               view.alphaMask3D.add(item)
             } else if (alphaBlendMode instanceof TransparentMode) {
+              const i = meshInstanceEntry.transparent3D.add(meshInstance)
+              item.bindings.set(2, resolveTransparent3DBindGroup, [meshInstanceEntry.transparent3D.getOffset(i)])
               view.transparent3D.add(item)
             } else {
+              const i = meshInstanceEntry.opaque3D.add(meshInstance)
+              item.bindings.set(2, resolveOpaque3DBindGroup, [meshInstanceEntry.opaque3D.getOffset(i)])
               view.opaque3D.add(item)
             }
           }
