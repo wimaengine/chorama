@@ -141,6 +141,9 @@ export class CameraController {
       case 0:
         this.keys.add("mouseleft")
         break
+      case 1:
+        this.keys.add("mousemiddle")
+        break
       case 2:
         this.keys.add("mouseright")
         break
@@ -159,6 +162,9 @@ export class CameraController {
     switch (event.button) {
       case 0:
         this.keys.delete("mouseleft")
+        break
+      case 1:
+        this.keys.delete("mousemiddle")
         break
       case 2:
         this.keys.delete("mouseright")

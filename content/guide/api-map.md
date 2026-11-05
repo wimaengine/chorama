@@ -63,6 +63,7 @@ import {
 - `CameraController`
 - `OrbitCameraControls`
 - `FreeCameraController`
+- `Pan2DCameraController`
 
 ## Assets and Textures
 

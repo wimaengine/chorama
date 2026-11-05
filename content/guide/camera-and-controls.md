@@ -13,6 +13,7 @@ Here, we only focus on camera setup and controls.
 - a perspective projection setup
 - orbit controls for mouse/touch navigation
 - a free camera controller for keyboard and mouse navigation
+- 2D pan, zoom, and rotation controls
 
 ## Step 1: Import Camera APIs
 
@@ -22,7 +23,8 @@ import {
   PerspectiveProjection,
   OrthographicProjection,
   OrbitCameraControls,
-  FreeCameraController
+  FreeCameraController,
+  Pan2DCameraController
 } from "chorama";
 ```
 
@@ -96,6 +98,31 @@ requestAnimationFrame(frame);
 
 Pass a frame delta in seconds when you want movement to be independent of the
 render rate, for example `controls.update(deltaTime)`.
+
+## Use a 2D Camera Controller
+
+`Pan2DCameraController` is intended for an orthographic camera viewing a 2D
+scene. Drag with the left pointer button to pan, drag with the right or middle
+button to rotate around the Z axis, and use the wheel to zoom. Touch input
+supports one-finger panning and two-finger pan, pinch, and rotation gestures.
+
+```js
+const controls = new Pan2DCameraController(camera, canvas)
+controls.minZoom = 0.25
+controls.maxZoom = 8
+
+function frame() {
+  controls.update()
+  renderer.render([sprite, camera], device)
+  requestAnimationFrame(frame)
+}
+
+requestAnimationFrame(frame)
+```
+
+The controller keeps the orthographic projection bounds under your control and
+applies zoom through the camera transform. `panSensitivity` scales the
+screen-to-world pan distance and defaults to `1`.
 
 ## Switch to Orthographic Projection
 
