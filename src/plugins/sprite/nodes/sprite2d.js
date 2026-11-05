@@ -52,15 +52,21 @@ export class Sprite2dNode {
             return true
           }
 
-          const alphaBlendMode = child.alphaBlendMode()
+          const atlas = child.atlases[child.atlasIndex]
+          if (atlas === undefined) {
+            return true
+          }
+
+          const texture = atlas.texture
+          const alphaBlendMode = child.alphaBlend
           const alphaCutoff = alphaBlendMode instanceof AlphaMaskMode
             ? alphaBlendMode.cutoff
             : 0.5
-          const uvRect = child.uvRect
+          const uvRect = getUVRect(child)
           const size = /** @type {[number, number]} */ (child.size === undefined
             ? [
-              child.image.width * (uvRect[2] - uvRect[0]),
-              child.image.height * (uvRect[3] - uvRect[1])
+              texture.width * (uvRect[2] - uvRect[0]),
+              texture.height * (uvRect[3] - uvRect[1])
             ]
             : [child.size.x, child.size.y])
           const spriteInstance = SpriteInstanceUniform.from2D(
@@ -71,7 +77,7 @@ export class Sprite2dNode {
             child.tint,
             alphaCutoff
           )
-          const bindGroup = spriteBindGroups.getOrSet(renderDevice, renderer, child.image)
+          const bindGroup = spriteBindGroups.getOrSet(renderDevice, renderer, texture)
 
           if (alphaBlendMode instanceof AlphaMaskMode) {
             const pipelineId = spritePipelines.alphaMask
@@ -125,4 +131,26 @@ export class Sprite2dNode {
       }
     }
   }
+}
+
+/**
+ * Returns the selected normalized UV rectangle for a sprite.
+ *
+ * @param {Sprite2D} sprite
+ * @returns {[number, number, number, number]}
+ */
+function getUVRect(sprite) {
+  const atlas = sprite.atlases[sprite.atlasIndex]
+
+  if (atlas === undefined || atlas.layout === undefined) {
+    return [0, 0, 1, 1]
+  }
+
+  const bounds = atlas.layout.slices[sprite.sliceIndex]
+
+  if (bounds === undefined) {
+    return [0, 0, 1, 1]
+  }
+
+  return [bounds.min.x, bounds.min.y, bounds.max.x, bounds.max.y]
 }

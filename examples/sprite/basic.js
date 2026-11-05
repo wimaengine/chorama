@@ -10,6 +10,7 @@ import {
   PanCamera2DController,
   Sprite2D,
   SpritePlugin,
+  TextureAtlasLayout,
   TextureAtlas,
   TextureLoader,
   WebGLRenderDevice,
@@ -40,9 +41,11 @@ const texture = new TextureLoader().load({
   paths: ["/sprite_sheets/wanderer/wanderer.png"],
   flipY: true
 })
-const atlas = createWandererAtlas()
-const sprite = new Sprite2D(texture, atlas)
-sprite.slice = 0
+const layout = createWandererAtlas()
+const atlas = new TextureAtlas(texture, layout)
+const sprite = new Sprite2D([atlas])
+sprite.atlasIndex = 0
+sprite.sliceIndex = 0
 sprite.transform.position.set(0, 0)
 
 document.body.append(canvas)
@@ -61,7 +64,7 @@ function update(time) {
   previousTime = time
 
   if (elapsed >= 80) {
-    sprite.slice = ((sprite.slice ?? 0) + 1) % atlas.slices.length
+    sprite.sliceIndex = (sprite.sliceIndex + 1) % layout.slices.length
     elapsed = 0
   }
 
@@ -84,7 +87,7 @@ function updateView() {
 /**
  * Builds normalized bottom-left atlas slices for the 8x8 Wanderer sheet.
  *
- * @returns {TextureAtlas}
+ * @returns {TextureAtlasLayout}
  */
 function createWandererAtlas() {
   const columns = 8
@@ -101,5 +104,5 @@ function createWandererAtlas() {
     }
   }
 
-  return new TextureAtlas(slices)
+  return new TextureAtlasLayout(slices)
 }
