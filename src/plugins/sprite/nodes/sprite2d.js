@@ -134,7 +134,7 @@ export class Sprite2dNode {
 }
 
 /**
- * Returns the selected normalized UV rectangle for a sprite.
+ * Returns the selected normalized top-left UV rectangle for a sprite.
  *
  * @param {Sprite2D} sprite
  * @returns {[number, number, number, number]}

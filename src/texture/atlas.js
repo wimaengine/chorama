@@ -2,7 +2,9 @@
 /** @import { Texture } from "./texture.js" */
 
 /**
- * Texture regions expressed as normalized coordinates over a complete image.
+ * Texture regions expressed as normalized top-left coordinates over a
+ * complete image. The y-axis increases downward: [0, 0] is the top-left
+ * corner and [1, 1] is the bottom-right corner.
  */
 export class TextureAtlasLayout {
   /**

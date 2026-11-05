@@ -58,7 +58,7 @@ export class SpriteInstanceUniform {
   transform
 
   /**
-   * Normalized lower-left/upper-right UV rectangle.
+   * Normalized top-left/bottom-right UV rectangle.
    * @type {[number, number, number, number]}
    */
   uvRect

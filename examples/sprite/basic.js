@@ -38,8 +38,7 @@ camera.transform.position.z = 1
 const cameraControls = new PanCamera2DController(camera)
 
 const texture = new TextureLoader().load({
-  paths: ["/sprite_sheets/wanderer/wanderer.png"],
-  flipY: true
+  paths: ["/sprite_sheets/wanderer/wanderer.png"]
 })
 const layout = createWandererAtlas()
 const atlas = new TextureAtlas(texture, layout)
@@ -85,7 +84,7 @@ function updateView() {
 }
 
 /**
- * Builds normalized bottom-left atlas slices for the 8x8 Wanderer sheet.
+ * Builds normalized top-left atlas slices for the 8x8 Wanderer sheet.
  *
  * @returns {TextureAtlasLayout}
  */
@@ -98,8 +97,8 @@ function createWandererAtlas() {
     for (let column = 0; column < columns; column++) {
       const minX = column / columns
       const maxX = (column + 1) / columns
-      const minY = 1 - (row + 1) / rows
-      const maxY = 1 - row / rows
+      const minY = row / rows
+      const maxY = (row + 1) / rows
       slices.push(new BoundingBox2D(minX, minY, maxX, maxY))
     }
   }
