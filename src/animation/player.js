@@ -1,4 +1,4 @@
-import { Object2D, Object3D, ObjectBase } from "../objects/index.js"
+import { ObjectBase } from "../objects/index.js"
 import { AnimationClip } from "./clip.js"
 import { Playback } from "./playback.js"
 import { PlaybackRepeat } from "./repeat.js"
@@ -261,13 +261,6 @@ export class AnimationPlayer extends ObjectBase {
           }
         }
       })
-    })
-
-    this.traverseDFS((object) => {
-      if (object instanceof Object2D || object instanceof Object3D) {
-        object.update()
-      }
-      return true
     })
 
     return this
