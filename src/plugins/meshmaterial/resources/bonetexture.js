@@ -1,4 +1,4 @@
-import { Affine3 } from "../../../math/index.js"
+import { Affine2, Affine3 } from "../../../math/index.js"
 import { TextureFormat, TextureType, getTextureFormatSize } from "../../../constants/index.js"
 import { Texture } from "../../../texture/index.js"
 
@@ -28,7 +28,7 @@ export class BoneTextureResource {
   texture
 
   /**
-   * @type {Map<import("../../../objects/index.js").Skin, BoneTextureSlot>}
+   * @type {Map<import("../../../objects/index.js").Skin2D | import("../../../objects/index.js").Skin3D, BoneTextureSlot>}
    */
   #slots = new Map()
 
@@ -43,7 +43,7 @@ export class BoneTextureResource {
   #maxLayers
 
   /**
-   * @param {import("../../../objects/index.js").Skin} skin
+   * @param {import("../../../objects/index.js").Skin2D | import("../../../objects/index.js").Skin3D} skin
    * @returns {BoneTextureSlot}
    */
   getOrAllocate(skin) {
@@ -72,10 +72,12 @@ export class BoneTextureResource {
   }
 
   /**
-   * @param {import("../../../objects/index.js").Skin} skin
+   * Collects a 2D skin into the shared bone texture.
+   *
+   * @param {import("../../../objects/index.js").Skin2D} skin
    * @returns {BoneTextureSlot}
    */
-  collect(skin) {
+  collect2D(skin) {
     const slot = this.getOrAllocate(skin)
     const { bones, inverseBindPose } = skin
     if (bones.length === 0) {
@@ -86,29 +88,13 @@ export class BoneTextureResource {
     const boneTransforms = new Float32Array(buffer)
     for (let i = 0; i < bones.length; i++) {
       const offset = (slot.index + i) * 16
-      const bone = /** @type {import("../../../objects/index.js").Bone3D} */ (bones[i])
-      const pose = /** @type {Affine3} */ (inverseBindPose[i] || new Affine3())
-      const world = Affine3.multiply(
-        bone.transform.world,
-        pose
-      )
-
-      boneTransforms[offset + 0] = world.a
-      boneTransforms[offset + 1] = world.b
-      boneTransforms[offset + 2] = world.c
-      boneTransforms[offset + 3] = 0
-      boneTransforms[offset + 4] = world.d
-      boneTransforms[offset + 5] = world.e
-      boneTransforms[offset + 6] = world.f
-      boneTransforms[offset + 7] = 0
-      boneTransforms[offset + 8] = world.g
-      boneTransforms[offset + 9] = world.h
-      boneTransforms[offset + 10] = world.i
-      boneTransforms[offset + 11] = 0
-      boneTransforms[offset + 12] = world.x
-      boneTransforms[offset + 13] = world.y
-      boneTransforms[offset + 14] = world.z
-      boneTransforms[offset + 15] = 1
+      const bone = bones[i]
+      if (!bone) {
+        continue
+      }
+      const pose = /** @type {Affine2} */ (inverseBindPose[i] || new Affine2())
+      const world = Affine2.multiply(bone.transform.world, pose)
+      writeAffine2(boneTransforms, offset, world)
     }
 
     this.texture.data = [buffer]
@@ -118,7 +104,7 @@ export class BoneTextureResource {
   /**
    * Collects a 3D skin into the shared bone texture.
    *
-   * @param {import("../../../objects/index.js").Skin} skin
+   * @param {import("../../../objects/index.js").Skin3D} skin
    * @returns {BoneTextureSlot}
    */
   collect3D(skin) {
@@ -132,29 +118,13 @@ export class BoneTextureResource {
     const boneTransforms = new Float32Array(buffer)
     for (let i = 0; i < bones.length; i++) {
       const offset = (slot.index + i) * 16
-      const bone = /** @type {import("../../../objects/index.js").Bone3D} */ (bones[i])
+      const bone = bones[i]
+      if (!bone) {
+        continue
+      }
       const pose = /** @type {Affine3} */ (inverseBindPose[i] || new Affine3())
-      const world = Affine3.multiply(
-        bone.transform.world,
-        pose
-      )
-
-      boneTransforms[offset + 0] = world.a
-      boneTransforms[offset + 1] = world.b
-      boneTransforms[offset + 2] = world.c
-      boneTransforms[offset + 3] = 0
-      boneTransforms[offset + 4] = world.d
-      boneTransforms[offset + 5] = world.e
-      boneTransforms[offset + 6] = world.f
-      boneTransforms[offset + 7] = 0
-      boneTransforms[offset + 8] = world.g
-      boneTransforms[offset + 9] = world.h
-      boneTransforms[offset + 10] = world.i
-      boneTransforms[offset + 11] = 0
-      boneTransforms[offset + 12] = world.x
-      boneTransforms[offset + 13] = world.y
-      boneTransforms[offset + 14] = world.z
-      boneTransforms[offset + 15] = 1
+      const world = Affine3.multiply(bone.transform.world, pose)
+      writeAffine3(boneTransforms, offset, world)
     }
 
     this.texture.data = [buffer]
@@ -213,6 +183,57 @@ export class BoneTextureResource {
 
     return rows
   }
+}
+
+/**
+ * Writes a 2D affine as a 4x4 matrix in column-major order. The transform
+ * occupies the XY plane and leaves Z unchanged.
+ *
+ * @param {Float32Array} data
+ * @param {number} offset
+ * @param {Affine2} affine
+ */
+function writeAffine2(data, offset, affine) {
+  data[offset + 0] = affine.a
+  data[offset + 1] = affine.b
+  data[offset + 2] = 0
+  data[offset + 3] = 0
+  data[offset + 4] = affine.c
+  data[offset + 5] = affine.d
+  data[offset + 6] = 0
+  data[offset + 7] = 0
+  data[offset + 8] = 0
+  data[offset + 9] = 0
+  data[offset + 10] = 1
+  data[offset + 11] = 0
+  data[offset + 12] = affine.x
+  data[offset + 13] = affine.y
+  data[offset + 14] = 0
+  data[offset + 15] = 1
+}
+
+/**
+ * @param {Float32Array} data
+ * @param {number} offset
+ * @param {Affine3} affine
+ */
+function writeAffine3(data, offset, affine) {
+  data[offset + 0] = affine.a
+  data[offset + 1] = affine.b
+  data[offset + 2] = affine.c
+  data[offset + 3] = 0
+  data[offset + 4] = affine.d
+  data[offset + 5] = affine.e
+  data[offset + 6] = affine.f
+  data[offset + 7] = 0
+  data[offset + 8] = affine.g
+  data[offset + 9] = affine.h
+  data[offset + 10] = affine.i
+  data[offset + 11] = 0
+  data[offset + 12] = affine.x
+  data[offset + 13] = affine.y
+  data[offset + 14] = affine.z
+  data[offset + 15] = 1
 }
 
 /**

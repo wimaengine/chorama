@@ -60,6 +60,10 @@ export class MeshMaterial2DNode {
             return true
           }
 
+          if (child.skin) {
+            boneTexture.collect2D(child.skin)
+          }
+
           const renderItem = createMeshMaterialRenderItem({
             object: child,
             device: renderDevice,

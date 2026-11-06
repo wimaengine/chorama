@@ -1,4 +1,5 @@
 export * from './base.js'
+export * from './geometry.js'
 export * from './plane.js'
 export * from './circle.js'
 export * from './cylinder.js'

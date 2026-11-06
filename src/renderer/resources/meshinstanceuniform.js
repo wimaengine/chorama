@@ -32,11 +32,17 @@ export class MeshInstanceUniform {
    * the promoted affine's Z translation so the existing MeshInstanceBlock can
    * be reused by the 2D pipeline.
    *
-   * @param {import("hisabati").Affine2} transform
-   * @param {number} [zIndex=0]
+   * @param {MeshInstance2DOptions} options
    * @returns {MeshInstanceUniform}
    */
-  static from2D(transform, zIndex = 0) {
+  static from2D({
+    transform,
+    zIndex = 0,
+    skinIndex = 0,
+    boneCount = 0,
+    morphTargetCount = 0,
+    morphWeights = []
+  }) {
     const promotedTransform = new Affine3(
       transform.a,
       transform.c,
@@ -53,7 +59,11 @@ export class MeshInstanceUniform {
     )
 
     return new MeshInstanceUniform({
-      transform: promotedTransform
+      transform: promotedTransform,
+      skinIndex,
+      boneCount,
+      morphTargetCount,
+      morphWeights
     })
   }
 
@@ -150,6 +160,16 @@ export class MeshInstanceUniform {
 /**
  * @typedef MeshInstanceUniformOptions
  * @property {Affine3} transform
+ * @property {number} [skinIndex=0]
+ * @property {number} [boneCount=0]
+ * @property {number} [morphTargetCount=0]
+ * @property {number[]} [morphWeights=[]]
+ */
+
+/**
+ * @typedef MeshInstance2DOptions
+ * @property {import("hisabati").Affine2} transform
+ * @property {number} [zIndex=0]
  * @property {number} [skinIndex=0]
  * @property {number} [boneCount=0]
  * @property {number} [morphTargetCount=0]

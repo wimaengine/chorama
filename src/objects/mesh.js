@@ -3,58 +3,85 @@ import { BasicMaterial } from "../material/basic.js"
 import { RawMaterial } from "../material/index.js"
 import { Object2D } from "./object2d.js"
 import { Object3D } from "./object3d.js"
-import { Affine3 } from "../math/index.js"
-import { Bone3D } from "./bone.js";
+import { Affine2, Affine3 } from "../math/index.js"
+import { Bone2D, Bone3D } from "./bone.js"
 
+/**
+ * A skeletal skin whose bone and inverse-bind-pose dimensions match.
+ *
+ * @template {Bone2D | Bone3D} [B = Bone3D]
+ * @template {Affine2 | Affine3} [A = Affine3]
+ */
 export class Skin {
   /**
-   * @type {Affine3}
+   * @type {A}
    */
-  bindMatrix = Affine3.identity()
+  bindMatrix
 
   /**
-   * @type {Affine3}
+   * @type {A}
    */
-  inverseBindMatrix = Affine3.identity()
+  inverseBindMatrix
 
   /**
-   * @type {Bone3D[]}
+   * @type {B[]}
    */
   bones = []
 
   /**
-   * @type {Affine3[]}
+   * @type {A[]}
    */
   inverseBindPose = []
 
   /**
-   * @param {Affine3} [bindMatrix]
+   * @param {A} [bindMatrix]
    */
-  constructor(bindMatrix = new Affine3()) {
+  constructor(bindMatrix = /** @type {A} */ (new Affine3())) {
     this.bindMatrix = bindMatrix
-    this.inverseBindMatrix = bindMatrix.clone()
+    this.inverseBindMatrix = /** @type {A} */ (bindMatrix.clone())
   }
 
   clone() {
-    const skin = new Skin()
-    skin.inverseBindPose = this.inverseBindPose
+    const skin = /** @type {Skin<B, A>} */ (new Skin(this.bindMatrix.clone()))
+    skin.inverseBindMatrix = /** @type {A} */ (this.inverseBindMatrix.clone())
+    skin.inverseBindPose = this.inverseBindPose.map((pose) => /** @type {A} */ (pose.clone()))
     skin.bones = this.bones.slice()
     return skin
   }
 
   setBindPose() {
+    const is2D = this.bones[0] instanceof Bone2D
+
     for (let i = 0; i < this.bones.length; i++) {
-      const bone = /**@type {Bone3D} */ (this.bones[i])
-      const element = this.inverseBindPose[i] || new Affine3();
-      element.copy(bone.transform.world).invert()
-      this.inverseBindPose[i] = element
+      const bone = this.bones[i]
+
+      if (!bone) {
+        continue
+      }
+
+      if (is2D) {
+        const bone2D = /** @type {Bone2D} */ (bone)
+        const element = /** @type {Affine2} */ (this.inverseBindPose[i] || new Affine2())
+        element.copy(bone2D.transform.world).invert()
+        this.inverseBindPose[i] = /** @type {A} */ (element)
+      } else {
+        const bone3D = /** @type {Bone3D} */ (bone)
+        const element = /** @type {Affine3} */ (this.inverseBindPose[i] || new Affine3())
+        element.copy(bone3D.transform.world).invert()
+        this.inverseBindPose[i] = /** @type {A} */ (element)
+      }
     }
   }
 }
 
 /**
+ * A 2D skeletal skin.
+ * @typedef {Skin<Bone2D, Affine2>} Skin2D
+ */
+
+/**
  * A 3D skeletal skin.
- * @typedef {Skin} Skin3D
+ * @typedef {Skin<Bone3D, Affine3>} Skin3D
  */
 
 /**
@@ -124,6 +151,11 @@ export class MeshMaterial2D extends Object2D {
   material
 
   /**
+   * @type {Skin2D | undefined}
+   */
+  skin
+
+  /**
    * @param {Mesh} mesh
    * @param {BasicMaterial} material
    */
@@ -147,6 +179,7 @@ export class MeshMaterial2D extends Object2D {
 
     newMesh.mesh = this.mesh
     newMesh.material = this.material
+    newMesh.skin = this.skin?.clone()
 
     return newMesh
   }

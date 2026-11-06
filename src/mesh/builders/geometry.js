@@ -44,6 +44,8 @@ export function createMesh3dFromArrays({
  * @param {number[]} options.positions
  * @param {number[]} [options.uvs]
  * @param {number[]} [options.colors]
+ * @param {number[]} [options.jointIndices]
+ * @param {number[]} [options.jointWeights]
  * @param {number[]} [options.indices]
  * @returns {Mesh}
  */
@@ -51,12 +53,16 @@ export function createMesh2dFromArrays({
   positions,
   uvs = [],
   colors = [],
+  jointIndices = [],
+  jointWeights = [],
   indices
 }) {
   return createMeshFromArraysWithPosition(Attribute.Position2D, 2, {
     positions,
     uvs,
     colors,
+    jointIndices,
+    jointWeights,
     indices
   })
 }
@@ -69,6 +75,8 @@ export function createMesh2dFromArrays({
  * @param {number[]} [options.normals]
  * @param {number[]} [options.uvs]
  * @param {number[]} [options.colors]
+ * @param {number[]} [options.jointIndices]
+ * @param {number[]} [options.jointWeights]
  * @param {number[]} [options.indices]
  * @returns {Mesh}
  */

@@ -44,7 +44,6 @@ function createPipelineBitsFromMesh(mesh, object) {
   let key = keyFromTopology(mesh)
   if (is2D) key |= MeshKey.Dimension2D
   if (
-    object instanceof MeshMaterial3D &&
     mesh.attributes.has(Attribute.JointIndex.name) &&
     mesh.attributes.has(Attribute.JointWeight.name) &&
     object.skin &&
@@ -132,7 +131,7 @@ export function createMeshMaterialRenderItem({
     return
   }
   let skinTextureState
-  if (object instanceof MeshMaterial3D && object.skin) {
+  if (object.skin) {
     skinTextureState = { resource: boneTexture, slot: boneTexture.getOrAllocate(object.skin) }
   }
   let morphTextureState
@@ -191,7 +190,12 @@ export function createMeshMaterialRenderItem({
 
   if (!caches.getRenderPipeline(pipelineId)) return
   const meshInstance = object instanceof MeshMaterial2D
-    ? MeshInstanceUniform.from2D(object.transform.world, object.zIndex)
+    ? MeshInstanceUniform.from2D({
+      transform: object.transform.world,
+      zIndex: object.zIndex,
+      skinIndex: skinTextureState ? skinTextureState.slot.index : 0,
+      boneCount: object.skin?.bones.length ?? 0
+    })
     : new MeshInstanceUniform({
       transform: object.transform.world,
       skinIndex: skinTextureState ? skinTextureState.slot.index : 0,
