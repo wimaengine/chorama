@@ -1,5 +1,4 @@
 import { Mesh } from "../mesh/index.js"
-import { BasicMaterial } from "../material/basic.js"
 import { RawMaterial } from "../material/index.js"
 import { Object2D } from "./object2d.js"
 import { Object3D } from "./object3d.js"
@@ -137,7 +136,9 @@ export class MeshMaterial3D extends Object3D {
 }
 
 /**
- * A 2D mesh object using the basic material pipeline.
+ * A 2D mesh object using a material pipeline.
+ *
+ * @template {RawMaterial} [U = RawMaterial]
  */
 export class MeshMaterial2D extends Object2D {
   /**
@@ -146,7 +147,7 @@ export class MeshMaterial2D extends Object2D {
   mesh
 
   /**
-   * @type {BasicMaterial}
+   * @type {U}
    */
   material
 
@@ -157,14 +158,10 @@ export class MeshMaterial2D extends Object2D {
 
   /**
    * @param {Mesh} mesh
-   * @param {BasicMaterial} material
+   * @param {U} material
    */
   constructor(mesh, material) {
     super()
-    if (!(material instanceof BasicMaterial)) {
-      throw new Error("MeshMaterial2D requires a BasicMaterial")
-    }
-
     this.mesh = mesh
     this.material = material
   }
