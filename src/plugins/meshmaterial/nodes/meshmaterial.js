@@ -45,27 +45,6 @@ export class MeshMaterial3DNode {
 
     materials.clear()
 
-    const collectedSkins = new Set()
-
-    for (let i = 0; i < objects.length; i++) {
-      const object = /** @type {Object3D} */ (objects[i])
-
-      object.traverseDFS((child) => {
-        if (
-          !(child instanceof MeshMaterial3D) ||
-          !child.skin ||
-          child.skin.bones.length === 0 ||
-          collectedSkins.has(child.skin)
-        ) {
-          return true
-        }
-
-        boneTexture.collect(child.skin)
-        collectedSkins.add(child.skin)
-        return true
-      })
-    }
-
     for (const view of views.items()) {
       if (!(view.object instanceof Camera)) {
         continue
@@ -92,6 +71,10 @@ export class MeshMaterial3DNode {
 
           if (!isMeshVisible(child, view)) {
             return true
+          }
+
+          if (child.skin) {
+            boneTexture.collect3D(child.skin)
           }
 
           const renderItem = createMeshMaterialRenderItem({

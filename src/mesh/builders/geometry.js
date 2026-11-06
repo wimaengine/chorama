@@ -12,6 +12,8 @@ import { assert } from "../../utils/index.js"
  * @param {number[]} [options.normals]
  * @param {number[]} [options.uvs]
  * @param {number[]} [options.colors]
+ * @param {number[]} [options.jointIndices]
+ * @param {number[]} [options.jointWeights]
  * @param {number[]} [options.indices]
  * @returns {Mesh}
  */
@@ -20,6 +22,8 @@ export function createMesh3dFromArrays({
   normals = [],
   uvs = [],
   colors = [],
+  jointIndices = [],
+  jointWeights = [],
   indices
 }) {
   return createMeshFromArraysWithPosition(Attribute.Position3D, 3, {
@@ -27,6 +31,8 @@ export function createMesh3dFromArrays({
     normals,
     uvs,
     colors,
+    jointIndices,
+    jointWeights,
     indices
   })
 }
@@ -74,6 +80,8 @@ function createMeshFromArraysWithPosition(
     normals = [],
     uvs = [],
     colors = [],
+    jointIndices = [],
+    jointWeights = [],
     indices
   }
 ) {
@@ -104,6 +112,20 @@ function createMeshFromArraysWithPosition(
     attributes.set(
       Attribute.Color.name,
       new DataView(new Float32Array(colors).buffer)
+    )
+  }
+
+  if (jointIndices.length > 0) {
+    attributes.set(
+      Attribute.JointIndex.name,
+      new DataView(new Uint16Array(jointIndices).buffer)
+    )
+  }
+
+  if (jointWeights.length > 0) {
+    attributes.set(
+      Attribute.JointWeight.name,
+      new DataView(new Float32Array(jointWeights).buffer)
     )
   }
 

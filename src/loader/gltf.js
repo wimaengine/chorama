@@ -3175,7 +3175,7 @@ function parseGeometry(gltfMesh, gltf) {
  * @param {GLTFSkin} gltfSkin
  * @param {GLTF} gltf
  * @param {Map<number, Object3D>} entityMap
- * @returns {Skin}
+ * @returns {import("../objects/index.js").Skin3D}
  */
 function parseSkin(gltfSkin, gltf, entityMap) {
   /** @type {Affine3[]} */
@@ -3196,7 +3196,7 @@ function parseSkin(gltfSkin, gltf, entityMap) {
     bindPose = convertToInverseBindPose(bindPoseData)
   }
 
-  const skin = new Skin()
+  const skin = /** @type {import("../objects/index.js").Skin3D} */ (new Skin(new Affine3()))
 
   if (gltfSkin.inverseBindMatrices !== undefined && bindPose.length !== gltfSkin.joints.length) {
     console.warn(

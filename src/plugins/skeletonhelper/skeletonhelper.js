@@ -45,7 +45,7 @@ export class SkeletonHelperPlugin extends Plugin {
     const skin = object.skinnedMesh.skin
     const boneIndices = new Map(skin.bones.map((bone, index) => [bone, index]))
     const pipeline = this.getRenderPipeline(device, renderer)
-    const skinSlot = boneTextureResource?.collect(skin)
+    const skinSlot = boneTextureResource?.collect3D(skin)
     const transformsInfo = pipeline.uniforms.get("transforms")
     const modelInfo = pipeline.uniforms.get("model")
     const parentInfo = pipeline.uniforms.get("parent_index")

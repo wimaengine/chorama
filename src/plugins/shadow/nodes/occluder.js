@@ -43,27 +43,6 @@ export class ShadowOccluderNode {
     assert(meshInstanceBindGroups, "MeshInstanceBindGroups resource missing")
     assert(materialBindGroups, "MeshMaterialBindGroups resource missing")
 
-    const collectedSkins = new Set()
-
-    for (let i = 0; i < objects.length; i++) {
-      const object = /** @type {Object3D} */ (objects[i])
-
-      object.traverseDFS((child) => {
-        if (
-          !(child instanceof MeshMaterial3D) ||
-          !child.skin ||
-          child.skin.bones.length === 0 ||
-          collectedSkins.has(child.skin)
-        ) {
-          return true
-        }
-
-        boneTexture.collect(child.skin)
-        collectedSkins.add(child.skin)
-        return true
-      })
-    }
-
     for (const view of views.items()) {
       if (
         !(view.object instanceof DirectionalLight) &&
@@ -118,6 +97,10 @@ export class ShadowOccluderNode {
 
           if (!pipeline) {
             return true
+          }
+
+          if (child.skin) {
+            boneTexture.collect3D(child.skin)
           }
 
           const skinTextureState = child.skin ? boneTexture.getOrAllocate(child.skin) : undefined

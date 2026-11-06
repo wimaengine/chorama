@@ -116,6 +116,52 @@ export class BoneTextureResource {
   }
 
   /**
+   * Collects a 3D skin into the shared bone texture.
+   *
+   * @param {import("../../../objects/index.js").Skin} skin
+   * @returns {BoneTextureSlot}
+   */
+  collect3D(skin) {
+    const slot = this.getOrAllocate(skin)
+    const { bones, inverseBindPose } = skin
+    if (bones.length === 0) {
+      return slot
+    }
+
+    const buffer = this.#ensureCapacity(slot.index + bones.length)
+    const boneTransforms = new Float32Array(buffer)
+    for (let i = 0; i < bones.length; i++) {
+      const offset = (slot.index + i) * 16
+      const bone = /** @type {import("../../../objects/index.js").Bone3D} */ (bones[i])
+      const pose = /** @type {Affine3} */ (inverseBindPose[i] || new Affine3())
+      const world = Affine3.multiply(
+        bone.transform.world,
+        pose
+      )
+
+      boneTransforms[offset + 0] = world.a
+      boneTransforms[offset + 1] = world.b
+      boneTransforms[offset + 2] = world.c
+      boneTransforms[offset + 3] = 0
+      boneTransforms[offset + 4] = world.d
+      boneTransforms[offset + 5] = world.e
+      boneTransforms[offset + 6] = world.f
+      boneTransforms[offset + 7] = 0
+      boneTransforms[offset + 8] = world.g
+      boneTransforms[offset + 9] = world.h
+      boneTransforms[offset + 10] = world.i
+      boneTransforms[offset + 11] = 0
+      boneTransforms[offset + 12] = world.x
+      boneTransforms[offset + 13] = world.y
+      boneTransforms[offset + 14] = world.z
+      boneTransforms[offset + 15] = 1
+    }
+
+    this.texture.data = [buffer]
+    return slot
+  }
+
+  /**
    * @param {number} rows
    * @returns {ArrayBuffer}
    */

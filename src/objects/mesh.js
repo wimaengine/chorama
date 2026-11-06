@@ -27,7 +27,13 @@ export class Skin {
    */
   inverseBindPose = []
 
-  constructor() { }
+  /**
+   * @param {Affine3} [bindMatrix]
+   */
+  constructor(bindMatrix = new Affine3()) {
+    this.bindMatrix = bindMatrix
+    this.inverseBindMatrix = bindMatrix.clone()
+  }
 
   clone() {
     const skin = new Skin()
@@ -47,6 +53,11 @@ export class Skin {
 }
 
 /**
+ * A 3D skeletal skin.
+ * @typedef {Skin} Skin3D
+ */
+
+/**
  * @template {RawMaterial} [U = RawMaterial]
  */
 export class MeshMaterial3D extends Object3D {
@@ -61,7 +72,7 @@ export class MeshMaterial3D extends Object3D {
   material
 
   /**
-   * @type {Skin | undefined}
+   * @type {Skin3D | undefined}
    */
   skin
 
