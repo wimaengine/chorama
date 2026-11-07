@@ -112,11 +112,6 @@ function update() {
 }
 
 function updateView() {
-  canvas.style.width = `${innerWidth}px`
-  canvas.style.height = `${innerHeight}px`
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
-
   const aspect = Math.max(innerWidth / Math.max(innerHeight, 1), 0.01)
   const contentWidth = spriteSize + spriteSpacing * (spriteSheets.length - 1)
   const viewHeight = Math.max(spriteSize + 80, contentWidth / aspect)

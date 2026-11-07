@@ -66,11 +66,6 @@ function update() {
 }
 
 function updateView() {
-  canvas.style.width = `${innerWidth}px`
-  canvas.style.height = `${innerHeight}px`
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
-
   const aspect = Math.max(innerWidth / Math.max(innerHeight, 1), 0.01)
   const viewHeight = 1050
   const viewWidth = viewHeight * aspect

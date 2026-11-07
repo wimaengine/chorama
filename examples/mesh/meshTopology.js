@@ -108,11 +108,6 @@ buildOptionsFolder
 buildOptionsFolder.open()
 
 function updateView() {
-  canvas.style.width = innerWidth + "px"
-  canvas.style.height = innerHeight + "px"
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
-
   if (camera.projection instanceof PerspectiveProjection) {
     camera.projection.aspect = innerWidth / innerHeight
   }

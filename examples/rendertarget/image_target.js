@@ -118,20 +118,12 @@ function update() {
 }
 
 function updateView() {
-  const fullWidth = innerWidth * devicePixelRatio
-  const fullHeight = innerHeight * devicePixelRatio
-
-  canvas.style.width = innerWidth + "px"
-  canvas.style.height = innerHeight + "px"
-  canvas.width = fullWidth
-  canvas.height = fullHeight
-
   if (
     camera1.projection instanceof PerspectiveProjection &&
     camera2.projection instanceof PerspectiveProjection
   ) {
-    camera1.projection.aspect = fullWidth / fullHeight
-    camera2.projection.aspect = fullWidth / fullHeight
+    camera1.projection.aspect = innerWidth / innerHeight
+    camera2.projection.aspect = innerWidth / innerHeight
   }
 }
 

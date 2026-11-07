@@ -52,8 +52,6 @@ const model = loader.load({
 })
 
 document.body.append(canvas)
-updateView()
-addEventListener("resize", updateView)
 requestAnimationFrame(update)
 
 // GUI
@@ -125,13 +123,6 @@ function update() {
   }
   stats.end()
   requestAnimationFrame(update)
-}
-
-function updateView() {
-  canvas.style.width = innerWidth + "px"
-  canvas.style.height = innerHeight + "px"
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
 }
 
 // demo-only performance monitor

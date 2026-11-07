@@ -57,8 +57,6 @@ cameraControls.distance = 5
 camera.projection = projection
 
 document.body.append(canvas)
-addEventListener("resize", updateView)
-updateView()
 requestAnimationFrame(update)
 
 function createObjects() {
@@ -85,13 +83,6 @@ function update() {
   cameraControls.update()
   renderer.render([ground, ...objects, camera], renderDevice)
   requestAnimationFrame(update)
-}
-
-function updateView() {
-  canvas.style.width = innerWidth + "px"
-  canvas.style.height = innerHeight + "px"
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
 }
 
 // demo-only GUI controls

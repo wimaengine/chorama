@@ -57,11 +57,6 @@ function update() {
 }
 
 function updateView() {
-  canvas.style.width = innerWidth + "px"
-  canvas.style.height = innerHeight + "px"
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
-
   const viewHeight = 3
   const viewWidth = viewHeight * innerWidth / innerHeight
   projection.left = -viewWidth * 0.5

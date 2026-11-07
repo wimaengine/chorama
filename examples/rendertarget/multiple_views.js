@@ -123,15 +123,7 @@ function update() {
 }
 
 function updateView() {
-  const fullWidth = innerWidth * devicePixelRatio
-  const fullHeight = innerHeight * devicePixelRatio
-  const halfFullWidth = fullWidth / 2
-  const halfFullHeight = fullHeight / 2
-
-  canvas.style.width = innerWidth + "px"
-  canvas.style.height = innerHeight + "px"
-  canvas.width = fullWidth
-  canvas.height = fullHeight
+  const aspect = innerWidth / innerHeight
 
   if (
     camera1.projection instanceof PerspectiveProjection &&
@@ -139,10 +131,10 @@ function updateView() {
     camera3.projection instanceof PerspectiveProjection &&
     camera4.projection instanceof PerspectiveProjection
   ) {
-    camera1.projection.aspect = halfFullWidth / halfFullHeight
-    camera2.projection.aspect = halfFullWidth / halfFullHeight
-    camera3.projection.aspect = halfFullWidth / halfFullHeight
-    camera4.projection.aspect = halfFullWidth / halfFullHeight
+    camera1.projection.aspect = aspect
+    camera2.projection.aspect = aspect
+    camera3.projection.aspect = aspect
+    camera4.projection.aspect = aspect
   }
 }
 

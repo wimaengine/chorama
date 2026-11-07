@@ -125,11 +125,6 @@ function update(now) {
 }
 
 function updateView() {
-  canvas.style.width = `${innerWidth}px`
-  canvas.style.height = `${innerHeight}px`
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
-
   const viewHeight = 5
   const viewWidth = viewHeight * innerWidth / Math.max(innerHeight, 1)
   projection.left = -viewWidth * 0.5

@@ -80,10 +80,6 @@ function update() {
 }
 
 function updateView() {
-  canvas.style.width = innerWidth + "px"
-  canvas.style.height = innerHeight + "px"
-  canvas.width = innerWidth * devicePixelRatio
-  canvas.height = innerHeight * devicePixelRatio
   projection.aspect = innerWidth / innerHeight
 }
 
