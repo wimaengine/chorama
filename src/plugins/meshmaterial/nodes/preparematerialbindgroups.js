@@ -79,7 +79,7 @@ function createMaterialBindGroup(device, renderer, material) {
       visibility: 0,
       sampler: { type: gpuSampler.type }
     })
-    bindGroupEntries.push({ binding, resource: { texture: gpuTexture } })
+    bindGroupEntries.push({ binding, resource: { view: gpuTexture.view } })
     bindGroupEntries.push({ binding: binding + 1, resource: { sampler: gpuSampler } })
     binding += 2
   }

@@ -75,16 +75,16 @@ export class SkeletonHelperPlugin extends Plugin {
     const colorTexture = colorTarget ? caches.getTexture(device, colorTarget) : undefined
     const renderTexture = depthTexture ?? colorTexture
     const depthStencilAttachment = depthTexture ? /** @type {import("../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
-      texture: depthTexture,
+      view: depthTexture.view,
       layer: renderTarget.layer
     }) : undefined
 
-    if (depthTexture && depthStencilAttachment && hasDepthComponent(depthTexture.actualFormat)) {
+    if (depthTexture && depthStencilAttachment && hasDepthComponent(depthTexture.texture.actualFormat)) {
       depthStencilAttachment.depthLoadOp = "load"
       depthStencilAttachment.depthStoreOp = "store"
     }
 
-    if (depthTexture && depthStencilAttachment && hasStencilComponent(depthTexture.actualFormat)) {
+    if (depthTexture && depthStencilAttachment && hasStencilComponent(depthTexture.texture.actualFormat)) {
       depthStencilAttachment.stencilLoadOp = "load"
       depthStencilAttachment.stencilStoreOp = "store"
     }
@@ -93,7 +93,7 @@ export class SkeletonHelperPlugin extends Plugin {
 
     const pass = device.createCommandEncoder().beginRenderPass({
       colorAttachments: renderTarget.color.map((texture) => texture ? {
-        texture: caches.getTexture(device, texture),
+        view: caches.getTexture(device, texture).view,
         layer: renderTarget.layer,
         loadOp: /** @type {import("../../core/index.js").WebGLLoadOp} */ ("load"),
         storeOp: /** @type {import("../../core/index.js").WebGLStoreOp} */ ("store")
@@ -103,10 +103,10 @@ export class SkeletonHelperPlugin extends Plugin {
 
     if (renderTexture) {
       const { width, height } = getMipLevelSize(
-        renderTexture.type,
-        renderTexture.width,
-        renderTexture.height,
-        renderTexture.depth,
+        renderTexture.texture.type,
+        renderTexture.texture.width,
+        renderTexture.texture.height,
+        renderTexture.texture.depth,
         0
       )
       pass.setViewport(
@@ -128,7 +128,7 @@ export class SkeletonHelperPlugin extends Plugin {
     const gpuSampler = caches.getSampler(device, renderer.defaults.textureNearestSampler)
 
     device.context.activeTexture(WebGL2RenderingContext.TEXTURE0 + transformsInfo.texture_unit)
-    device.context.bindTexture(boneTextureResource.texture.type, transformsTexture.inner)
+    device.context.bindTexture(boneTextureResource.texture.type, transformsTexture.texture.inner)
     device.context.bindSampler(transformsInfo.texture_unit, gpuSampler.inner)
 
     device.context.uniformMatrix4fv(modelInfo.location, false, [...Affine3.toMatrix4(object.skinnedMesh.transform.world)])

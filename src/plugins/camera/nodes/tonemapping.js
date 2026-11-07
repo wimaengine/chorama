@@ -1,4 +1,5 @@
 /**@import { WebGLRenderDevice } from "../../../core/index.js" */
+/** @import { CachedTexture } from "../../../caches/index.js" */
 import { ACESFilmicTonemapping, AgXTonemapping, Camera, HableTonemapping, KhronosPBRNeutralTonemapping, ReinhardToneMapping } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
 import { CanvasTarget } from "../../../rendertarget/index.js"
@@ -80,7 +81,7 @@ export class TonemappingNode {
 
       const pass = commandEncoder.beginRenderPass({
         colorAttachments: [{
-          texture: renderer.caches.getTexture(renderDevice, outputColor),
+          view: renderer.caches.getTexture(renderDevice, outputColor).view,
           layer: 0,
           loadOp: "load",
           storeOp: "store"
@@ -177,9 +178,9 @@ function getTonemappingPipeline(device, renderer, pipelineState, toneMapping) {
  * @param {TonemappingPipeline} pipelineState
  * @param {import("../../../index.js").GPUBuffer} exposureBuffer
  * @param {TonemappingUniform} tonemappingUniform
- * @param {import("../../../index.js").GPUTexture} source
+ * @param {CachedTexture} source
  * @param {import("../../../index.js").GPUSampler} gpuSampler
- * @param {import("../../../index.js").GPUTexture} lutTexture
+ * @param {CachedTexture} lutTexture
  * @param {import("../../../index.js").GPUSampler} lutSampler
  */
 function createTonemappingBindGroup(renderDevice, pipelineState, exposureBuffer, tonemappingUniform, source, gpuSampler, lutTexture, lutSampler) {
@@ -197,7 +198,7 @@ function createTonemappingBindGroup(renderDevice, pipelineState, exposureBuffer,
       {
         binding: 1,
         resource: {
-          texture: source
+          view: source.view
         }
       },
       {
@@ -209,7 +210,7 @@ function createTonemappingBindGroup(renderDevice, pipelineState, exposureBuffer,
       {
         binding: 3,
         resource: {
-          texture: lutTexture
+          view: lutTexture.view
         }
       },
       {

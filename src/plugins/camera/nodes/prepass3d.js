@@ -95,7 +95,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
 
   const pass = commandEncoder.beginRenderPass({
     colorAttachments: normalTexture ? [{
-      texture: normalTexture,
+      view: normalTexture.view,
       mipLevel: 0,
       layer: 0,
       loadOp: "clear",
@@ -103,7 +103,7 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
       clearValue: [0, 0, 0, 0]
     }] : [],
     depthStencilAttachment: {
-      texture: sourceDepthTexture,
+      view: sourceDepthTexture.view,
       mipLevel: view.depthMipmapLevel,
       layer: view.depthLayer,
       depthLoadOp: "clear",
@@ -113,10 +113,10 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
   })
 
   const { width, height } = getMipLevelSize(
-    sourceDepthTexture.type,
-    sourceDepthTexture.width,
-    sourceDepthTexture.height,
-    sourceDepthTexture.depth,
+    sourceDepthTexture.texture.type,
+    sourceDepthTexture.texture.width,
+    sourceDepthTexture.texture.height,
+    sourceDepthTexture.texture.depth,
     view.depthMipmapLevel
   )
   pass.setViewport(0, 0, width, height, view.depthRange.start, view.depthRange.end)
@@ -196,8 +196,8 @@ function renderItems(view, viewIndex, device, renderer, prePassTextures, viewBin
   const destinationDepthTexture = caches.getTexture(device, prePassTexture.depth)
 
   commandEncoder.copyTextureToTexture(
-    { texture: sourceDepthTexture },
-    { texture: destinationDepthTexture },
+    { texture: sourceDepthTexture.texture },
+    { texture: destinationDepthTexture.texture },
     {
       width: renderTarget.width,
       height: renderTarget.height,

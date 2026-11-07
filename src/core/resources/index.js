@@ -1,6 +1,7 @@
 export * from './gpubuffer.js'
 export * from './gpusampler.js'
 export * from './gputexture.js'
+export * from './webglgputextureview.js'
 export * from './gpumesh.js'
 export * from './blendparams.js'
 export * from './webglshadermodule.js'

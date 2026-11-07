@@ -23,7 +23,7 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, shadowMa
   const caches = renderer.caches
   const depthTexture = caches.getTexture(device, shadowMap.shadowAtlas)
   const depthStencilAttachment = depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
-    texture: depthTexture,
+    view: depthTexture.view,
     mipLevel: view.depthMipmapLevel,
     layer: view.depthLayer,
     depthLoadOp: "clear",
@@ -37,10 +37,10 @@ function renderItems(view, viewIndex, device, renderer, viewBindGroups, shadowMa
   })
 
   const { width, height } = getMipLevelSize(
-    depthTexture.type,
-    depthTexture.width,
-    depthTexture.height,
-    depthTexture.depth,
+    depthTexture.texture.type,
+    depthTexture.texture.width,
+    depthTexture.texture.height,
+    depthTexture.texture.depth,
     view.depthMipmapLevel
   )
   pass.setViewport(

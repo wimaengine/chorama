@@ -346,7 +346,7 @@ function createBindGroupEntry(device, caches, item) {
       return {
         binding,
         resource: {
-          texture: caches.getTexture(device, textureResource)
+          view: caches.getTexture(device, textureResource).view
         }
       }
     }

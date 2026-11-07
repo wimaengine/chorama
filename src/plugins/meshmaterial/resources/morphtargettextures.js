@@ -1,3 +1,4 @@
+/** @import { CachedTexture } from "../../../caches/index.js" */
 import { TextureFormat, TextureType } from "../../../constants/index.js"
 import { MeshInstanceUniform } from "../../../renderer/resources/meshinstanceuniform.js"
 import { Texture } from "../../../texture/index.js"
@@ -169,7 +170,7 @@ export class MorphTargetTextures {
         {
           binding: 0,
           resource: {
-            texture: gpuTexture
+            view: gpuTexture.view
           }
         },
         {
@@ -193,7 +194,7 @@ export class MorphTargetTextures {
  * @property {number} height
  * @property {Texture} texture
  * @property {import("../../../core/index.js").WebGLBindGroup | undefined} bindGroup
- * @property {import("../../../core/resources/index.js").GPUTexture | undefined} gpuTexture
+ * @property {CachedTexture | undefined} gpuTexture
  * @property {import("../../../core/resources/index.js").GPUSampler | undefined} gpuSampler
  */
 

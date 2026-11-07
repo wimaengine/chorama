@@ -2,9 +2,10 @@ import { BufferUsage, BufferType, TextureType, TextureFormat, TextureFilter, Tex
 import { Vector3 } from "../../math/index.js";
 import { CompareFunction } from "../constants.js";
 import { MeshVertexLayout } from "../layouts/index.js";
-import { BlendParams, GPUTexture } from "../resources/index.js";
+import { BlendParams, WebGLGPUTextureView } from "../resources/index.js";
 /** @import { GPUBuffer } from "../resources/index.js" */
 /** @import { GPUSampler } from "../resources/index.js" */
+/** @import { GPUTexture } from "../resources/index.js" */
 
 /**
  * @typedef {"load" | "clear"} WebGLLoadOp
@@ -37,7 +38,7 @@ import { BlendParams, GPUTexture } from "../resources/index.js";
 
 /**
  * @typedef WebGLRenderPassColorAttachment
- * @property {GPUTexture} texture
+ * @property {WebGLGPUTextureView} view
  * @property {number} [mipLevel]
  * @property {number} [layer]
  * @property {WebGLLoadOp} loadOp
@@ -47,7 +48,7 @@ import { BlendParams, GPUTexture } from "../resources/index.js";
 
 /**
  * @typedef WebGLRenderPassDepthStencilAttachment
- * @property {GPUTexture} [texture]
+ * @property {WebGLGPUTextureView} [view]
  * @property {number} [mipLevel]
  * @property {number} [layer]
  * @property {number} [depthClearValue]
@@ -82,7 +83,7 @@ import { BlendParams, GPUTexture } from "../resources/index.js";
 
 /**
  * @typedef WebGLBindGroupTextureResource
- * @property {GPUTexture} texture
+ * @property {WebGLGPUTextureView} view
  */
 
 /**

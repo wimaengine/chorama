@@ -1,4 +1,5 @@
 /**@import { WebGLRenderDevice } from "../../../core/index.js" */
+/** @import { CachedTexture } from "../../../caches/index.js" */
 import { Camera } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
 import { TextureFormat } from "../../../constants/index.js"
@@ -239,7 +240,7 @@ function createBloomTextureDescriptor(width, height) {
  * @param {BloomPipeline} pipelineState
  * @param {import("../../../core/resources/index.js").GPUBuffer} bloomBuffer
  * @param {number} bloomBindingSize
- * @param {import("../../../core/resources/index.js").GPUTexture} sourceTexture
+ * @param {CachedTexture} sourceTexture
  * @param {import("../../../core/resources/index.js").GPUSampler} sampler
  */
 function createExtractBindGroup(device, pipelineState, bloomBuffer, bloomBindingSize, sourceTexture, sampler) {
@@ -257,7 +258,7 @@ function createExtractBindGroup(device, pipelineState, bloomBuffer, bloomBinding
       {
         binding: 1,
         resource: {
-          texture: sourceTexture
+          view: sourceTexture.view
         }
       },
       {
@@ -273,7 +274,7 @@ function createExtractBindGroup(device, pipelineState, bloomBuffer, bloomBinding
 /**
  * @param {WebGLRenderDevice} device
  * @param {GaussianBlurPipeline} pipelineState
- * @param {import("../../../core/resources/index.js").GPUTexture} sourceTexture
+ * @param {CachedTexture} sourceTexture
  * @param {import("../../../core/resources/index.js").GPUSampler} sampler
  */
 function createBlurBindGroup(device, pipelineState, sourceTexture, sampler) {
@@ -284,7 +285,7 @@ function createBlurBindGroup(device, pipelineState, sourceTexture, sampler) {
       {
         binding: 1,
         resource: {
-          texture: sourceTexture
+          view: sourceTexture.view
         }
       },
       {
@@ -300,8 +301,8 @@ function createBlurBindGroup(device, pipelineState, sourceTexture, sampler) {
 /**
  * @param {WebGLRenderDevice} device
  * @param {BloomPipeline} pipelineState
- * @param {import("../../../core/resources/index.js").GPUTexture} accumTexture
- * @param {import("../../../core/resources/index.js").GPUTexture} bloomTexture
+ * @param {CachedTexture} accumTexture
+ * @param {CachedTexture} bloomTexture
  * @param {import("../../../core/resources/index.js").GPUSampler} sampler
  */
 function createAccumulationBindGroup(device, pipelineState, accumTexture, bloomTexture, sampler) {
@@ -312,7 +313,7 @@ function createAccumulationBindGroup(device, pipelineState, accumTexture, bloomT
       {
         binding: 0,
         resource: {
-          texture: accumTexture
+          view: accumTexture.view
         }
       },
       {
@@ -324,7 +325,7 @@ function createAccumulationBindGroup(device, pipelineState, accumTexture, bloomT
       {
         binding: 2,
         resource: {
-          texture: bloomTexture
+          view: bloomTexture.view
         }
       },
       {
@@ -342,8 +343,8 @@ function createAccumulationBindGroup(device, pipelineState, accumTexture, bloomT
  * @param {BloomPipeline} pipelineState
  * @param {import("../../../core/resources/index.js").GPUBuffer} bloomBuffer
  * @param {number} bloomBindingSize
- * @param {import("../../../core/resources/index.js").GPUTexture} sceneTexture
- * @param {import("../../../core/resources/index.js").GPUTexture} bloomTexture
+ * @param {CachedTexture} sceneTexture
+ * @param {CachedTexture} bloomTexture
  * @param {import("../../../core/resources/index.js").GPUSampler} sampler
  */
 function createCompositeBindGroup(device, pipelineState, bloomBuffer, bloomBindingSize, sceneTexture, bloomTexture, sampler) {
@@ -361,7 +362,7 @@ function createCompositeBindGroup(device, pipelineState, bloomBuffer, bloomBindi
       {
         binding: 1,
         resource: {
-          texture: sceneTexture
+          view: sceneTexture.view
         }
       },
       {
@@ -373,7 +374,7 @@ function createCompositeBindGroup(device, pipelineState, bloomBuffer, bloomBindi
       {
         binding: 3,
         resource: {
-          texture: bloomTexture
+          view: bloomTexture.view
         }
       },
       {
@@ -388,7 +389,7 @@ function createCompositeBindGroup(device, pipelineState, bloomBuffer, bloomBindi
 
 /**
  * @param {WebGLRenderDevice} device
- * @param {import("../../../core/resources/index.js").GPUTexture} outputTexture
+ * @param {CachedTexture} outputTexture
  * @param {import("../../../core/index.js").WebGLRenderPipeline} pipeline
  * @param {import("../../../core/index.js").WebGLBindGroup} bindGroup
  * @param {number[] | undefined} [dynamicOffsets]
@@ -396,7 +397,7 @@ function createCompositeBindGroup(device, pipelineState, bloomBuffer, bloomBindi
 function renderFullscreenPass(device, outputTexture, pipeline, bindGroup, dynamicOffsets) {
   const pass = device.createCommandEncoder().beginRenderPass({
     colorAttachments: [{
-      texture: outputTexture,
+      view: outputTexture.view,
       layer: 0,
       loadOp: "clear",
       storeOp: "store",
@@ -412,12 +413,12 @@ function renderFullscreenPass(device, outputTexture, pipeline, bindGroup, dynami
 
 /**
  * @param {WebGLRenderDevice} device
- * @param {import("../../../core/resources/index.js").GPUTexture} texture
+ * @param {CachedTexture} texture
  */
 function clearTexture(device, texture) {
   const pass = device.createCommandEncoder().beginRenderPass({
     colorAttachments: [{
-      texture,
+      view: texture.view,
       layer: 0,
       loadOp: "clear",
       storeOp: "store",

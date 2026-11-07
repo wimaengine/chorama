@@ -157,7 +157,7 @@ function validateBufferResource(resource, layoutEntry) {
  * @param {WebGLBindGroupLayoutEntry} layoutEntry
  */
 function validateTextureResource(resource, layoutEntry) {
-  const texture = resource.texture
+  const texture = resource.view.texture
 
   assertTrue(texture.inner !== null, "The default framebuffer texture cannot be sampled")
 
@@ -232,7 +232,7 @@ function bindUniformBlock(context, pipeline, name, bindingPoint) {
  * @param {WebGLBindGroupLayoutEntry} layoutEntry
  */
 function applyTextureBinding(context, pipeline, resource, layoutEntry) {
-  const { texture } = resource
+  const { texture } = resource.view
 
   assertTrue(texture.inner !== null, "The default framebuffer texture cannot be sampled")
 

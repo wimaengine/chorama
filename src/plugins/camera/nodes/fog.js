@@ -1,3 +1,4 @@
+/** @import { CachedTexture } from "../../../caches/index.js" */
 import { Camera } from "../../../objects/index.js"
 import { Views } from "../../../renderer/index.js"
 import { ViewUniformBuffer } from "../../../renderer/resources/index.js"
@@ -85,7 +86,7 @@ export class FogNode {
 
       const pass = commandEncoder.beginRenderPass({
         colorAttachments: [{
-          texture: renderer.caches.getTexture(renderDevice, outputColor),
+          view: renderer.caches.getTexture(renderDevice, outputColor).view,
           layer: 0,
           loadOp: "load",
           storeOp: "store"
@@ -105,8 +106,8 @@ export class FogNode {
  * @param {FogPipeline} pipelineState
  * @param {import("../../../core/resources/index.js").GPUBuffer} cameraBuffer
  * @param {import("../../../core/resources/index.js").GPUBuffer} fogBuffer
- * @param {import("../../../core/resources/index.js").GPUTexture} sceneTexture
- * @param {import("../../../core/resources/index.js").GPUTexture} depthTexture
+ * @param {CachedTexture} sceneTexture
+ * @param {CachedTexture} depthTexture
  * @param {import("../../../core/resources/index.js").GPUSampler} sampler
  */
 function createFogBindGroup(device, pipelineState, cameraBuffer, fogBuffer, sceneTexture, depthTexture, sampler) {
@@ -131,7 +132,7 @@ function createFogBindGroup(device, pipelineState, cameraBuffer, fogBuffer, scen
       {
         binding: 2,
         resource: {
-          texture: sceneTexture
+          view: sceneTexture.view
         }
       },
       {
@@ -143,7 +144,7 @@ function createFogBindGroup(device, pipelineState, cameraBuffer, fogBuffer, scen
       {
         binding: 4,
         resource: {
-          texture: depthTexture
+          view: depthTexture.view
         }
       },
       {

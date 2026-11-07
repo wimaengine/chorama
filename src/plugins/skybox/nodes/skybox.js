@@ -257,7 +257,7 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, day, night, obj
       {
         binding: 1,
         resource: {
-          texture: dayTexture
+          view: dayTexture.view
         }
       },
       {
@@ -269,7 +269,7 @@ function createSkyboxBindGroup(device, renderer, skyboxPipeline, day, night, obj
       {
         binding: 3,
         resource: {
-          texture: nightTexture
+          view: nightTexture.view
         }
       },
       {

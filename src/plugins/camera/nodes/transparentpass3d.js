@@ -41,14 +41,14 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
 
   const pass = device.createCommandEncoder().beginRenderPass({
     colorAttachments: [{
-      texture: colorTexture,
+      view: colorTexture.view,
       mipLevel: view.colorMipmapLevel,
       layer: view.colorLayer,
       loadOp: "load",
       storeOp: "store"
     }],
     depthStencilAttachment: depthTexture ? /** @type {import("../../../core/index.js").WebGLRenderPassDepthStencilAttachment} */ ({
-      texture: depthTexture,
+      view: depthTexture.view,
       mipLevel: view.depthMipmapLevel,
       layer: view.depthLayer,
       depthLoadOp: "load",
@@ -58,10 +58,10 @@ function renderItems(view, viewIndex, device, renderer, colorTargets, viewBindGr
   })
 
   const { width, height } = getMipLevelSize(
-    colorTexture.type,
-    colorTexture.width,
-    colorTexture.height,
-    colorTexture.depth,
+    colorTexture.texture.type,
+    colorTexture.texture.width,
+    colorTexture.texture.height,
+    colorTexture.texture.depth,
     view.colorMipmapLevel
   )
   pass.setViewport(0, 0, width, height, view.depthRange.start, view.depthRange.end)

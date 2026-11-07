@@ -5,11 +5,22 @@
 
 import { Texture } from "../texture/index.js"
 import { Attribute, Mesh } from "../mesh/index.js"
-import { GPUMesh, GPUTexture, GPUBuffer, MeshVertexLayout, WebGLRenderDevice, WebGLRenderPipeline } from "../core/index.js"
+import { GPUMesh, GPUTexture, GPUBuffer, MeshVertexLayout, WebGLGPUTextureView, WebGLRenderDevice, WebGLRenderPipeline } from "../core/index.js"
 import { BufferType, BufferUsage } from "../constants/others.js"
 import { mapToIndexFormat } from "../function.js"
 import { assert } from "../utils/index.js"
 import { getVertexFormatComponentNumber, getVertexFormatComponentSize } from "../constants/mesh.js"
+
+/**
+ * GPU resources associated with one logical texture.
+ *
+ * The texture is used for uploads and copies; the view is used by bind groups
+ * and render-pass attachments.
+ *
+ * @typedef {object} CachedTexture
+ * @property {GPUTexture} texture
+ * @property {WebGLGPUTextureView} view
+ */
 
 export class Caches {
   /**
@@ -17,7 +28,7 @@ export class Caches {
    */
   meshes = new Map()
   /**
-   * @type {Map<Texture, GPUTexture>}
+   * @type {Map<Texture, CachedTexture>}
    */
   textures = new Map()
 
@@ -88,13 +99,15 @@ export class Caches {
   /**
    * @param {WebGLRenderDevice} device
    * @param {Texture} texture
-   * @returns {GPUTexture}
+   * @returns {CachedTexture}
    */
   getTexture(device, texture) {
-    const gpuTexture = this.textures.get(texture)
+    const cachedTexture = this.textures.get(texture)
     const mipmapCount = texture.data.length
 
-    if (gpuTexture) {
+    if (cachedTexture) {
+      const gpuTexture = cachedTexture.texture
+
       if (texture.changed) {
         if (
           texture.type === gpuTexture.type &&
@@ -116,12 +129,12 @@ export class Caches {
               mipmapLevel
             })
           })
-          return gpuTexture
+          return cachedTexture
         } else {
           gpuTexture.destroy()
         }
       } else {
-        return gpuTexture
+        return cachedTexture
       }
     }
 
@@ -146,8 +159,12 @@ export class Caches {
     })
     // Flush out any change detection that happened when the image was creates
     texture.changed
-    this.textures.set(texture, newTex)
-    return newTex
+    const newCachedTexture = {
+      texture: newTex,
+      view: newTex.createView()
+    }
+    this.textures.set(texture, newCachedTexture)
+    return newCachedTexture
   }
 
   /**

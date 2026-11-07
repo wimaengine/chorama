@@ -1,5 +1,7 @@
 import { TextureFormat, TextureType } from "../../constants/index.js"
 import { WebGLTextureFormat } from "../../function.js"
+import { WebGLGPUTextureView } from "./webglgputextureview.js"
+/** @import { GPUTextureViewDescriptor } from "./webglgputextureview.js" */
 
 export class GPUTexture {
   /**
@@ -89,6 +91,16 @@ export class GPUTexture {
     this.mipmapCount = mipmapCount
     this.pixelSize = pixelSize
     this.actualFormat = actualFormat
+  }
+
+  /**
+   * Creates the default view for this texture.
+   *
+   * @param {GPUTextureViewDescriptor} [descriptor]
+   * @returns {WebGLGPUTextureView}
+   */
+  createView(descriptor) {
+    return new WebGLGPUTextureView(this, descriptor)
   }
 
   destroy() {

@@ -1,5 +1,6 @@
 /** @import { Texture } from "../../../texture/index.js" */
 /** @import { WebGLBindGroup, WebGLBindGroupLayout, WebGLRenderDevice } from "../../../core/index.js" */
+/** @import { CachedTexture } from "../../../caches/index.js" */
 
 /**
  * Bind groups for sprite images.
@@ -66,7 +67,7 @@ export class SpriteBindGroups {
       entries: [
         {
           binding: 0,
-          resource: { texture: gpuTexture }
+          resource: { view: gpuTexture.view }
         },
         {
           binding: 1,
@@ -82,7 +83,7 @@ export class SpriteBindGroups {
 
 /**
  * @typedef SpriteTextureBindGroup
- * @property {import("../../../core/index.js").GPUTexture} gpuTexture
+ * @property {CachedTexture} gpuTexture
  * @property {import("../../../core/index.js").GPUSampler} gpuSampler
  * @property {import("../../../core/index.js").WebGLBindGroup} bindGroup
  */

@@ -1,4 +1,5 @@
 /**@import { WebGLRenderDevice } from "../../../core/index.js" */
+/** @import { CachedTexture } from "../../../caches/index.js" */
 import { Camera } from "../../../objects/index.js"
 import { View, Views } from "../../../renderer/index.js"
 import { CanvasTarget, ImageRenderTarget } from "../../../rendertarget/index.js"
@@ -58,12 +59,13 @@ export class CanvasBlitNode {
 
         canvasTarget.changed()
         const currentTexture = canvasTarget.getCurrentTexture(renderDevice)
+        const currentTextureView = currentTexture.createView()
 
         const pipeline = getCanvasBlitPipeline(renderDevice, renderer, pipelineState, currentTexture.actualFormat)
 
         const pass = commandEncoder.beginRenderPass({
           colorAttachments: [{
-            texture: currentTexture,
+            view: currentTextureView,
             loadOp: "load",
             storeOp: "store"
           }]
@@ -103,7 +105,7 @@ export class CanvasBlitNode {
 
         const pass = commandEncoder.beginRenderPass({
           colorAttachments: [{
-            texture: imageTexture,
+            view: imageTexture.view,
             mipLevel: view.colorMipmapLevel,
             layer: view.colorLayer,
             loadOp: "load",
@@ -112,10 +114,10 @@ export class CanvasBlitNode {
         })
 
         const { width, height } = getMipLevelSize(
-          imageTexture.type,
-          imageTexture.width,
-          imageTexture.height,
-          imageTexture.depth,
+          imageTexture.texture.type,
+          imageTexture.texture.width,
+          imageTexture.texture.height,
+          imageTexture.texture.depth,
           view.colorMipmapLevel
         )
         pass.setViewport(
@@ -149,7 +151,7 @@ export class CanvasBlitNode {
 /**
  * @param {WebGLRenderDevice} device
  * @param {CanvasBlitPipeline} pipelineState
- * @param {import("../../../core/resources/index.js").GPUTexture} sourceTexture
+ * @param {CachedTexture} sourceTexture
  * @param {import("../../../core/resources/index.js").GPUSampler} gpuSampler
  */
 function createCanvasBlitBindGroup(device, pipelineState, sourceTexture, gpuSampler) {
@@ -160,7 +162,7 @@ function createCanvasBlitBindGroup(device, pipelineState, sourceTexture, gpuSamp
       {
         binding: 1,
         resource: {
-          texture: sourceTexture
+          view: sourceTexture.view
         }
       },
       {

@@ -381,14 +381,14 @@ function getRenderExtent(descriptor) {
 
   for (const colorAttachment of descriptor.colorAttachments) {
     if (colorAttachment) {
-      attachment = colorAttachment.texture
+      attachment = colorAttachment.view.texture
       mipLevel = colorAttachment.mipLevel ?? 0
       break
     }
   }
 
   if (!attachment) {
-    attachment = descriptor.depthStencilAttachment?.texture
+    attachment = descriptor.depthStencilAttachment?.view?.texture
     mipLevel = descriptor.depthStencilAttachment?.mipLevel ?? 0
   }
 
@@ -424,16 +424,16 @@ function usesDefaultFramebuffer(descriptor) {
       continue
     }
 
-    assert(attachment.texture, `Render pass color attachment ${index} does not have a texture`)
+    assert(attachment.view, `Render pass color attachment ${index} does not have a view`)
 
-    if (attachment.texture.inner !== null) {
+    if (attachment.view.texture.inner !== null) {
       continue
     }
 
     assertTrue(index === 0, "The default framebuffer texture must be color attachment 0")
     assertTrue(defaultTexture === undefined, "A render pass cannot use multiple default framebuffer textures")
-    assertTrue(attachment.texture.type === TextureType.Texture2D, "The default framebuffer texture must be 2D")
-    defaultTexture = attachment.texture
+    assertTrue(attachment.view.texture.type === TextureType.Texture2D, "The default framebuffer texture must be 2D")
+    defaultTexture = attachment.view.texture
   }
 
   if (defaultTexture === undefined) {
@@ -469,7 +469,7 @@ function resolveDrawBuffers(context, descriptor, limits, useDefaultFramebuffer) 
       return context.NONE
     }
 
-    assert(attachment.texture, `Render pass color attachment ${index} does not have a texture`)
+    assert(attachment.view, `Render pass color attachment ${index} does not have a view`)
 
     return useDefaultFramebuffer ? context.BACK : context.COLOR_ATTACHMENT0 + index
   })
@@ -487,11 +487,11 @@ function configureFramebufferAttachments(context, descriptor, limits) {
     const attachment = descriptor.colorAttachments[i]
     const colorAttachment = context.COLOR_ATTACHMENT0 + i
 
-    if (attachment?.texture) {
+    if (attachment?.view) {
       attachTextureToFramebuffer(
         context,
         colorAttachment,
-        attachment.texture,
+        attachment.view.texture,
         attachment.mipLevel ?? 0,
         attachment.layer ?? 0
       )
@@ -504,10 +504,10 @@ function configureFramebufferAttachments(context, descriptor, limits) {
   context.framebufferTexture2D(context.FRAMEBUFFER, context.STENCIL_ATTACHMENT, context.TEXTURE_2D, null, 0)
   context.framebufferTexture2D(context.FRAMEBUFFER, context.DEPTH_STENCIL_ATTACHMENT, context.TEXTURE_2D, null, 0)
 
-  const depthStencilTexture = descriptor.depthStencilAttachment?.texture
+  const depthStencilTexture = descriptor.depthStencilAttachment?.view?.texture
 
   if (descriptor.depthStencilAttachment) {
-    assert(depthStencilTexture, "Render pass depth/stencil attachment does not have a texture")
+    assert(depthStencilTexture, "Render pass depth/stencil attachment does not have a view")
   }
 
   if (depthStencilTexture) {
@@ -592,7 +592,7 @@ function configureDepthStencilState(context, descriptor, useDefaultFramebuffer) 
     return
   }
 
-  const format = depthStencilAttachment.texture?.actualFormat
+  const format = depthStencilAttachment.view?.texture.actualFormat
   const depthRequested = depthStencilAttachment.depthLoadOp !== undefined ||
     depthStencilAttachment.depthStoreOp !== undefined ||
     depthStencilAttachment.depthClearValue !== undefined
