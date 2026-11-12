@@ -1,6 +1,7 @@
 import { defineConfig } from "astro/config";
 import { readFileSync } from "node:fs";
 import { website } from "wima-docs-website-template";
+import { getReflectionKindSlug } from "wima-docs-website-template/utils/typedoc";
 
 function glsl() {
   return {
@@ -27,7 +28,16 @@ export default defineConfig({
   integrations: [website({
     guideRoute: "/guide",
     examplesRoute: "/examples",
+    apiRoute: "/api",
+    sourceBranch: "main",
+    introContentPath: "README.md",
     guideContentDir: "content/guide",
-    examplesContentDir: "examples"
+    examplesContentDir: "examples",
+    apiSourceDir: "src",
+    apiEntryRoute: (entryPath, reflection) => {
+      const packageName = entryPath.split("/")[0] || "root";
+      const kind = getReflectionKindSlug(reflection.kind);
+      return `${packageName}/${kind}-${reflection.name}`;
+    }
   })],
 });
