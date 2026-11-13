@@ -138,6 +138,11 @@ ortho.bottom = -5;
 camera.projection = ortho;
 ```
 
+`SkyBox` works with orthographic cameras too. Add `SkyboxPlugin` to the renderer
+plugins and include the skybox in the render list alongside the camera. The
+orthographic camera uses parallel environment rays, so the skybox remains a
+directional background without perspective distortion.
+
 For orthographic cameras, update bounds yourself when viewport shape changes.
 
 ## Reference Examples

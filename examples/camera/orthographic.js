@@ -13,7 +13,10 @@ import {
   CanvasTarget,
   BasicMaterial,
   OrthographicProjection,
-  CameraPlugin
+  CameraPlugin,
+  SkyBox,
+  SkyboxPlugin,
+  TextureType
 } from "chorama"
 
 const canvas = document.createElement('canvas')
@@ -27,6 +30,7 @@ const renderer = new WebGLRenderer({
   plugins: [
     new CameraPlugin(),
     new MeshMaterialPlugin(),
+    new SkyboxPlugin(),
   ]
 })
 const projection = new OrthographicProjection()
@@ -37,6 +41,17 @@ const cameraControls = new OrbitCameraControls(camera, canvas)
 const textureLoader = new TextureLoader()
 const texture = textureLoader.load({
   paths: ["/images/uv.jpg"],
+})
+const day = textureLoader.load({
+  paths: [
+    "/images/skybox/miramar_right.png",
+    "/images/skybox/miramar_left.png",
+    "/images/skybox/miramar_top.png",
+    "/images/skybox/miramar_bottom.png",
+    "/images/skybox/miramar_back.png",
+    "/images/skybox/miramar_front.png",
+  ],
+  type: TextureType.TextureCubeMap,
 })
 
 //create objects
@@ -49,6 +64,10 @@ meshBuilder.height = 10
 
 const ground = new MeshMaterial3D(meshBuilder.build3d(), material)
 const objects = createObjects()
+const skyBox = new SkyBox({
+  day
+})
+skyBox.transform.orientation.rotateY(Math.PI)
 
 ground.transform.orientation.rotateX(-Math.PI / 2)
 
@@ -57,6 +76,8 @@ cameraControls.distance = 5
 camera.projection = projection
 
 document.body.append(canvas)
+addEventListener("resize", updateView)
+updateView()
 requestAnimationFrame(update)
 
 function createObjects() {
@@ -81,8 +102,17 @@ function createObjects() {
 
 function update() {
   cameraControls.update()
-  renderer.render([ground, ...objects, camera], renderDevice)
+  renderer.render([ground, ...objects, skyBox, camera], renderDevice)
   requestAnimationFrame(update)
+}
+
+function updateView() {
+  const viewHeight = 12
+  const viewWidth = viewHeight * innerWidth / innerHeight
+  projection.left = -viewWidth * 0.5
+  projection.right = viewWidth * 0.5
+  projection.top = viewHeight * 0.5
+  projection.bottom = -viewHeight * 0.5
 }
 
 // demo-only GUI controls
