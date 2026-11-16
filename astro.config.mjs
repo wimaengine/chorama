@@ -21,7 +21,7 @@ export default defineConfig({
   output: "static",
   compressHTML: true,
   publicDir: "./assets",
-  outDir: "./dist/website",
+  outDir: "./website",
   vite: {
     plugins: [glsl()],
   },

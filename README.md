@@ -99,7 +99,7 @@ Use this library if you want lower-level control than full game engines, but sti
 npm install
 ```
 
-### Build library bundles
+### Build the library and website
 
 ```bash
 npm run build
@@ -109,6 +109,7 @@ Build output:
 
 - `dist/index.umd.js`
 - `dist/index.module.js`
+- `website/` (static documentation website)
 
 ### Run demos
 
