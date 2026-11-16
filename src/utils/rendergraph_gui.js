@@ -37,16 +37,12 @@ export function addRenderGraphGuiAddon({
    * scale: number
    * panX: number
    * panY: number
-   * minScale: number
-   * maxScale: number
    * markerId: string
    * }} */
   const graphViewState = {
     scale: 1,
     panX: 0,
     panY: 0,
-    minScale: 0.35,
-    maxScale: 2.5,
     markerId
   }
   /** 
@@ -451,8 +447,6 @@ function createSvgElement(tag) {
  *   scale: number
  *   panX: number
  *   panY: number
- *   minScale: number
- *   maxScale: number
  * }} view
  * @param {() => void} redraw
  */
@@ -475,7 +469,7 @@ function enableGraphNavigation(svg, view, redraw) {
     const worldX = (px - view.panX) / view.scale
     const worldY = (py - view.panY) / view.scale
     const zoom = Math.exp(-event.deltaY * 0.0015)
-    const nextScale = clamp(view.scale * zoom, view.minScale, view.maxScale)
+    const nextScale = view.scale * zoom
 
     view.scale = nextScale
     view.panX = px - worldX * nextScale
@@ -539,15 +533,6 @@ function toSvgCoordinates(svg, clientX, clientY) {
   point.x = clientX
   point.y = clientY
   return point.matrixTransform(matrix.inverse())
-}
-
-/**
- * @param {number} value
- * @param {number} min
- * @param {number} max
- */
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value))
 }
 
 /**
